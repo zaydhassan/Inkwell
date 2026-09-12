@@ -16,7 +16,7 @@ import LeaderboardIcon from "@mui/icons-material/Leaderboard";
 import ArticleIcon from "@mui/icons-material/Article";
 import PostAddIcon from "@mui/icons-material/PostAdd";
 import LogoutIcon from "@mui/icons-material/Logout";
-import toast from "react-hot-toast";
+import { toastLogout } from "../utils/toasts";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import GradientButton from "./GradientButton";
@@ -28,13 +28,13 @@ import useRequireAuth from "../hooks/useRequireAuth";
 
 const NAV_ITEMS = [
   { label: "Home", path: "/", match: (p) => p === "/" },
-  { label: "About", path: "/about", match: (p) => p === "/about" },
-  { label: "Blogs", path: "/blogs", match: (p) => p.startsWith("/blogs") || p.startsWith("/category") },
+  { label: "Explore", path: "/blogs", match: (p) => p.startsWith("/blogs") || p.startsWith("/category") },
+  { label: "Write", path: "/create-blog", match: (p) => p.startsWith("/create-blog") || p.startsWith("/edit-blog") },
   { label: "Leaderboard", path: "/leaderboard", match: (p) => p.startsWith("/leaderboard") },
-  { label: "Contact", path: "/contact", match: (p) => p === "/contact" },
+  { label: "About", path: "/about", match: (p) => p === "/about" },
 ];
 
-// Filled-pill active state (brandSoft bg + terracotta text) reads more
+// Filled-pill active state (brandSoft bg + charcoal text) reads more
 // "premium SaaS" than a thin under-bar, and stays legible in both modes.
 const navBtnSx = (active) => ({
   color: active ? "primary.main" : "text.secondary",
@@ -96,7 +96,7 @@ const Navbar = () => {
     // and local auth state, then syncs the Redux store.
     await logout();
     dispatch(authActions.logout());
-    toast.success("Logged out Successfully");
+    toastLogout();
     navigate("/");
   };
 
@@ -139,22 +139,24 @@ const Navbar = () => {
           <Toolbar
             disableGutters
             sx={{
-              my: { xs: 1.25, md: 1.75 },
+              // The pill compacts slightly once the page scrolls: less outer
+              // margin, tighter padding, deeper shadow — a smooth, subtle lift.
+              my: scrolled ? { xs: 0.75, md: 1 } : { xs: 1.25, md: 1.75 },
               px: { xs: 1.5, md: 2 },
-              py: 0.75,
+              py: scrolled ? 0.4 : 0.75,
               borderRadius: 999,
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
               gap: 1.5,
               bgcolor: "background.glass",
-              backdropFilter: "blur(14px)",
-              WebkitBackdropFilter: "blur(14px)",
+              backdropFilter: (t) => (scrolled ? "blur(18px)" : "blur(14px)"),
+              WebkitBackdropFilter: (t) => (scrolled ? "blur(18px)" : "blur(14px)"),
               border: (t) => `1px solid ${t.palette.divider}`,
               boxShadow: scrolled
                 ? (t) => t.customShadows?.card || "0 12px 36px rgba(0,0,0,0.12)"
                 : "0 1px 2px rgba(0,0,0,0.04)",
-              transition: "box-shadow .35s ease, margin .35s ease",
+              transition: "box-shadow .35s ease, margin .35s ease, padding .35s ease",
             }}
           >
             <IconButton edge="start" color="inherit" aria-label="menu" sx={{ display: { md: "none" } }} onClick={handleDrawerToggle}>
@@ -303,6 +305,23 @@ const Navbar = () => {
                       Analytics
                     </Button>
                   )}
+                  <Button
+                    fullWidth
+                    sx={{
+                      justifyContent: "flex-start",
+                      textTransform: "none",
+                      fontWeight: location.pathname === "/contact" ? 700 : 600,
+                      borderRadius: 2,
+                      px: 2,
+                      py: 1.25,
+                      color: location.pathname === "/contact" ? "primary.main" : "text.secondary",
+                      backgroundColor: location.pathname === "/contact" ? "brandSoft" : "transparent",
+                      "&:hover": { backgroundColor: "brandSoft", color: "primary.main" },
+                    }}
+                    onClick={() => { go("/contact"); setMobileOpen(false); }}
+                  >
+                    Contact
+                  </Button>
                 </Stack>
               </Box>
             </Drawer>
@@ -368,24 +387,42 @@ const Navbar = () => {
                 </>
               )}
               {!isLogin && (
-                <GradientButton
-                  onClick={() => navigate("/login")}
-                  sx={{
-                    borderRadius: 999,
-                    px: 2.75,
-                    py: 0.9,
-                    minHeight: 0,
-                    fontWeight: 700,
-                    fontSize: "0.85rem",
-                    letterSpacing: "0.01em",
-                    boxShadow: (t) => t.customShadows?.card,
-                    "&:hover": {
-                      boxShadow: (t) => t.customShadows?.cardHover,
-                    },
-                  }}
-                >
-                  Login
-                </GradientButton>
+                <>
+                  <Button
+                    onClick={() => navigate("/login")}
+                    sx={{
+                      borderRadius: 999,
+                      px: { xs: 1.5, md: 2.25 },
+                      py: 0.9,
+                      minHeight: 0,
+                      textTransform: "none",
+                      fontWeight: 700,
+                      fontSize: "0.85rem",
+                      color: "text.secondary",
+                      "&:hover": { color: "primary.main", backgroundColor: "brandSoft" },
+                    }}
+                  >
+                    Sign In
+                  </Button>
+                  <GradientButton
+                    onClick={() => navigate("/register")}
+                    sx={{
+                      borderRadius: 999,
+                      px: { xs: 2, md: 2.75 },
+                      py: 0.9,
+                      minHeight: 0,
+                      fontWeight: 700,
+                      fontSize: "0.85rem",
+                      letterSpacing: "0.01em",
+                      boxShadow: (t) => t.customShadows?.card,
+                      "&:hover": {
+                        boxShadow: (t) => t.customShadows?.cardHover,
+                      },
+                    }}
+                  >
+                    Get Started
+                  </GradientButton>
+                </>
               )}
             </Box>
           </Toolbar>

@@ -1,7 +1,7 @@
 import { createTheme } from "@mui/material/styles";
 
 // ─────────────────────────────────────────────────────────────────────
-//  Inkwell design system — Modern SaaS / terracotta / glass.
+//  Inkwell design system — premium white editorial / charcoal monochrome.
 //  One factory builds both the light and dark MUI themes from a shared
 //  token set so the two modes never drift apart. The raw `.css` pages
 //  read the same values through CSS custom properties (see index.css),
@@ -9,54 +9,55 @@ import { createTheme } from "@mui/material/styles";
 //  set by ThemeContext.
 // ─────────────────────────────────────────────────────────────────────
 
-// Brand accent — terracotta. Identical hue family in both modes; only the
-// neutrals flip.
-const BRAND = {
-  main: "#C2410C",
-  light: "#E8693A",
-  dark: "#9A2E08",
-  contrastText: "#FFFFFF",
-};
-// A single vibrant "accent badge" color, used sparingly (eyebrow dots,
-// trending arrows, role badges) so it reads as a highlight, not a second
-// brand color.
-const ACCENT = { main: "#0EA5E9", contrastText: "#FFFFFF" };
-
+// Brand accent — charcoal. #111111 is the light-mode primary; #000000 is the
+// deep hover/press tone. Dark mode inverts to a warm white #F5F1EA primary so
+// buttons/links stay legible on the near-black surfaces; only the neutrals
+// flip (premium white in light, warm black #11100F family in dark).
 const getTokenSets = (mode) => {
   const isDark = mode === "dark";
+  const BRAND = isDark
+    ? { main: "#F5F1EA", light: "#FFFFFF", dark: "#D6CFC4", contrastText: "#111111" }
+    : { main: "#111111", light: "#3F3F46", dark: "#000000", contrastText: "#FFFFFF" };
+  // A single "accent badge" tone matching the brand, used sparingly (eyebrow
+  // dots, trending arrows, role badges) so it reads as a highlight, not a
+  // second brand color.
+  const ACCENT = isDark
+    ? { main: "#F5F1EA", contrastText: "#111111" }
+    : { main: "#111111", contrastText: "#FFFFFF" };
+
   return {
     brand: BRAND,
     accent: ACCENT,
-    // alpha helpers for low-emphasis terracotta fills (chip/button hovers)
-    brandSoft: isDark ? "rgba(232,105,58,0.18)" : "rgba(194,65,12,0.12)",
-    brandSofter: isDark ? "rgba(232,105,58,0.10)" : "rgba(194,65,12,0.07)",
+    // alpha helpers for low-emphasis charcoal fills (chip/button hovers)
+    brandSoft: isDark ? "rgba(245,241,234,0.16)" : "rgba(17,17,17,0.06)",
+    brandSofter: isDark ? "rgba(245,241,234,0.08)" : "rgba(17,17,17,0.035)",
     background: {
-      default: isDark ? "#161210" : "#FAF7F2",
-      paper: isDark ? "#211C18" : "#FFFFFF",
+      default: isDark ? "#11100F" : "#FAFAF9",
+      paper: isDark ? "#1A1816" : "#FFFFFF",
       // translucent "glass" surface
-      glass: isDark ? "rgba(33,28,24,0.55)" : "rgba(255,255,255,0.65)",
+      glass: isDark ? "rgba(26,24,22,0.70)" : "rgba(255,255,255,0.75)",
       gradient: isDark
-        ? "linear-gradient(180deg, #161210 0%, #1F1A16 100%)"
-        : "linear-gradient(180deg, #FAF7F2 0%, #F3ECE2 100%)",
+        ? "linear-gradient(180deg, #11100F 0%, #1A1816 100%)"
+        : "linear-gradient(180deg, #FFFFFF 0%, #FAFAF9 100%)",
     },
     text: {
-      primary: isDark ? "#F5EFE7" : "#1F1B16",
-      secondary: isDark ? "#B8AEA3" : "#5C534A",
-      disabled: isDark ? "#6B6258" : "#9A9088",
+      primary: isDark ? "#F5F1EA" : "#111111",
+      secondary: isDark ? "#A8A29E" : "#4B5563",
+      disabled: isDark ? "#78716C" : "#6B7280",
     },
-    divider: isDark ? "rgba(245,239,231,0.10)" : "rgba(31,27,22,0.10)",
-    // glow shadows — the terracotta "lift" on hover
+    divider: isDark ? "rgba(245,241,234,0.10)" : "#E7E5E4",
+    // glow shadows — the charcoal "lift" on hover
     customShadows: {
       card: isDark
-        ? "0 8px 28px rgba(0,0,0,0.45)"
-        : "0 4px 20px rgba(31,27,22,0.06)",
+        ? "0 8px 28px rgba(0,0,0,0.50)"
+        : "0 4px 20px rgba(17,17,17,0.05)",
       cardHover: isDark
-        ? "0 12px 40px rgba(232,105,58,0.28)"
-        : "0 12px 36px rgba(194,65,12,0.18)",
+        ? "0 12px 40px rgba(0,0,0,0.60)"
+        : "0 12px 36px rgba(17,17,17,0.12)",
       glass: isDark
-        ? "0 8px 32px rgba(0,0,0,0.50)"
-        : "0 8px 32px rgba(31,27,22,0.10)",
-      glow: "0 0 0 4px rgba(194,65,12,0.18)",
+        ? "0 8px 32px rgba(0,0,0,0.55)"
+        : "0 8px 32px rgba(17,17,17,0.07)",
+      glow: isDark ? "0 0 0 4px rgba(245,241,234,0.18)" : "0 0 0 4px rgba(17,17,17,0.10)",
     },
   };
 };
@@ -73,8 +74,14 @@ const getDesignTokens = (mode) => {
       divider: t.divider,
       success: { main: "#16A34A", contrastText: "#FFFFFF" },
       error: { main: "#DC2626", contrastText: "#FFFFFF" },
+      // semantic warning keeps its conventional amber (functional, not brand)
       warning: { main: "#D97706", contrastText: "#FFFFFF" },
       info: t.accent,
+      // Exposed as palette entries so `bgcolor: "brandSoft"` / "brandSofter"
+      // resolve to real colors in the sx prop (MUI looks palette keys up by
+      // name). Many components across the app rely on this.
+      brandSoft: t.brandSoft,
+      brandSofter: t.brandSofter,
     },
     // exposed on the theme object for sx consumers (theme.customShadows.*)
     customShadows: t.customShadows,
@@ -129,7 +136,7 @@ const buildTheme = (mode) => {
           },
           "::-webkit-scrollbar-thumb:hover": { background: palette.primary.main },
           "html": { scrollbarColor: `${palette.primary.main} transparent` },
-          "::selection": { background: palette.primary.main, color: "#fff" },
+          "::selection": { background: palette.primary.main, color: palette.primary.contrastText },
         },
       },
       MuiButton: {
@@ -160,7 +167,7 @@ const buildTheme = (mode) => {
             },
           },
         },
-        // a custom "gradient" variant (terracotta 135°) for the primary CTA
+        // a custom "gradient" variant (charcoal 135°) for the primary CTA
         variants: [
           {
             props: { variant: "gradient" },

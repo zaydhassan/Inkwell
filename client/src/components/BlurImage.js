@@ -8,7 +8,7 @@ import { Box } from "@mui/material";
 const BlurImage = ({
   src,
   alt = "",
-  gradient = "linear-gradient(135deg, rgba(194,65,12,0.30), rgba(154,46,8,0.50))",
+  gradient = "linear-gradient(135deg, #F5F5F4, #E7E5E4)",
   zoomOnHover = true,
   sx,
   imgSx,

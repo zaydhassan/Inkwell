@@ -7,9 +7,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import 'react-toastify/dist/ReactToastify.css';
 import ErrorBoundary from "./components/ErrorBoundary";
-import AuroraBackground from "./components/AuroraBackground";
 import CommandPalette from "./components/CommandPalette";
 
 // Route-level code-splitting: each page is loaded on demand via React.lazy so
@@ -51,15 +49,36 @@ function AppWrapper() {
   const location = useLocation();
   const isAdmin = user?.role === "Admin";
   const isAdminRoute = location.pathname.startsWith("/admin");
+  // The redesigned login page owns its own chrome (theme toggle + back home).
+  const isImmersiveAuthRoute = location.pathname === "/login";
 
   return (
     <MuiThemeProvider theme={themeInstance}>
       <CssBaseline />
-      <AuroraBackground />
       <CommandPalette />
       <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-        {!isAdminRoute && <Navbar />}
-        <Toaster />
+        {!isAdminRoute && !isImmersiveAuthRoute && <Navbar />}
+        {/* Global toast shell — a glass card on the theme's surface. The
+            unique per-event badges/icons live in utils/toasts.js. */}
+        <Toaster
+          position="top-center"
+          gutter={10}
+          toastOptions={{
+            duration: 3200,
+            style: {
+              background: "var(--surface-glass)",
+              backdropFilter: "blur(14px)",
+              WebkitBackdropFilter: "blur(14px)",
+              border: "1px solid var(--divider)",
+              color: "var(--text)",
+              borderRadius: "14px",
+              boxShadow: "var(--shadow-card)",
+              fontSize: "0.875rem",
+              fontWeight: 500,
+              padding: "10px 14px",
+            },
+          }}
+        />
         <Box component="main" sx={{ flex: 1 }}>
           <Suspense fallback={<PageFallback />}>
           <ErrorBoundary>
@@ -99,7 +118,7 @@ function AppWrapper() {
           </ErrorBoundary>
           </Suspense>
         </Box>
-        {!isAdminRoute && <Footer />}
+        {!isAdminRoute && !isImmersiveAuthRoute && <Footer />}
       </Box>
     </MuiThemeProvider>
   );

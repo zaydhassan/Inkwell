@@ -7,6 +7,7 @@ import { Visibility, VisibilityOff, Email as EmailIcon, Lock as LockIcon, Person
 import axios from "axios";
 import toast from "react-hot-toast";
 import { validateEmail, validatePassword, validateMinLength, validateFields } from "../utils/validate";
+import { toastRegister } from "../utils/toasts";
 import AuthSplitLayout from "../components/AuthSplitLayout";
 import GradientButton from "../components/GradientButton";
 import GoogleSignInButton from "../components/GoogleSignInButton";
@@ -24,10 +25,10 @@ const strengthOf = (pw) => {
   if (/\d/.test(pw)) score += 1;
   if (/[^A-Za-z0-9]/.test(pw) || pw.length >= 12) score += 1;
   const map = [
-    { label: "Too short", color: "#9a9088" },
+    { label: "Too short", color: "#9B98AD" },
     { label: "Weak", color: "#dc2626" },
     { label: "Fair", color: "#d97706" },
-    { label: "Good", color: "#0EA5E9" },
+    { label: "Good", color: "#F59E0B" },
     { label: "Strong", color: "#16a34a" },
   ];
   return { score, ...map[score] };
@@ -98,7 +99,7 @@ const Register = () => {
         role: inputs.role
       });
       if (data.success) {
-        toast.success("Sign up successful. Please log in.");
+        toastRegister();
         navigate("/login");
       }
     } catch (error) {

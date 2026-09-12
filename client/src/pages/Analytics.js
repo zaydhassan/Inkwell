@@ -20,7 +20,7 @@ import {
   Grid,
   Typography,
   Stack,
-  CircularProgress,
+  Skeleton,
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import FavoriteIcon from "@mui/icons-material/Favorite";
@@ -87,10 +87,26 @@ const Analytics = () => {
     );
   }
 
+  // Skeleton mirrors the dashboard layout: four stat cards + chart panels.
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <CircularProgress />
+      <Box sx={{ minHeight: '100vh', p: { xs: 2, md: 4 } }}>
+        <Skeleton variant="text" width={220} height={38} sx={{ mb: 3 }} />
+        <Grid container spacing={2} sx={{ mb: 3 }}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Grid item xs={12} sm={6} md={3} key={i}>
+              <Skeleton variant="rounded" height={120} sx={{ borderRadius: 4 }} />
+            </Grid>
+          ))}
+        </Grid>
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={8}>
+            <Skeleton variant="rounded" height={340} sx={{ borderRadius: 4 }} />
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Skeleton variant="rounded" height={340} sx={{ borderRadius: 4 }} />
+          </Grid>
+        </Grid>
       </Box>
     );
   }
@@ -177,9 +193,9 @@ const Analytics = () => {
                   data={{
                     labels: timeseries.labels,
                     datasets: [
-                      { label: "Views", data: timeseries.views, borderColor: "#C2410C", backgroundColor: "rgba(194,65,12,0.15)", fill: true, tension: 0.35 },
-                      { label: "Likes", data: timeseries.likes, borderColor: "#E8693A", backgroundColor: "rgba(232,105,58,0.15)", fill: true, tension: 0.35 },
-                      { label: "Comments", data: timeseries.comments, borderColor: "#0EA5E9", backgroundColor: "rgba(14,165,233,0.15)", fill: true, tension: 0.35 },
+                      { label: "Views", data: timeseries.views, borderColor: "#111111", backgroundColor: "rgba(17,17,17,0.10)", fill: true, tension: 0.35 },
+                      { label: "Likes", data: timeseries.likes, borderColor: "#52525B", backgroundColor: "rgba(82,82,91,0.12)", fill: true, tension: 0.35 },
+                      { label: "Comments", data: timeseries.comments, borderColor: "#9CA3AF", backgroundColor: "rgba(156,163,175,0.12)", fill: true, tension: 0.35 },
                     ],
                   }}
                   options={chartOptions}
@@ -196,7 +212,7 @@ const Analytics = () => {
                     <Bar
                       data={{
                         labels: topPosts.map((p) => p.title.length > 24 ? p.title.slice(0, 24) + "…" : p.title),
-                        datasets: [{ label: "Views", data: topPosts.map((p) => p.views), backgroundColor: "#C2410C", borderRadius: 6 }],
+                        datasets: [{ label: "Views", data: topPosts.map((p) => p.views), backgroundColor: "#111111", borderRadius: 6 }],
                       }}
                       options={{ ...chartOptions, plugins: { ...chartOptions.plugins, legend: { display: false } } }}
                     />
@@ -215,7 +231,7 @@ const Analytics = () => {
                           labels: categories.map((c) => c.category),
                           datasets: [{
                             data: categories.map((c) => c.count),
-                            backgroundColor: ["#C2410C", "#E8693A", "#0EA5E9", "#9A2E08", "#F59E0B", "#10B981", "#6366F1", "#EC4899"],
+                            backgroundColor: ["#111111", "#52525B", "#A3A3A3", "#404040", "#D4D4D4", "#10B981", "#737373", "#262626"],
                             borderColor: theme.palette.background.paper,
                             borderWidth: 2,
                           }],

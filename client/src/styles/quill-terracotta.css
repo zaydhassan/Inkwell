@@ -1,4 +1,4 @@
-/* Quill overrides for the Inkwell terracotta theme. Loaded AFTER
+/* Quill overrides for the Inkwell charcoal theme. Loaded AFTER
    quill.snow.css in CreateBlog/EditBlog. Light-mode tweaks apply to
    `.ql-snow` unconditionally; dark-mode overrides are keyed on the
    `data-theme="dark"` attribute set on <html> by ThemeContext, so the

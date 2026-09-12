@@ -1,7 +1,7 @@
 import React from "react";
 import { Typography, Box } from "@mui/material";
 
-// A consistent section header: a terracotta "eyebrow" overline, a display
+// A consistent section header: a charcoal "eyebrow" overline, a display
 // title, and an optional supporting line. `badge` renders a small vibrant
 // accent dot beside the eyebrow for the SaaS "accent badge" touch.
 const SectionHeading = ({ eyebrow, title, subtitle, badge = false, align = "left", sx }) => (

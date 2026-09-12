@@ -37,12 +37,12 @@ const TYPE_ICON = {
 };
 
 const TYPE_COLOR = {
-  like: "#E8693A",
-  comment: "#0EA5E9",
-  reply: "#0EA5E9",
-  levelUp: "#C2410C",
-  badge: "#C2410C",
-  system: "#9A2E08",
+  like: "var(--accent)",
+  comment: "var(--text-secondary)",
+  reply: "var(--text-disabled)",
+  levelUp: "var(--accent)",
+  badge: "var(--accent)",
+  system: "var(--text-secondary)",
 };
 
 // "2m", "3h", "5d" — lightweight relative time without pulling moment/date libs.
@@ -167,7 +167,7 @@ const NotificationBell = () => {
           ) : (
             recent.map((n) => {
               const Icon = TYPE_ICON[n.type] || NotificationsIcon;
-              const color = TYPE_COLOR[n.type] || "#9A2E08";
+              const color = TYPE_COLOR[n.type] || "var(--accent)";
               return (
                 <Box
                   key={n._id}

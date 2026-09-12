@@ -25,9 +25,9 @@ const containerVariants = {
 const NOISE_URI =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
 
-// Ambient section background: layered radial glows, two drifting blur blobs,
-// a hairline grid texture, and a noise pass. Everything is pointer-events:none
-// and GPU-friendly (transform/opacity only).
+// Ambient section background: a hairline grid texture and a noise pass only —
+// no colored washes or blobs, keeping the section premium white. Everything
+// is pointer-events:none and GPU-friendly (transform/opacity only).
 const SectionBackground = () => (
   <Box
     aria-hidden
@@ -39,46 +39,6 @@ const SectionBackground = () => (
       zIndex: 0,
     }}
   >
-    {/* Soft top radial wash */}
-    <Box
-      sx={{
-        position: "absolute",
-        top: "-20%",
-        left: "50%",
-        width: "70%",
-        height: "70%",
-        transform: "translateX(-50%)",
-        background:
-          "radial-gradient(circle at 50% 0%, rgba(194,65,12,0.14), transparent 62%)",
-      }}
-    />
-    {/* Drifting orange blobs */}
-    <Box
-      sx={{
-        position: "absolute",
-        top: "8%",
-        left: "-6%",
-        width: 280,
-        height: 280,
-        borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(232,105,58,0.22), transparent 70%)",
-        filter: "blur(60px)",
-        animation: "blobFloatA 14s ease-in-out infinite",
-      }}
-    />
-    <Box
-      sx={{
-        position: "absolute",
-        bottom: "4%",
-        right: "-8%",
-        width: 320,
-        height: 320,
-        borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(194,65,12,0.18), transparent 70%)",
-        filter: "blur(70px)",
-        animation: "blobFloatB 18s ease-in-out infinite",
-      }}
-    />
     {/* Hairline grid texture, faded at edges */}
     <Box
       sx={{
@@ -136,7 +96,7 @@ const SectionHeader = () => (
             height: 7,
             borderRadius: "50%",
             bgcolor: "primary.main",
-            boxShadow: "0 0 0 4px rgba(194,65,12,0.18)",
+            boxShadow: "0 0 0 4px rgba(17,17,17,0.12)",
             animation: "underlineGlow 2.4s ease-in-out infinite",
           }}
         />
@@ -162,7 +122,10 @@ const SectionHeader = () => (
           color: "text.primary",
         }}
       >
-        Latest from the community
+        Stories worth your time.
+      </Typography>
+      <Typography variant="subtitle1" sx={{ mt: 1, color: "text.secondary" }}>
+        Hand-picked stories from the InkWell community.
       </Typography>
       {/* Glowing animated underline */}
       <motion.div
@@ -174,8 +137,8 @@ const SectionHeader = () => (
           height: 4,
           borderRadius: 999,
           marginTop: 10,
-          background: "linear-gradient(90deg, #C2410C, #E8693A)",
-          boxShadow: "0 0 16px rgba(194,65,12,0.55)",
+          background: "linear-gradient(90deg, var(--accent), var(--accent-light))",
+          boxShadow: "0 0 16px rgba(17,17,17,0.35)",
           animation: "underlineGlow 2.6s ease-in-out infinite 0.6s",
         }}
       />
@@ -200,8 +163,7 @@ const CtaBlock = ({ onStartWriting }) => (
         py: { xs: 5, md: 7 },
         borderRadius: 4,
         overflow: "hidden",
-        background: (t) =>
-          `linear-gradient(135deg, ${t.palette.primary.bgSofter}, ${t.palette.background.glass})`,
+        background: (t) => t.palette.background.paper,
         border: (t) => `1px solid ${t.palette.divider}`,
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
@@ -217,7 +179,7 @@ const CtaBlock = ({ onStartWriting }) => (
           height: "160%",
           transform: "translateX(-50%)",
           background:
-            "radial-gradient(circle, rgba(194,65,12,0.18), transparent 70%)",
+            "radial-gradient(circle, rgba(17,17,17,0.05), transparent 70%)",
           filter: "blur(50px)",
           pointerEvents: "none",
         }}

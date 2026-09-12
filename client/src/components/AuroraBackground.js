@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, useMotionValue, useSpring } from "framer-motion";
 
-// A subtle, cursor-following terracotta aurora rendered behind the whole
+// A subtle, cursor-following charcoal aurora rendered behind the whole
 // app (portaled to <body> so it sits at the same layer as the fixed ambient
 // glow in index.css, beneath #root's z-index:1 content). GPU-only: it moves
 // via transform on a single blurred radial blob. Honors prefers-reduced-motion
@@ -58,7 +58,7 @@ const AuroraBackground = () => {
           marginTop: -320,
           borderRadius: "50%",
           background:
-            "radial-gradient(circle, rgba(194,65,12,0.16), rgba(232,105,58,0.06) 45%, transparent 70%)",
+            "radial-gradient(circle, rgba(17,17,17,0.06), rgba(17,17,17,0.02) 45%, transparent 70%)",
           filter: "blur(70px)",
           x: enabled ? sx : window.innerWidth / 2,
           y: enabled ? sy : window.innerHeight / 2,
@@ -76,7 +76,7 @@ const AuroraBackground = () => {
           marginTop: -210,
           borderRadius: "50%",
           background:
-            "radial-gradient(circle, rgba(14,165,233,0.10), transparent 65%)",
+            "radial-gradient(circle, rgba(17,17,17,0.03), transparent 65%)",
           filter: "blur(80px)",
           x: enabled ? sx : window.innerWidth / 2,
           y: enabled ? sy : window.innerHeight / 2,

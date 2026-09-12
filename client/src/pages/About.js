@@ -62,7 +62,7 @@ const AboutPage = () => {
   const navigate = useNavigate();
 
   return (
-    <Box sx={{ minHeight: "100vh", py: { xs: 6, md: 10 } }}>
+    <Box sx={{ minHeight: "100vh", py: { xs: 6, md: 10 }, overflowX: "hidden" }}>
       <Container maxWidth="lg">
         {/* ── Hero ───────────────────────────────────────── */}
         <Grid container spacing={6} alignItems="center">
@@ -131,7 +131,7 @@ const AboutPage = () => {
                       position: "absolute",
                       inset: 0,
                       background:
-                        "linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(22,18,16,0.45))",
+                        "linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(28,25,23,0.45))",
                     },
                   }}
                 >
@@ -238,7 +238,7 @@ const AboutPage = () => {
                       variant="h3"
                       sx={{
                         position: "absolute", top: 12, right: 20,
-                        color: "brandSoft", fontWeight: 800, opacity: 0.9,
+                        color: "primary.main", fontWeight: 800, opacity: 0.08,
                         fontFamily: "Plus Jakarta Sans, Inter, sans-serif",
                       }}
                     >

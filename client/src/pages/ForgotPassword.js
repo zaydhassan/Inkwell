@@ -3,6 +3,7 @@ import { Typography, TextField, Stack, InputAdornment, Box } from '@mui/material
 import { Link as RouterLink } from 'react-router-dom';
 import { Email as EmailIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
 import toast from "react-hot-toast";
+import { toastResetLink } from '../utils/toasts';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../firebase/firebaseConfig';
 import { validateEmail } from '../utils/validate';
@@ -25,7 +26,7 @@ const ForgotPassword = () => {
     try {
       await sendPasswordResetEmail(auth, email);
       setSent(true);
-      toast.success("Reset password link sent to your email.");
+      toastResetLink();
     } catch (error) {
       toast.error("Failed to send reset link");
     } finally {

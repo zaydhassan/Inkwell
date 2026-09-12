@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 // Fire a short confetti burst. canvas-confetti draws on its own canvas, so this
 // is safe to call from any handler with no setup/teardown.
 const burst = () => {
-  const colors = ["#C2410C", "#E8693A", "#0EA5E9", "#F59E0B"];
+  const colors = ["#111111", "#52525B", "#A3A3A3", "#D4D4D4"];
   confetti({ particleCount: 90, spread: 70, origin: { y: 0.7 }, colors });
   // A second smaller burst from the sides for a richer effect.
   setTimeout(() => {

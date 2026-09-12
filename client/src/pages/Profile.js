@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   Box, Button, TextField, List, ListItem, ListItemButton, ListItemText,
-  Chip, Typography, LinearProgress, CircularProgress, Link, Divider, Stack,
+  Chip, Typography, LinearProgress, Skeleton, Link, Divider, Stack,
 } from '@mui/material';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import { useNavigate } from 'react-router-dom';
@@ -13,8 +13,8 @@ import AddCircleIcon from '@mui/icons-material/AddCircle';
 import axios from 'axios';
 import LeaderboardIcon from '@mui/icons-material/Leaderboard';
 import RedeemIcon from '@mui/icons-material/CardGiftcard';
-import { ToastContainer, toast, Slide, Zoom, Flip } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import toast from "react-hot-toast";
+import { toastProfileUpdated, toastReward } from "../utils/toasts";
 import { onActivate } from "../utils/a11y";
 import { validateEmail, validateMinLength, validatePassword } from "../utils/validate";
 import GlassCard from "../components/GlassCard";
@@ -72,14 +72,10 @@ const Profile = () => {
         setLevel(response.data.user.level || "Beginner");
         setBadges(response.data.user.badges || []);
       } else {
-        toast.error("Couldn't load your stats.", {
-          position: "top-center", autoClose: 3000, transition: Flip,
-        });
+        toast.error("Couldn't load your stats.");
       }
     } catch (error) {
-      toast.error("Couldn't load your stats.", {
-        position: "top-center", autoClose: 3000, transition: Flip,
-      });
+      toast.error("Couldn't load your stats.");
     }
   }, [user]);
 
@@ -95,9 +91,7 @@ const Profile = () => {
       }
     } catch (error) {
       setRewards([]);
-      toast.error("Couldn't load rewards.", {
-        position: "top-center", autoClose: 3000, transition: Flip,
-      });
+      toast.error("Couldn't load rewards.");
     }
     setLoadingRewards(false);
   };
@@ -106,24 +100,12 @@ const Profile = () => {
     try {
       const response = await axios.post('/api/v1/rewards/redeem', { userId: user._id, rewardId });
       if (response.data.success) {
-        toast.success('Reward redeemed successfully!', {
-          position: "top-center",
-          autoClose: 3000,
-          transition: Zoom,
-        });
+        toastReward();
       } else {
-        toast.error(response.data.message || 'Failed to redeem reward.', {
-          position: "top-center",
-          autoClose: 3000,
-          transition: Flip,
-        });
+        toast.error(response.data.message || 'Failed to redeem reward.');
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to redeem reward.', {
-        position: "top-center",
-        autoClose: 3000,
-        transition: Flip,
-      });
+      toast.error(error.response?.data?.message || 'Failed to redeem reward.');
     }
   };
 
@@ -135,9 +117,7 @@ const Profile = () => {
         setTopReaders(response.data.topReaders || []);
       }
     } catch (error) {
-      toast.error("Couldn't load the leaderboard.", {
-        position: "top-center", autoClose: 3000, transition: Flip,
-      });
+      toast.error("Couldn't load the leaderboard.");
     }
   }, []);
 
@@ -154,8 +134,11 @@ const Profile = () => {
       axios.get(`/api/v1/follow/info/${user._id}`)
         .then(({ data }) => data.success && setFollowInfo({ followersCount: data.followersCount, followingCount: data.followingCount }))
         .catch(() => {});
+      // `points` intentionally excluded: setPoints in fetchUserStats would
+      // re-trigger this effect and double every fetch on mount.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }
-  }, [user, points, fetchUserStats, fetchLeaderboard]);
+  }, [user, fetchUserStats, fetchLeaderboard]);
 
   const handleAvatarClick = () => {
     fileInputRef.current.click();
@@ -170,10 +153,7 @@ const Profile = () => {
 
   const handleUpdate = async (selectedImage = null) => {
     if (!user || !user._id) {
-      toast.error("⚠️ Cannot update: User data not available.", {
-        position: "top-center",
-        transition: Flip,
-      });
+      toast.error("⚠️ Cannot update: User data not available.");
       return;
     }
 
@@ -223,19 +203,11 @@ const Profile = () => {
       // updateUser is a createAsyncThunk; unwrap() throws on rejection so we
       // only show success when the server actually persisted the change.
       await dispatch(updateUser(updatedData)).unwrap();
-      toast.success("Profile updated successfully!", {
-        position: "top-center",
-        autoClose: 3000,
-        transition: Zoom,
-      });
+      toastProfileUpdated();
       // Clear the password field after a successful update.
       setPassword('');
     } catch (error) {
-      toast.error(error?.message || "Failed to update profile.", {
-        position: "top-center",
-        autoClose: 3000,
-        transition: Flip,
-      });
+      toast.error(error?.message || "Failed to update profile.");
     } finally {
       setIsUpdating(false);
     }
@@ -274,15 +246,6 @@ const Profile = () => {
 
   return (
     <>
-      <ToastContainer
-        position="top-center"
-        autoClose={2000}
-        hideProgressBar={false}
-        closeOnClick
-        pauseOnHover
-        draggable
-        transition={Slide}
-      />
       <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, minHeight: "100vh" }}>
         {/* Sidebar */}
         <Box
@@ -297,11 +260,11 @@ const Profile = () => {
             {navItem("My Blogs", <ArticleIcon fontSize="small" />, () => handleRestrictedNavigation('/my-blogs'))}
             {navItem("Create Blog", <AddCircleIcon fontSize="small" />, () => handleRestrictedNavigation('/create-blog'))}
             {navItem("Rewards", <RedeemIcon fontSize="small" />, () => navigate('/rewards'))}
-            {navItem("Leaderboard", <LeaderboardIcon fontSize="small" />, () => {})}
+            {navItem("Leaderboard", <LeaderboardIcon fontSize="small" />, () => navigate('/leaderboard'))}
           </List>
 
-          <LeaderboardCard title="Top Writers" emoji="✍️" rows={topWriters} currentUserId={user?._id} />
-          <LeaderboardCard title="Top Readers" emoji="📖" rows={topReaders} currentUserId={user?._id} />
+          <LeaderboardCard title="Top Writers" rows={topWriters} currentUserId={user?._id} />
+          <LeaderboardCard title="Top Readers" rows={topReaders} currentUserId={user?._id} />
 
           <List sx={{ mt: 2 }}>
             {navItem("Logout", <ExitToAppIcon fontSize="small" />, handleLogout)}
@@ -337,6 +300,14 @@ const Profile = () => {
 
             {/* Header card: role badge + level + points + progress */}
             <GlassCard sx={{ p: 4, width: "100%", textAlign: "center" }}>
+              <Typography variant="h5" sx={{ fontWeight: 800, fontFamily: "Plus Jakarta Sans, Inter, sans-serif", mb: 0.5 }}>
+                {user?.username || "Your profile"}
+              </Typography>
+              {bio && (
+                <Typography variant="body2" sx={{ color: "text.secondary", mb: 2, maxWidth: 480, mx: "auto" }}>
+                  {bio}
+                </Typography>
+              )}
               <Stack direction="row" spacing={1} justifyContent="center" sx={{ mb: 2 }}>
                 <Chip label={user?.role || "Reader"} color="secondary" size="small" />
                 <Chip label={level} color="primary" size="small" />
@@ -385,7 +356,11 @@ const Profile = () => {
             <GlassCard sx={{ p: 3, width: "100%" }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>Rewards</Typography>
               {loadingRewards ? (
-                <Box sx={{ display: "flex", justifyContent: "center" }}><CircularProgress size={28} /></Box>
+                <Stack spacing={1.5}>
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} variant="rounded" height={56} sx={{ borderRadius: 2 }} />
+                  ))}
+                </Stack>
               ) : Array.isArray(rewards) && rewards.length > 0 ? (
                 <List disablePadding>
                   {rewards.map(reward => (
@@ -400,7 +375,7 @@ const Profile = () => {
                         variant="outlined"
                         size="small"
                         color="primary"
-                        disabled={user.points < reward.costInPoints}
+                        disabled={points < reward.costInPoints}
                         onClick={() => handleRedeem(reward._id)}
                       >
                         Redeem

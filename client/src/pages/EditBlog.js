@@ -2,9 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import axios from "axios";
-import { Box, Button, InputLabel, TextField, Typography, Select, MenuItem, CircularProgress, IconButton, Stack } from "@mui/material";
+import { Box, Button, InputLabel, TextField, Typography, Select, MenuItem, Stack, Skeleton } from "@mui/material";
 import { History as HistoryIcon } from "@mui/icons-material";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import PhotoOutlinedIcon from "@mui/icons-material/PhotoOutlined";
 import toast from "react-hot-toast";
+import { toastUpdated, toastScheduled } from "../utils/toasts";
 import "quill/dist/quill.snow.css";
 import "../styles/quill-terracotta.css";
 import Quill from "quill";
@@ -47,6 +50,7 @@ const EditBlog = () => {
     const [inputs, setInputs] = useState({ title: "", description: "", category: "", image: "", tags: [] });
     const [uploadedImage, setUploadedImage] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [fetchError, setFetchError] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
     // Prefilled from blog.publishAt on fetch; a future value schedules the
     // post (server auto-publishes at the chosen time). Empty = unschedule.
@@ -140,11 +144,10 @@ const EditBlog = () => {
                         quillInstance.current.root.innerHTML = description || "";
                     }
                 } else {
-                    toast.error("Failed to load blog details");
-                    navigate("/my-blogs");
+                    setFetchError(true);
                 }
             } catch (error) {
-                toast.error("Error fetching blog details");
+                setFetchError(true);
             } finally {
                 setLoading(false);
             }
@@ -287,9 +290,9 @@ const EditBlog = () => {
                 if (draftKey) clearDraft(draftKey);
                 if (scheduling) {
                     const when = new Date(scheduleAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
-                    toast.success(`Scheduled for ${when}`);
+                    toastScheduled(when);
                 } else {
-                    toast.success("Blog updated successfully!");
+                    toastUpdated();
                 }
                 // A Draft→Published transition awards publish points server-side;
                 // sync the store + celebrate when the response carries a delta.
@@ -310,10 +313,39 @@ const EditBlog = () => {
         }
     };
 
+    if (fetchError) {
+        return (
+            <Box sx={{ maxWidth: 760, mx: "auto", py: { xs: 4, md: 6 }, px: 2 }}>
+                <GlassCard sx={{ p: 6, textAlign: "center" }}>
+                    <ErrorOutlineIcon sx={{ fontSize: 44, color: "text.secondary", mb: 1 }} />
+                    <Typography variant="h6" sx={{ mb: 1 }}>This story couldn't be loaded</Typography>
+                    <Typography variant="body2" sx={{ color: "text.secondary", mb: 3 }}>
+                        It may have been deleted, or the connection dropped. Try again or head back to your blogs.
+                    </Typography>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2} justifyContent="center">
+                        <Button variant="outlined" color="primary" onClick={() => window.location.reload()}>
+                            Retry
+                        </Button>
+                        <GradientButton onClick={() => navigate("/my-blogs")}>Back to My Blogs</GradientButton>
+                    </Stack>
+                </GlassCard>
+            </Box>
+        );
+    }
+
     if (loading) {
         return (
-            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-                <CircularProgress />
+            <Box sx={{ maxWidth: 760, mx: "auto", py: { xs: 4, md: 6 }, px: 2 }}>
+                <Skeleton variant="text" width={160} height={38} sx={{ mb: 3 }} />
+                <Box sx={{ p: { xs: 3, md: 4 }, borderRadius: 4, border: "1px solid", borderColor: "divider" }}>
+                    <Skeleton variant="text" width={64} sx={{ mb: 1 }} />
+                    <Skeleton variant="rounded" height={56} sx={{ mb: 3, borderRadius: 2 }} />
+                    <Skeleton variant="text" width={90} sx={{ mb: 1 }} />
+                    <Skeleton variant="rounded" height={300} sx={{ mb: 3, borderRadius: 2 }} />
+                    <Skeleton variant="text" width={80} sx={{ mb: 1 }} />
+                    <Skeleton variant="rounded" height={48} sx={{ mb: 3, borderRadius: 2 }} />
+                    <Skeleton variant="rounded" height={48} sx={{ width: "60%", borderRadius: 999 }} />
+                </Box>
             </Box>
         );
     }
@@ -366,9 +398,34 @@ const EditBlog = () => {
                     size="small"
                 />
 
-                <InputLabel sx={{ mt: 2, mb: 0.5, color: "text.secondary" }}>Image</InputLabel>
-                <input type="file" accept="image/*" onChange={handleFileChange} />
-                <Typography variant="body2" sx={{ mt: 1, color: "text.secondary" }}>Current: {inputs.image || "none"}</Typography>
+                <InputLabel sx={{ mt: 2, mb: 0.5, color: "text.secondary" }}>Cover image</InputLabel>
+                <Box
+                    component="label"
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        p: 2,
+                        border: "1px dashed",
+                        borderColor: uploadedImage ? "primary.main" : "divider",
+                        borderRadius: 2,
+                        bgcolor: "action.hover",
+                        cursor: "pointer",
+                        transition: "border-color 0.2s ease",
+                        "&:hover": { borderColor: "primary.light" },
+                    }}
+                >
+                    <PhotoOutlinedIcon sx={{ color: "primary.main" }} />
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {uploadedImage ? uploadedImage.name : "Choose a new cover image"}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                            Current: {inputs.image || "none"} — leaving this as-is keeps it
+                        </Typography>
+                    </Box>
+                    <input type="file" accept="image/*" onChange={handleFileChange} hidden />
+                </Box>
 
                 <Button
                     startIcon={<HistoryIcon />}

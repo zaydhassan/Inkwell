@@ -8,11 +8,11 @@ import {
   Typography,
   IconButton,
   Button,
-  CircularProgress,
   Chip,
   InputAdornment,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import SkeletonBlogCard from "../components/SkeletonBlogCard";
 import { motion } from "framer-motion";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -20,6 +20,7 @@ import PublishIcon from "@mui/icons-material/Publish";
 import moment from "moment";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { toastDeleted, toastPublished } from "../utils/toasts";
 import GlassCard from "../components/GlassCard";
 import SectionHeading from "../components/SectionHeading";
 
@@ -61,7 +62,9 @@ const UserBlogs = () => {
 
   useEffect(() => {
     getUserBlogs();
-  }, [filter]);
+    // Tabs filter client-side — no refetch needed when the filter changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleDelete = async (id) => {
     const ok = window.confirm("Delete this blog permanently? This cannot be undone.");
@@ -70,7 +73,7 @@ const UserBlogs = () => {
     try {
       const response = await axios.delete(`/api/v1/blog/delete-blog/${id}`);
       if (response.data.success) {
-        toast.success("Blog deleted.");
+        toastDeleted();
         setBlogs((prevBlogs) => prevBlogs.filter((blog) => blog._id !== id));
       } else {
         toast.error(response.data.message || "Failed to delete blog.");
@@ -85,7 +88,7 @@ const UserBlogs = () => {
       const { data } = await axios.put(`/api/v1/blog/update-blog/${id}`, { status: "Published" });
 
       if (data.success) {
-        toast.success("Blog published successfully!");
+        toastPublished();
         setBlogs((prevBlogs) =>
           prevBlogs.map((blog) =>
             blog._id === id ? { ...blog, status: "Published", publishAt: null } : blog
@@ -136,6 +139,7 @@ const UserBlogs = () => {
         <TextField
           variant="outlined"
           placeholder="Search your blogs"
+          aria-label="Search your blogs"
           size="small"
           sx={{ flex: 1, maxWidth: 480 }}
           InputProps={{
@@ -167,9 +171,9 @@ const UserBlogs = () => {
         }}
       >
         {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", padding: 6, gridColumn: "1 / -1" }}>
-            <CircularProgress />
-          </Box>
+          Array.from({ length: 6 }).map((_, i) => (
+            <SkeletonBlogCard key={i} />
+          ))
         ) : fetchError ? (
           <Box sx={{ textAlign: "center", padding: 6, gridColumn: "1 / -1" }}>
             <Typography color="text.secondary" sx={{ mb: 2 }}>

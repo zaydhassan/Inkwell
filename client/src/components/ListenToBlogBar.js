@@ -79,7 +79,7 @@ const ListenToBlogBar = ({
         zIndex: 1250,
         // Glassy surface that matches the app's card language; stays legible
         // over any article image.
-        bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(28,28,32,0.92)" : "rgba(255,255,255,0.92)"),
+        bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(33,29,24,0.92)" : "rgba(255,255,255,0.92)"),
         backdropFilter: "blur(12px)",
         border: (t) => `1px solid ${t.palette.divider}`,
         borderRadius: 3,

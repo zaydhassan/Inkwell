@@ -24,139 +24,57 @@ const COVER_IMAGES = {
   ml: "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&w=800&q=80",
 };
 
-// Each entry pairs a topic with a pool of realistic, editorial titles +
-// two-line descriptions. Mixing across pools is what makes the grid feel
-// like a real, varied feed rather than six copies of the same idea.
+// The six editorial placeholder articles, exactly as specified. Titles and
+// descriptions are fixed so the grid always reads as a curated set; only the
+// metadata (date, engagement, author) is randomized per mount.
 const CONTENT = [
-  {
-    topic: "technology",
-    category: "Technology",
-    image: COVER_IMAGES.technology,
-    titles: [
-      "The quiet revolution of edge computing in 2026",
-      "Why local-first software is winning developer hearts",
-    ],
-    descriptions: [
-      "Latency is the new currency. How moving compute to the edge is reshaping the apps we use every day.",
-      "Offline-first isn't a niche anymore — it's becoming the default for tools that respect your data.",
-    ],
-  },
-  {
-    topic: "programming",
-    category: "Programming",
-    image: COVER_IMAGES.programming,
-    titles: [
-      "Writing code that reads like good prose",
-      "The art of the pull request: small, clear, kind",
-    ],
-    descriptions: [
-      "Great code is written for humans first. A field guide to naming, structure, and clarity.",
-      "How thoughtful PRs turn code review from a gatekeeper into a conversation.",
-    ],
-  },
   {
     topic: "ai",
     category: "AI",
     image: COVER_IMAGES.ai,
-    titles: [
-      "Prompting is composition: a writer's guide to LLMs",
-      "Beyond the hype: where AI actually helps small teams",
-    ],
-    descriptions: [
-      "Treating prompts like drafts — iterate, refine, and let the model surprise you.",
-      "Three unglamorous workflows where AI quietly paid off for a five-person startup.",
-    ],
+    title: "The Rise of AI Agents",
+    description:
+      "Autonomous agents are moving from demos into daily workflows. What they can genuinely do today — and where a human still needs to stay in the loop.",
   },
   {
-    topic: "design",
-    category: "Design",
-    image: COVER_IMAGES.design,
-    titles: [
-      "Designing for calm: restraint as a feature",
-      "The micro-interactions that make products feel alive",
-    ],
-    descriptions: [
-      "Whitespace, motion, and hierarchy — how doing less can feel more premium.",
-      "A tour of the tiny animated details that signal care and craft.",
-    ],
-  },
-  {
-    topic: "startups",
-    category: "Startups",
-    image: COVER_IMAGES.startups,
-    titles: [
-      "Launch smaller: the case for the tiniest viable product",
-      "What I learned shipping one feature a week for a year",
-    ],
-    descriptions: [
-      "Why the smallest possible launch beats the biggest planned one.",
-      "A year of tiny, consistent releases — and what actually moved the needle.",
-    ],
+    topic: "technology",
+    category: "Technology",
+    image: COVER_IMAGES.technology,
+    title: "Building Scalable Web Applications",
+    description:
+      "From caching layers to queue-backed workers, the architecture patterns that keep a growing product fast, reliable, and affordable.",
   },
   {
     topic: "productivity",
     category: "Productivity",
     image: COVER_IMAGES.productivity,
-    titles: [
-      "Deep work for people with noisy calendars",
-      "The weekly review that actually sticks",
-    ],
-    descriptions: [
-      "Practical focus tactics when your day is full of meetings and pings.",
-      "A 20-minute ritual that compounds into a saner, sharper week.",
-    ],
+    title: "Small Habits, Big Changes",
+    description:
+      "Why tiny, repeatable routines beat dramatic overhauls — and how to design habits that survive even your busiest weeks.",
+  },
+  {
+    topic: "design",
+    category: "Design",
+    image: COVER_IMAGES.design,
+    title: "Designing Better Digital Products",
+    description:
+      "Clarity, restraint, and honest feedback: the quiet principles behind interfaces that people trust and genuinely enjoy using.",
   },
   {
     topic: "engineering",
-    category: "Engineering",
+    category: "Software Engineering",
     image: COVER_IMAGES.engineering,
-    titles: [
-      "Refactors that pay for themselves",
-      "How we cut our deploy time from 40 minutes to 4",
-    ],
-    descriptions: [
-      "A framework for deciding when a rewrite is investment, not indulgence.",
-      "The boring infrastructure wins that quietly compounded into velocity.",
-    ],
+    title: "The Future of Software Engineering",
+    description:
+      "AI-assisted development, platform thinking, and taste as a differentiator — what the next decade of building software looks like.",
   },
   {
-    topic: "cybersecurity",
-    category: "Security",
-    image: COVER_IMAGES.cybersecurity,
-    titles: [
-      "Security as a habit, not a checkpoint",
-      "The $0 audit: reviewing your own app like an attacker",
-    ],
-    descriptions: [
-      "Building a culture where safe defaults are easier than risky ones.",
-      "A practical self-audit checklist for small teams without a security org.",
-    ],
-  },
-  {
-    topic: "cloud",
-    category: "Cloud",
-    image: COVER_IMAGES.cloud,
-    titles: [
-      "Serverless, simplified: when to reach for it",
-      "The cloud bill that shrank by 60%",
-    ],
-    descriptions: [
-      "A clear-eyed look at where serverless shines and where it hurts.",
-      "How tagging, scheduling, and right-sizing reclaimed a runaway budget.",
-    ],
-  },
-  {
-    topic: "ml",
-    category: "Machine Learning",
-    image: COVER_IMAGES.ml,
-    titles: [
-      "Feature stores, explained without the jargon",
-      "From notebook to production without losing your mind",
-    ],
-    descriptions: [
-      "What a feature store is, why it exists, and whether you need one yet.",
-      "A pragmatic path for shipping your first ML model to real users.",
-    ],
+    topic: "startups",
+    category: "Career",
+    image: COVER_IMAGES.startups,
+    title: "Building Your Career in Tech",
+    description:
+      "Practical advice on skills, mentors, and deliberate practice for a durable, fulfilling career in technology — no hype required.",
   },
 ];
 
@@ -169,12 +87,12 @@ const AUTHORS = [
 
 // Rotating palette for avatar gradients so each face reads distinct.
 const AVATAR_GRADIENTS = [
-  "linear-gradient(135deg, #C2410C 0%, #E8693A 100%)",
-  "linear-gradient(135deg, #9A2E08 0%, #C2410C 100%)",
-  "linear-gradient(135deg, #E8693A 0%, #F59E0B 100%)",
-  "linear-gradient(135deg, #0EA5E9 0%, #2563EB 100%)",
-  "linear-gradient(135deg, #16A34A 0%, #0EA5E9 100%)",
-  "linear-gradient(135deg, #7C3AED 0%, #C2410C 100%)",
+  "linear-gradient(135deg, #44403C 0%, #78716C 100%)",
+  "linear-gradient(135deg, #292524 0%, #57534E 100%)",
+  "linear-gradient(135deg, #57534E 0%, #A8A29E 100%)",
+  "linear-gradient(135deg, #78716C 0%, #D6D3D1 100%)",
+  "linear-gradient(135deg, #1C1917 0%, #44403C 100%)",
+  "linear-gradient(135deg, #A8A29E 0%, #E7E5E4 100%)",
 ];
 
 // Deterministic-ish helpers (Math.random is fine here — this runs in the
@@ -199,15 +117,14 @@ const shuffle = (arr) => {
   return a;
 };
 
-// Build a single placeholder post from a content bucket + random metadata.
+// Build a single placeholder post from a fixed article + random metadata.
 const buildPost = (bucket, index) => {
-  const titleIdx = Math.floor(Math.random() * bucket.titles.length);
   const author = pick(AUTHORS);
   return {
     id: `placeholder-${index}`,
     placeholder: true,
-    title: bucket.titles[titleIdx],
-    description: bucket.descriptions[titleIdx],
+    title: bucket.title,
+    description: bucket.description,
     category: bucket.category,
     image: bucket.image,
     author,

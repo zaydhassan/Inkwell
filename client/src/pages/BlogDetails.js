@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Box, Typography, IconButton, Badge, Drawer, TextField, Button,
-  Divider, Menu, MenuItem, Container, Stack, Chip, CircularProgress, Grid, Tooltip
+  Divider, Menu, MenuItem, Container, Stack, Chip, Grid, Tooltip, Skeleton
 } from "@mui/material";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import { Favorite, FavoriteBorder, Share, Comment, Edit, Delete, Report, Bookmark, BookmarkBorder, AccessTime, Headphones, Pause, PlayArrow, FileDownload } from "@mui/icons-material";
 import toast from "react-hot-toast";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { useAuth } from "../context/AuthContext";
 import { sanitizeHtml, readingTime } from "../utils/sanitize";
+import { toastBookmarked, toastComment, toastCommentUpdated, toastCommentDeleted, toastReply, toastExport } from "../utils/toasts";
 import { downloadBlogAsPdf, downloadBlogAsMarkdown } from "../utils/exportBlog";
 import moment from "moment";
 import GlassCard from "../components/GlassCard";
@@ -30,6 +33,9 @@ import "./BlogDetails.css";
 const BlogDetails = () => {
   const [blog, setBlog] = useState(null);
   const [loading, setLoading] = useState(true);
+  // Distinguishes "fetch failed" from a normal render so a network error
+  // never degrades into a blank article shell.
+  const [fetchError, setFetchError] = useState(false);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [bookmarked, setBookmarked] = useState(false);
@@ -94,9 +100,26 @@ const BlogDetails = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
 
+  // Sticky reading actions: a compact glass pill docks to the bottom of the
+  // viewport once the reader scrolls past the in-article action row. Hidden
+  // while the TTS player bar is mounted so the two never stack.
+  const [showStickyBar, setShowStickyBar] = useState(false);
+  useEffect(() => {
+    const onScroll = () => {
+      const el = contentRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      setShowStickyBar(window.scrollY > 480 && rect.bottom > 0);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [blog]);
+
   useEffect(() => {
     const fetchBlogDetails = async () => {
       try {
+        setFetchError(false);
         const response = await axios.get(`/api/v1/blog/get-blog/${id}`, {
           headers: { "Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0" },
         });
@@ -105,7 +128,7 @@ const BlogDetails = () => {
         if (response.data.success) {
           setBlog(response.data.blog);
         } else {
-          toast.error("Failed to fetch blog details.");
+          setFetchError(true);
         }
 
         if (likeResponse.data.success) {
@@ -119,7 +142,7 @@ const BlogDetails = () => {
           setLiked(false);
         }
       } catch (error) {
-        toast.error("Failed to fetch blog details.");
+        setFetchError(true);
       } finally {
         // Loading is tied to the actual fetch, not an artificial timer.
         setLoading(false);
@@ -207,7 +230,7 @@ const BlogDetails = () => {
       const { data } = await axios.post("/api/v1/bookmarks/toggle", { blog: id });
       if (data.success) {
         setBookmarked(data.bookmarked);
-        toast.success(data.bookmarked ? "Saved to bookmarks." : "Removed from bookmarks.");
+        toastBookmarked(data.bookmarked);
       }
     } catch {
       // Revert on failure.
@@ -242,7 +265,7 @@ const BlogDetails = () => {
         content: newComment.trim(), blog_id: id, user_id: currentUser._id, role: currentUser.role
       });
       if (response.status === 201) {
-        toast.success("Comment added!");
+        toastComment();
         setNewComment("");
         // The server returns the commenter's gamification delta — sync it and
         // celebrate any level-up / new badge earned by commenting.
@@ -274,7 +297,7 @@ const BlogDetails = () => {
       const response = await axios.put(`/api/v1/comments/${commentId}`, { content: updatedText });
       if (response.status === 200) {
         setComments(comments.map((c) => (c._id === commentId ? { ...c, content: updatedText } : c)));
-        toast.success("Comment updated successfully!");
+        toastCommentUpdated();
         setEditingComment({ id: null, text: "" });
       }
     } catch (error) {
@@ -287,7 +310,7 @@ const BlogDetails = () => {
       await axios.delete(`/api/v1/comments/${commentId}`);
       setComments(comments.filter((c) => c._id !== commentId));
       setCommentCount((c) => Math.max(0, c - 1));
-      toast.success("Comment deleted successfully!");
+      toastCommentDeleted();
     } catch (error) {
       toast.error("Failed to delete comment.");
     }
@@ -313,18 +336,61 @@ const BlogDetails = () => {
         parentId: commentId, content: replyContent.trim(), user_id: currentUser._id,
       });
       setComments((prev) => prev.map((c) => (c._id === commentId ? { ...c, replies: [...(c.replies || []), data.reply] } : c)));
-      toast.success("Reply added successfully!");
+      toastReply();
       setReplyText((prev) => ({ ...prev, [commentId]: "" }));
     } catch (error) {
       toast.error("Failed to add reply.");
     }
   };
 
+  // Skeleton mirrors the real article layout (cover, meta, title, body).
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="70vh">
-        <CircularProgress />
-      </Box>
+      <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
+        <Skeleton variant="rounded" height={{ xs: 260, md: 420 }} sx={{ borderRadius: 4, mb: 3 }} />
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={8}>
+            <Stack spacing={2}>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Skeleton variant="circular" width={44} height={44} />
+                <Box sx={{ flex: 1 }}>
+                  <Skeleton variant="text" width={140} />
+                  <Skeleton variant="text" width={100} />
+                </Box>
+              </Stack>
+              <Skeleton variant="text" width="85%" height={44} />
+              <Skeleton variant="text" width="60%" height={44} />
+              <Skeleton variant="rounded" height={20} width="100%" sx={{ mt: 3 }} />
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} variant="text" width={`${92 - (i % 3) * 12}%`} />
+              ))}
+            </Stack>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Skeleton variant="rounded" height={220} sx={{ borderRadius: 4 }} />
+          </Grid>
+        </Grid>
+      </Container>
+    );
+  }
+
+  // Fetch failed: a styled full-page error (never a blank article shell).
+  if (fetchError || !blog) {
+    return (
+      <Container maxWidth="sm" sx={{ py: 12, textAlign: "center" }}>
+        <ErrorOutlineIcon sx={{ fontSize: 56, color: "text.disabled", mb: 2 }} />
+        <Typography variant="h5" sx={{ fontWeight: 800, mb: 1 }}>
+          This story couldn't be loaded
+        </Typography>
+        <Typography variant="body2" sx={{ color: "text.secondary", mb: 4 }}>
+          The article may have been removed, or something went wrong on our end.
+          Check your connection and try again.
+        </Typography>
+        <Stack direction="row" spacing={2} justifyContent="center">
+          <GradientButton onClick={() => window.location.reload()}>Retry</GradientButton>
+          <Button variant="outlined" onClick={() => navigate("/blogs")}>Browse all stories</Button>
+        </Stack>
+      </Container>
     );
   }
 
@@ -348,7 +414,7 @@ const BlogDetails = () => {
 
       <Grid container spacing={3} alignItems="flex-start">
         {/* Article */}
-        <Grid item xs={12} md={8.5}>
+        <Grid item xs={12} md={8}>
       <GlassCard sx={{ p: { xs: 3, md: 5 } }}>
         {/* Meta row */}
         <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={2} sx={{ mb: 2 }}>
@@ -410,7 +476,7 @@ const BlogDetails = () => {
                 setDownloadAnchor(null);
                 try {
                   await downloadBlogAsPdf(contentRef.current, blog);
-                  toast.success("PDF downloaded.");
+                  toastExport("PDF");
                 } catch (err) {
                   toast.error(err?.message || "Couldn't export PDF.");
                 }
@@ -423,7 +489,7 @@ const BlogDetails = () => {
                 setDownloadAnchor(null);
                 try {
                   await downloadBlogAsMarkdown(blog);
-                  toast.success("Markdown downloaded.");
+                  toastExport("Markdown");
                 } catch (err) {
                   toast.error(err?.message || "Couldn't export Markdown.");
                 }
@@ -453,7 +519,7 @@ const BlogDetails = () => {
         </Grid>
 
         {/* Table of contents sidebar (desktop) / popover trigger (mobile) */}
-        <Grid item xs={12} md={3.5}>
+        <Grid item xs={12} md={4}>
           <TableOfContents contentRef={contentRef} ready={!!blog} />
         </Grid>
       </Grid>
@@ -500,7 +566,9 @@ const BlogDetails = () => {
                         <UserAvatar src={comment?.user_id?.profile_image} name={comment?.user_id?.username} />
                         <Box>
                           <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{comment?.user_id?.username || "Unknown User"}</Typography>
-                          <Typography variant="caption" sx={{ color: "text.secondary" }}>{comment?.date || moment().format("MMM DD, YYYY")}</Typography>
+                          <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                            {comment?.date && moment(comment.date).isValid() ? moment(comment.date).format("MMM DD, YYYY") : ""}
+                          </Typography>
                         </Box>
                       </Stack>
                       <Box>
@@ -559,6 +627,63 @@ const BlogDetails = () => {
         </Box>
       </Drawer>
     </Container>
+
+      {/* Sticky reading actions — appears once the reader scrolls into the
+          article body; reuses the same handlers as the in-article row. */}
+      <AnimatePresence>
+        {showStickyBar && !(tts.supported && (tts.speaking || tts.paused)) && (
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 24 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            style={{
+              position: "fixed",
+              left: "50%",
+              transform: "translateX(-50%)",
+              bottom: 20,
+              zIndex: 1100,
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 0.5,
+                px: 1.5,
+                py: 0.75,
+                borderRadius: 999,
+                bgcolor: "background.glass",
+                backdropFilter: "blur(14px)",
+                WebkitBackdropFilter: "blur(14px)",
+                border: (t) => `1px solid ${t.palette.divider}`,
+                boxShadow: (t) => t.customShadows?.glass,
+              }}
+              role="toolbar"
+              aria-label="Article actions"
+            >
+              <IconButton onClick={handleLike} aria-label={liked ? "Unlike" : "Like"} size="small">
+                <Badge badgeContent={likeCount} color="primary">
+                  {liked ? <Favorite color="error" fontSize="small" /> : <FavoriteBorder fontSize="small" />}
+                </Badge>
+              </IconButton>
+              <IconButton onClick={toggleComments} aria-label="Comments" size="small">
+                <Badge badgeContent={commentCount} color="primary">
+                  <Comment fontSize="small" />
+                </Badge>
+              </IconButton>
+              {user && (
+                <IconButton onClick={handleBookmark} aria-label={bookmarked ? "Remove bookmark" : "Save bookmark"} size="small">
+                  {bookmarked ? <Bookmark color="primary" fontSize="small" /> : <BookmarkBorder fontSize="small" />}
+                </IconButton>
+              )}
+              <IconButton onClick={handleShareClick} aria-label="Share" size="small">
+                <Share fontSize="small" />
+              </IconButton>
+            </Box>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Text-to-speech player bar — only mounts while a session is active so
           it never shows on a fresh page load. */}

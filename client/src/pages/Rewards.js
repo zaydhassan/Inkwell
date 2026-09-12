@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, List, ListItem, ListItemText, Button, CircularProgress, Chip, Stack } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { Box, Typography, List, ListItem, ListItemText, Button, Skeleton, Chip, Stack } from '@mui/material';
 import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import axios from 'axios';
 import GlassCard from "../components/GlassCard";
 import SectionHeading from "../components/SectionHeading";
 
 const Rewards = () => {
+  const navigate = useNavigate();
   const [rewards, setRewards] = useState([]);
+  const [fetchError, setFetchError] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,6 +22,8 @@ const Rewards = () => {
           setRewards([]);
         }
       } catch (error) {
+        // Surface the failure instead of masking it as an empty list.
+        setFetchError(true);
         setRewards([]);
       } finally {
         setLoading(false);
@@ -40,9 +45,18 @@ const Rewards = () => {
 
       <Box sx={{ maxWidth: 720, mx: "auto" }}>
         {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-            <CircularProgress />
-          </Box>
+          <Stack spacing={2}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} variant="rounded" height={96} sx={{ borderRadius: 4 }} />
+            ))}
+          </Stack>
+        ) : fetchError ? (
+          <GlassCard sx={{ p: 6, textAlign: "center" }}>
+            <Typography variant="h6" sx={{ mb: 1 }}>Couldn't load rewards</Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary" }}>
+              Something went wrong on our end. Please try again in a moment.
+            </Typography>
+          </GlassCard>
         ) : rewards.length > 0 ? (
           <Stack spacing={2}>
             {rewards.map(reward => (
@@ -66,8 +80,8 @@ const Rewards = () => {
                       />
                     </Box>
                   </Stack>
-                  <Button variant="contained" color="primary">
-                    Redeem
+                  <Button variant="contained" color="primary" onClick={() => navigate('/profile')}>
+                    Redeem in Profile
                   </Button>
                 </Stack>
               </GlassCard>

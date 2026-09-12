@@ -6,7 +6,7 @@ import BrandLogo from "./BrandLogo";
 
 // Shared split-screen shell for the auth pages (Login / Register /
 // ForgotPassword). Left: an immersive brand panel — the image with a dark
-// scrim, animated terracotta aurora blobs, and a rotating set of feature
+// scrim, animated charcoal aurora blobs, and a rotating set of feature
 // highlights. Right: a premium glass form card. Fully dark-mode aware (the
 // brand panel is image-driven and always light-on-dark; the form panel uses
 // theme tokens). Keeps the three pages visually identical.
@@ -22,10 +22,10 @@ const DEFAULT_HIGHLIGHTS = [
 
 // Small qualitative trust avatars — colored monogram circles, not real users.
 const TRUST = [
-  { label: "A", color: "#C2410C" },
-  { label: "Z", color: "#0EA5E9" },
-  { label: "M", color: "#9A2E08" },
-  { label: "K", color: "#E8693A" },
+  { label: "A", color: "#D4D4D4" },
+  { label: "Z", color: "#A3A3A3" },
+  { label: "M", color: "#737373" },
+  { label: "K", color: "#F5F5F4" },
 ];
 
 const AuthSplitLayout = ({ image, eyebrow, headline, tagline, highlights = DEFAULT_HIGHLIGHTS, children }) => {
@@ -65,26 +65,26 @@ const AuthSplitLayout = ({ image, eyebrow, headline, tagline, highlights = DEFAU
             position: "absolute",
             inset: 0,
             background:
-              "linear-gradient(180deg, rgba(22,18,16,0.55) 0%, rgba(22,18,16,0.35) 45%, rgba(194,65,12,0.62) 100%)",
+              "linear-gradient(180deg, rgba(28,25,23,0.55) 0%, rgba(28,25,23,0.35) 45%, rgba(28,25,23,0.62) 100%)",
           },
         }}
       >
         {/* Animated aurora blobs */}
         <motion.div
           aria-hidden
-          style={{ position: "absolute", width: 360, height: 360, borderRadius: "50%", background: "rgba(194,65,12,0.45)", filter: "blur(80px)", top: "-8%", left: "-10%" }}
+          style={{ position: "absolute", width: 360, height: 360, borderRadius: "50%", background: "rgba(28,25,23,0.45)", filter: "blur(80px)", top: "-8%", left: "-10%" }}
           animate={{ x: [0, 40, 0], y: [0, 30, 0], scale: [1, 1.15, 1] }}
           transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
           aria-hidden
-          style={{ position: "absolute", width: 320, height: 320, borderRadius: "50%", background: "rgba(14,165,233,0.30)", filter: "blur(90px)", bottom: "6%", right: "-6%" }}
+          style={{ position: "absolute", width: 320, height: 320, borderRadius: "50%", background: "rgba(255,255,255,0.12)", filter: "blur(90px)", bottom: "6%", right: "-6%" }}
           animate={{ x: [0, -30, 0], y: [0, -20, 0], scale: [1, 1.2, 1] }}
           transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
           aria-hidden
-          style={{ position: "absolute", width: 260, height: 260, borderRadius: "50%", background: "rgba(232,105,58,0.35)", filter: "blur(70px)", top: "40%", left: "30%" }}
+          style={{ position: "absolute", width: 260, height: 260, borderRadius: "50%", background: "rgba(28,25,23,0.35)", filter: "blur(70px)", top: "40%", left: "30%" }}
           animate={{ x: [0, 24, 0], y: [0, -28, 0], scale: [1, 1.1, 1] }}
           transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
         />
@@ -169,7 +169,7 @@ const AuthSplitLayout = ({ image, eyebrow, headline, tagline, highlights = DEFAU
 
             {/* Trust row */}
             <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 4 }}>
-              <AvatarGroup max={4} sx={{ "& .MuiAvatar-root": { width: 30, height: 30, fontSize: 13, border: "2px solid rgba(22,18,16,0.6)" } }}>
+              <AvatarGroup max={4} sx={{ "& .MuiAvatar-root": { width: 30, height: 30, fontSize: 13, border: "2px solid rgba(28,25,23,0.6)" } }}>
                 {TRUST.map((t) => (
                   <Avatar key={t.label} sx={{ bgcolor: t.color, width: 30, height: 30 }}>{t.label}</Avatar>
                 ))}

@@ -9,10 +9,12 @@ import BlogCard from '../components/BlogCard';
 import BlogGrid from '../components/BlogGrid';
 import GlassCard from '../components/GlassCard';
 import GradientButton from '../components/GradientButton';
+import SkeletonBlogCard from '../components/SkeletonBlogCard';
 import UserAvatar from '../components/UserAvatar';
 import SectionHeading from '../components/SectionHeading';
 import SearchIcon from '@mui/icons-material/Search';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { onActivate } from '../utils/a11y';
 
 const PAGE_SIZE = 9;
@@ -25,6 +27,9 @@ const Blogs = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [fetchError, setFetchError] = useState(false);
+  // Real trending posts (top 5 by likes/comments/views from the server).
+  // Falls back to the head of the regular feed if the endpoint fails.
+  const [trending, setTrending] = useState([]);
   const navigate = useNavigate();
   const location = useLocation();
   const categories = ['Technology', 'Education', 'Health', 'Entertainment', 'Food', 'Business', 'Social Media', 'Travel', 'News'];
@@ -81,6 +86,17 @@ const Blogs = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
+  // Fetch the genuine trending list once per mount. On failure we quietly
+  // fall back to the head of the regular feed in the sidebar.
+  useEffect(() => {
+    let alive = true;
+    axios
+      .get('/api/v1/blog/trending')
+      .then(({ data }) => { if (alive) setTrending(data.success ? data.trending || [] : []); })
+      .catch(() => { if (alive) setTrending([]); });
+    return () => { alive = false; };
+  }, []);
+
   // Debounced search → reset to page 1 with the new query.
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -94,10 +110,38 @@ const Blogs = () => {
   const handleLoadMore = () => fetchBlogs(page + 1, searchQuery, true);
   const handleCategoryClick = (cat) => navigate(`/category/${cat}`);
 
+  // Loading skeleton mirrors the real layout (grid + sidebar) so the page
+  // doesn't jump when data arrives.
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <CircularProgress />
+      <Box sx={{ minHeight: '100vh', p: { xs: 2, md: 4 } }}>
+        <Box display="flex" justifyContent="center" mb={4}>
+          <Box sx={{ height: 56, width: '100%', maxWidth: 560, borderRadius: 3, bgcolor: 'divider' }} />
+        </Box>
+        <Grid container spacing={4}>
+          <Grid item xs={12} md={8}>
+            <BlogGrid sx={{ gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' } }}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <SkeletonBlogCard key={i} />
+              ))}
+            </BlogGrid>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <GlassCard sx={{ p: 3, mt: { xs: 0, md: 4 } }}>
+              <Box sx={{ height: 14, width: 90, borderRadius: 999, bgcolor: 'divider', mb: 2 }} />
+              <Box sx={{ height: 24, width: 140, borderRadius: 1, bgcolor: 'divider', mb: 3 }} />
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Stack key={i} direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2.5 }}>
+                  <Box sx={{ width: 34, height: 34, borderRadius: 999, bgcolor: 'divider' }} />
+                  <Box sx={{ flex: 1 }}>
+                    <Box sx={{ height: 12, width: '80%', borderRadius: 1, bgcolor: 'divider', mb: 0.75 }} />
+                    <Box sx={{ height: 10, width: '50%', borderRadius: 1, bgcolor: 'divider' }} />
+                  </Box>
+                </Stack>
+              ))}
+            </GlassCard>
+          </Grid>
+        </Grid>
       </Box>
     );
   }
@@ -199,11 +243,12 @@ const Blogs = () => {
               <TrendingUpIcon color="primary" fontSize="small" />
               <Typography variant="h6">Trending</Typography>
             </Stack>
-            {blogs.slice(0, 5).map((blog, index) => (
+            {(trending.length > 0 ? trending : blogs.slice(0, 5)).map((blog, index) => (
               <Box
                 key={blog._id}
                 role="button"
                 tabIndex={0}
+                aria-label={`Read ${blog.title || 'blog'}`}
                 sx={{ display: 'flex', alignItems: 'center', mb: 2, cursor: 'pointer', borderRadius: 2, p: 1, transition: 'background-color .2s ease', '&:hover': { backgroundColor: 'action.hover' } }}
                 onClick={() => navigate(`/blog-details/${blog._id}`)}
                 onKeyDown={onActivate(() => navigate(`/blog-details/${blog._id}`))}
@@ -211,14 +256,24 @@ const Blogs = () => {
                 <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 800, minWidth: 34 }}>
                   0{index + 1}
                 </Typography>
-                <UserAvatar src={blog.userAvatar} name={blog.user?.username} sx={{ width: 36, height: 36, mx: 1.5, fontSize: 14 }} />
+                <UserAvatar src={blog.user?.profile_image} name={blog.user?.username} sx={{ width: 36, height: 36, mx: 1.5, fontSize: 14 }} />
                 <Box flexGrow={1} sx={{ minWidth: 0 }}>
                   <Typography variant="subtitle2" sx={{ color: 'text.primary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {blog.title}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                    {blog.user?.username || 'Unknown'} · {moment(blog.created_at).format('MMM DD')}
-                  </Typography>
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ color: 'text.secondary' }}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                      {blog.user?.username || 'Unknown'}
+                    </Typography>
+                    {typeof blog.likeCount === 'number' && (
+                      <Stack direction="row" spacing={0.25} alignItems="center">
+                        <FavoriteBorderIcon sx={{ fontSize: 12, color: 'primary.main' }} />
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                          {blog.likeCount}
+                        </Typography>
+                      </Stack>
+                    )}
+                  </Stack>
                 </Box>
               </Box>
             ))}

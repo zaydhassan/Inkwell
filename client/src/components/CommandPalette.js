@@ -215,7 +215,7 @@ const CommandPalette = () => {
             position: "fixed",
             inset: 0,
             zIndex: 1300,
-            backgroundColor: "rgba(10,8,6,0.55)",
+            backgroundColor: "rgba(22,19,15,0.55)",
             backdropFilter: "blur(8px)",
             WebkitBackdropFilter: "blur(8px)",
             display: "flex",

@@ -4,7 +4,7 @@
     left: 50%;
     transform: translateX(-50%);
     padding: 10px 20px;
-    background-color: #3f51b5;
+    background-color: #111111;
     color: white;
     font-size: 18px;
     border-radius: 8px;
@@ -35,7 +35,7 @@
     display: block;
     height: 100%;
     width: 100%;
-    background-color:#3ec427;
+    background-color: rgba(255, 255, 255, 0.45);
     animation: loadProgress 5s linear forwards;
     border-radius: 0 0 8px 8px;
   }

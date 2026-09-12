@@ -80,7 +80,9 @@ const TableOfContents = ({ contentRef, ready }) => {
 
   if (headings.length === 0) return null;
 
-  const List = () => (
+  // A render function, not an inline component — an inline `<List />` would
+  // remount (and drop scroll state) on every render.
+  const renderList = () => (
     <Stack spacing={0.5}>
       {headings.map((h) => (
         <Box
@@ -125,7 +127,7 @@ const TableOfContents = ({ contentRef, ready }) => {
             On this page
           </Typography>
           <Box sx={{ mt: 1, maxHeight: "70vh", overflowY: "auto" }}>
-            <List />
+            {renderList()}
           </Box>
         </GlassCard>
       </Box>
@@ -149,7 +151,7 @@ const TableOfContents = ({ contentRef, ready }) => {
         >
           <Typography variant="overline" sx={{ color: "text.secondary" }}>On this page</Typography>
           <Box sx={{ mt: 1, maxHeight: "60vh", overflowY: "auto" }}>
-            <List />
+            {renderList()}
           </Box>
         </Popover>
       </Box>

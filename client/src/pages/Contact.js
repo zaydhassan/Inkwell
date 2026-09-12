@@ -24,8 +24,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faInstagram, faLinkedinIn, faGithub } from "@fortawesome/free-brands-svg-icons";
 import { faGlobe } from "@fortawesome/free-solid-svg-icons";
 import { motion, useMotionValue, useSpring } from "framer-motion";
-import { ToastContainer, toast, Slide, Zoom, Flip, Bounce } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import toast from "react-hot-toast";
+import { toastContactSent } from "../utils/toasts";
 import { validateEmail, validateMinLength, validateFields } from "../utils/validate";
 import GlassCard from "../components/GlassCard";
 import GradientButton from "../components/GradientButton";
@@ -70,17 +70,17 @@ const MSG_MAX = 1000;
    reproduce the exact token values per mode (see theme.js) so sx consumers
    here render correctly in both light and dark. */
 const softBg = (t) =>
-  t.palette.mode === "dark" ? "rgba(232,105,58,0.18)" : "rgba(194,65,12,0.12)";
+  t.palette.mode === "dark" ? "rgba(245,241,234,0.16)" : "rgba(17,17,17,0.06)";
 const softerBg = (t) =>
-  t.palette.mode === "dark" ? "rgba(232,105,58,0.10)" : "rgba(194,65,12,0.07)";
+  t.palette.mode === "dark" ? "rgba(245,241,234,0.08)" : "rgba(17,17,17,0.035)";
 const cardShadow = (t) =>
   t.palette.mode === "dark"
     ? "0 8px 28px rgba(0,0,0,0.45)"
-    : "0 4px 20px rgba(31,27,22,0.06)";
+    : "0 4px 20px rgba(28,25,23,0.06)";
 const hoverShadow = (t) =>
   t.palette.mode === "dark"
-    ? "0 12px 40px rgba(232,105,58,0.28)"
-    : "0 12px 36px rgba(194,65,12,0.18)";
+    ? "0 12px 40px rgba(0,0,0,0.60)"
+    : "0 12px 36px rgba(17,17,17,0.12)";
 
 // Deterministic particle field (no Math.random → stable across re-renders,
 // and no hydration mismatch risk). Each entry places a soft floating dot.
@@ -129,7 +129,7 @@ const BackgroundLayers = () => (
 /* ─────────────────────────────────────────────────────────────────────
    Field — a premium input.
    • Floating label: MUI Outlined floats natively on focus/fill.
-   • Orange focus glow + animated border: themed in MuiOutlinedInput.
+   • Charcoal focus glow + animated border: themed in MuiOutlinedInput.
    • Validation check icon: appears in the end adornment once the field
      is non-empty AND passes its validator (clear affordance).
    • Character counter: shown for the textarea via helperText.
@@ -231,7 +231,7 @@ const MagneticButton = ({ children, ...props }) => {
 /* ─────────────────────────────────────────────────────────────────────
    Contact — the page.
    Existing functionality preserved exactly: POST /api/v1/contact with
-   { name, email, message }, react-toastify toasts, shared validators.
+   { name, email, message }, react-hot-toast toasts, shared validators.
    The redesign is purely additive visual/interaction work.
    ───────────────────────────────────────────────────────────────────── */
 export default function Contact() {
@@ -266,11 +266,7 @@ export default function Contact() {
     setIsSending(true);
     setBtnState("loading");
     setServerMsg(null);
-    const toastId = toast.loading("⏳ Sending your message...", {
-      position: "top-center",
-      theme: "dark",
-      transition: Slide,
-    });
+    const toastId = toast.loading("⏳ Sending your message...");
 
     try {
       const response = await fetch("/api/v1/contact", {
@@ -281,13 +277,8 @@ export default function Contact() {
       const data = await response.json();
 
       if (response.ok) {
-        toast.update(toastId, {
-          render: "Message sent successfully!",
-          type: "success",
-          isLoading: false,
-          autoClose: 3000,
-          transition: Zoom,
-        });
+        toast.dismiss(toastId);
+        toastContactSent();
         setName(""); setEmail(""); setMessage("");
         setErrors({});
         setBtnState("success");
@@ -297,25 +288,13 @@ export default function Contact() {
         setTimeout(() => setServerMsg(null), 6000);
       } else {
         const text = data.message || "Error sending message.";
-        toast.update(toastId, {
-          render: "❌ " + text,
-          type: "error",
-          isLoading: false,
-          autoClose: 3000,
-          transition: Flip,
-        });
+        toast.error("❌ " + text, { id: toastId });
         setBtnState("idle");
         setServerMsg({ type: "error", text });
         setTimeout(() => setServerMsg(null), 6000);
       }
     } catch (error) {
-      toast.update(toastId, {
-        render: "Error sending message. Try again.",
-        type: "error",
-        isLoading: false,
-        autoClose: 3000,
-        transition: Bounce,
-      });
+      toast.error("Error sending message. Try again.", { id: toastId });
       setBtnState("idle");
       setServerMsg({ type: "error", text: "Network error. Please try again." });
       setTimeout(() => setServerMsg(null), 6000);
@@ -326,16 +305,6 @@ export default function Contact() {
 
   return (
     <>
-      <ToastContainer
-        position="top-center"
-        autoClose={3000}
-        hideProgressBar={false}
-        closeOnClick
-        pauseOnHover
-        draggable
-        transition={Slide}
-      />
-
       <Box className="contact-page" sx={{ minHeight: "100vh", py: { xs: 5, md: 8 } }}>
         <BackgroundLayers />
 

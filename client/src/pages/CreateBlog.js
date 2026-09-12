@@ -21,6 +21,7 @@ import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognitio
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { validateMinLength, validateRequired } from "../utils/validate";
+import { toastPublished, toastDraft, toastScheduled } from "../utils/toasts";
 import GlassCard from "../components/GlassCard";
 import UserAvatar from "../components/UserAvatar";
 import GradientButton from "../components/GradientButton";
@@ -77,12 +78,16 @@ const CreateBlog = () => {
   const [recovery, setRecovery] = useState(null);
   const didMountRef = useRef(false);
   const payloadRef = useRef(null);
+  // Autosave indicator state: "idle" → "saving" (change detected, debounce
+  // pending) → "saved" (localStorage write done). Drives the byline chip.
+  const [saveState, setSaveState] = useState("idle");
   // Stable debounced save instance (created once, reads payloadRef.current).
   const debouncedRef = useRef(null);
   if (!debouncedRef.current) {
     debouncedRef.current = makeDebouncedSave((key) => {
       if (key && payloadRef.current && !isDraftEmpty(payloadRef.current)) {
         saveDraft(key, payloadRef.current);
+        setSaveState("saved");
       }
     });
   }
@@ -187,6 +192,7 @@ const CreateBlog = () => {
       image: inputs.image || "",
       useImageUrl,
     };
+    setSaveState("saving");
     debouncedRef.current.trigger(draftKey);
   }, [draftKey, inputs, useImageUrl]);
 
@@ -300,12 +306,13 @@ const handleBlogAction = async (status, scheduleAt = null) => {
         // The server now owns the content — drop the local safety net so a
         // later visit doesn't prompt to restore a stale local copy.
         if (draftKey) clearDraft(draftKey);
+        setSaveState("idle");
         if (scheduling) {
           const when = new Date(scheduleAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
-          toast.success(`Scheduled for ${when}`);
+          toastScheduled(when);
           navigate("/my-blogs");
         } else {
-          toast.success(`Blog ${status === 'Published' ? 'published' : 'saved as draft'}`, { icon: '👏' });
+          if (status === 'Published') toastPublished(); else toastDraft();
           // Publishing awards points server-side; sync the store + celebrate any
           // level-up / badge earned on publish. Drafts earn nothing.
           if (status === 'Published' && response.data.points !== undefined) {
@@ -440,6 +447,20 @@ const handleBlogAction = async (status, scheduleAt = null) => {
                   </Typography>
                 </Stack>
                 <Stack direction="row" spacing={1} alignItems="center">
+                  {/* Autosave indicator — mirrors Medium's quiet "Saved" affordance */}
+                  {draftKey && saveState !== "idle" && (
+                    <Chip
+                      size="small"
+                      label={saveState === "saving" ? "Saving…" : "Draft saved"}
+                      variant="outlined"
+                      aria-live="polite"
+                      sx={{
+                        color: saveState === "saving" ? "text.secondary" : "success.main",
+                        borderColor: saveState === "saving" ? "divider" : "success.main",
+                        fontWeight: 600,
+                      }}
+                    />
+                  )}
                   <Chip
                     size="small"
                     label={`${wordCount} words`}

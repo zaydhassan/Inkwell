@@ -3,6 +3,7 @@ import axios from "axios";
 import { Button, Box, CircularProgress } from "@mui/material";
 import { PersonAddAlt1, PersonRemove } from "@mui/icons-material";
 import toast from "react-hot-toast";
+import { toastFollow } from "../utils/toasts";
 import { useAuth } from "../context/AuthContext";
 
 // Follow / unfollow a single author. Self-contained: reads the current user
@@ -51,7 +52,7 @@ const FollowButton = ({ userId, size = "small" }) => {
       if (data.success) {
         setFollowing(!!data.following);
         setCount(data.followersCount ?? count);
-        toast.success(data.following ? "Followed!" : "Unfollowed.");
+        toastFollow(!!data.following);
       } else {
         setFollowing(prev); // revert
       }

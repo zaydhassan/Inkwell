@@ -5,6 +5,7 @@ import {
 } from "@mui/material";
 import { Whatshot as FireIcon } from "@mui/icons-material";
 import toast from "react-hot-toast";
+import { toastGoal } from "../utils/toasts";
 
 // Writing streak + daily word-count goal.
 //
@@ -20,10 +21,10 @@ import toast from "react-hot-toast";
 
 const HEATMAP_LEVELS = [
   "rgba(120,120,120,0.10)", // 0 words
-  "rgba(194,65,12,0.28)", // 1
-  "rgba(194,65,12,0.50)", // 2
-  "rgba(194,65,12,0.72)", // 3
-  "rgba(194,65,12,0.95)", // 4
+  "rgba(120,120,120,0.35)", // 1
+  "rgba(120,120,120,0.55)", // 2
+  "rgba(120,120,120,0.75)", // 3
+  "rgba(120,120,120,0.95)", // 4
 ];
 
 // Map a day's word count to a 0–4 heatmap level relative to the goal.
@@ -69,13 +70,13 @@ export const StreakChip = () => {
         alignItems="center"
         sx={{
           px: 1.25, py: 0.5, borderRadius: 999,
-          background: "rgba(194,65,12,0.10)",
-          border: "1px solid rgba(194,65,12,0.25)",
+          background: "rgba(17,17,17,0.06)",
+          border: "1px solid rgba(17,17,17,0.12)",
           fontSize: 13, fontWeight: 600, color: "text.primary",
           whiteSpace: "nowrap",
         }}
       >
-        <FireIcon sx={{ fontSize: 18, color: "#c2410c" }} />
+        <FireIcon sx={{ fontSize: 18, color: "primary.main" }} />
         <span>{stats.currentStreak}-day</span>
         <Box component="span" sx={{ opacity: 0.7, fontWeight: 500 }}>
           {stats.todayWords}/{goal}
@@ -153,7 +154,7 @@ export const WritingStreakCard = () => {
     try {
       const { data } = await axios.put("/api/v1/writing/goal", { goal });
       if (data.success) {
-        toast.success("Daily goal updated.");
+        toastGoal();
         await fetchStats();
       }
     } catch (err) {
@@ -178,13 +179,13 @@ export const WritingStreakCard = () => {
   return (
     <Box>
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-        <FireIcon sx={{ color: "#c2410c" }} />
+        <FireIcon sx={{ color: "primary.main" }} />
         <Typography variant="h6" sx={{ fontWeight: 700 }}>Writing streak</Typography>
       </Stack>
 
       <Stack direction="row" spacing={3} sx={{ mb: 2 }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, color: "#c2410c", lineHeight: 1 }}>
+          <Typography variant="h4" sx={{ fontWeight: 800, color: "primary.main", lineHeight: 1 }}>
             {stats.currentStreak}
           </Typography>
           <Typography variant="caption" sx={{ color: "text.secondary" }}>day streak</Typography>
@@ -208,11 +209,11 @@ export const WritingStreakCard = () => {
             sx={{
               height: 8, borderRadius: 5,
               bgcolor: "rgba(120,120,120,0.15)",
-              "& .MuiLinearProgress-bar": { bgcolor: "#c2410c" },
+              "& .MuiLinearProgress-bar": { bgcolor: "primary.main" },
             }}
           />
           {pct >= 100 && (
-            <Typography variant="caption" sx={{ color: "#c2410c", fontWeight: 700 }}>
+            <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 700 }}>
               🎯 Goal hit today!
             </Typography>
           )}

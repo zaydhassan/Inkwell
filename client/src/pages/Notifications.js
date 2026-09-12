@@ -7,6 +7,7 @@ import {
   Tabs,
   Tab,
   CircularProgress,
+  Skeleton,
   Button,
 } from "@mui/material";
 import axios from "axios";
@@ -32,12 +33,12 @@ const TYPE_ICON = {
 };
 
 const TYPE_COLOR = {
-  like: "#E8693A",
-  comment: "#0EA5E9",
-  reply: "#0EA5E9",
-  levelUp: "#C2410C",
-  badge: "#C2410C",
-  system: "#9A2E08",
+  like: "var(--accent)",
+  comment: "var(--text-secondary)",
+  reply: "var(--text-disabled)",
+  levelUp: "var(--accent)",
+  badge: "var(--accent)",
+  system: "var(--text-secondary)",
 };
 
 const relativeTime = (dateStr) => {
@@ -133,9 +134,11 @@ const Notifications = () => {
         </Box>
 
         {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-            <CircularProgress />
-          </Box>
+          <Stack spacing={1.5}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} variant="rounded" height={72} sx={{ borderRadius: 4 }} />
+            ))}
+          </Stack>
         ) : visible.length === 0 ? (
           <GlassCard sx={{ p: 6, textAlign: "center" }}>
             <NotificationsIcon sx={{ fontSize: 40, color: "text.secondary", mb: 1 }} />
@@ -152,7 +155,7 @@ const Notifications = () => {
           <Stack spacing={1.5}>
             {visible.map((n) => {
               const Icon = TYPE_ICON[n.type] || NotificationsIcon;
-              const color = TYPE_COLOR[n.type] || "#9A2E08";
+              const color = TYPE_COLOR[n.type] || "var(--accent)";
               return (
                 <GlassCard
                   key={n._id}

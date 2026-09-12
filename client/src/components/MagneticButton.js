@@ -3,7 +3,7 @@ import { motion, useMotionValue, useSpring } from "framer-motion";
 import GradientButton from "./GradientButton";
 
 // A reusable magnetic CTA: the button gently follows the cursor while
-// hovered and springs back to center on leave. A soft terracotta glow
+// hovered and springs back to center on leave. A soft orange glow
 // blooms behind it on hover. Built on the existing GradientButton so all
 // brand styling + props pass through untouched.
 //
@@ -47,7 +47,7 @@ const MagneticButton = ({ children, strength = 0.35, glow = true, sx, ...props }
             transition: "box-shadow .3s ease, transform .2s ease",
             "&:hover": {
               boxShadow:
-                "0 12px 36px rgba(194,65,12,0.45), 0 0 0 4px rgba(194,65,12,0.18)",
+                "0 12px 36px rgba(17,17,17,0.30), 0 0 0 4px rgba(17,17,17,0.12)",
             },
           }),
           ...sx,

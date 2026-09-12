@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Typography, Stack } from "@mui/material";
 
-// A premium, on-brand vector logo for Inkwell — a terracotta gradient badge
+// A premium, on-brand vector logo for Inkwell — a charcoal gradient badge
 // carrying a quill glyph, paired with a styled "Inkwell" wordmark. Used across
 // the Navbar, Footer, and auth split-screen so the brand mark is consistent
 // everywhere. Pure vector/CSS — no image files are referenced or inspected.
@@ -38,7 +38,7 @@ const BrandLogo = ({
   size = 40,
   tone = "auto",
   showTagline = false,
-  tagline = "Write · Share · Earn",
+  tagline = "Write · Share · Inspire",
   onClick,
   sx,
   ...rest
@@ -57,8 +57,8 @@ const BrandLogo = ({
         alignItems: "center",
         justifyContent: "center",
         flexShrink: 0,
-        background: "linear-gradient(135deg, #E8693A 0%, #C2410C 55%, #9A2E08 100%)",
-        boxShadow: "0 6px 18px rgba(194,65,12,0.35)",
+        background: "linear-gradient(135deg, #2A2A2A 0%, #111111 55%, #000000 100%)",
+        boxShadow: "0 6px 18px rgba(17,17,17,0.30)",
         border: "1px solid rgba(255,255,255,0.20)",
         position: "relative",
         overflow: "hidden",
@@ -90,7 +90,7 @@ const BrandLogo = ({
           alignItems: "baseline",
         }}
       >
-        Ink<span style={{ color: "#C2410C" }}>well</span>
+        Ink<span style={{ color: "var(--accent)" }}>well</span>
       </Typography>
       {showTagline && (
         <Typography

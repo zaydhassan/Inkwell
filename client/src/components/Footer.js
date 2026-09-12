@@ -80,12 +80,11 @@ const Footer = () => {
               {socials.map(({ label, href, Icon }) => (
                 <IconButton
                   key={label}
-                  aria-label={label}
-                  href={href}
+                  aria-label={href === "#" ? `${label} (coming soon)` : label}
+                  href={href === "#" ? undefined : href}
                   size="small"
-                  component="a"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  {...(href === "#" ? {} : { component: "a", target: "_blank", rel: "noopener noreferrer" })}
+                  sx={{ opacity: href === "#" ? 0.5 : 1 }}
                 >
                   <Icon fontSize="small" />
                 </IconButton>
@@ -145,7 +144,7 @@ const Footer = () => {
             © {year} Inkwell. Crafted for writers.
           </Typography>
           <Typography variant="caption" sx={{ color: "text.disabled" }}>
-            Built with the MERN stack
+            Built for curious minds, everywhere.
           </Typography>
         </Box>
       </Container>

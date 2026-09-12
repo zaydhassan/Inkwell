@@ -285,7 +285,7 @@ const AdminPanel = () => {
                           users.filter((u) => u.role === "Writer").length,
                           users.filter((u) => u.role === "Admin").length,
                         ],
-                        backgroundColor: ["#0EA5E9", "#C2410C", "#E8693A"],
+                        backgroundColor: ["#111111", "#52525B", "#A3A3A3"],
                         borderColor: theme.palette.background.paper,
                         borderWidth: 2,
                       },
@@ -309,7 +309,7 @@ const AdminPanel = () => {
                         data: [...new Set(blogs.map((blog) => blog.category))].map(
                           (cat) => blogs.filter((b) => b.category === cat).length
                         ),
-                        backgroundColor: "#C2410C",
+                        backgroundColor: "#111111",
                         borderRadius: 6,
                       },
                     ],

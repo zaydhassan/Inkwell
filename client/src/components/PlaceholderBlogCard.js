@@ -57,7 +57,7 @@ const PlaceholderBlogCard = ({ post, index = 0 }) => {
         scalar: 0.7,
         ticks: 110,
         origin,
-        colors: ["#C2410C", "#E8693A", "#F59E0B", "#FFFFFF"],
+        colors: ["#111111", "#52525B", "#A3A3A3", "#FFFFFF"],
       });
     }
     setLiked((v) => !v);
@@ -86,7 +86,7 @@ const PlaceholderBlogCard = ({ post, index = 0 }) => {
               borderRadius: "inherit",
               padding: "1.5px",
               background:
-                "linear-gradient(135deg, rgba(194,65,12,0.55), rgba(232,105,58,0.12))",
+                "linear-gradient(135deg, rgba(17,17,17,0.30), rgba(17,17,17,0.08))",
               WebkitMask:
                 "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
               WebkitMaskComposite: "xor",
@@ -153,7 +153,7 @@ const PlaceholderBlogCard = ({ post, index = 0 }) => {
                   color: "#fff",
                   fontWeight: 700,
                   height: 24,
-                  boxShadow: "0 4px 14px rgba(194,65,12,0.45)",
+                  boxShadow: "0 4px 14px rgba(17,17,17,0.30)",
                   "& .MuiChip-label": { px: 1, fontSize: "0.7rem" },
                 }}
               />
@@ -236,7 +236,7 @@ const PlaceholderBlogCard = ({ post, index = 0 }) => {
                     border: "none",
                     cursor: "pointer",
                     padding: 0,
-                    color: liked ? "#C2410C" : "inherit",
+                    color: liked ? "var(--accent)" : "inherit",
                   }}
                   aria-label={liked ? "Unlike" : "Like"}
                   aria-pressed={liked}
@@ -267,7 +267,7 @@ const PlaceholderBlogCard = ({ post, index = 0 }) => {
                   border: "none",
                   cursor: "pointer",
                   padding: 6,
-                  color: bookmarked ? "#C2410C" : "inherit",
+                  color: bookmarked ? "var(--accent)" : "inherit",
                 }}
                 aria-label={bookmarked ? "Remove bookmark" : "Bookmark"}
                 aria-pressed={bookmarked}

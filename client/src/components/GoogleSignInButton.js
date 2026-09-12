@@ -19,7 +19,7 @@ const GoogleG = ({ size = 20 }) => (
 
 // Premium "Continue with Google" button — styled to sit inside the auth glass
 // cards: full-width, subtle outline, rounded, soft hover. Kept visually distinct
-// from the terracotta GradientButton so the OAuth option reads as a clear
+// from the charcoal GradientButton so the OAuth option reads as a clear
 // alternative rather than competing with the primary CTA.
 const GoogleSignInButton = ({ onClick, loading = false, disabled = false, label = "Continue with Google", sx }) => (
   <Button
