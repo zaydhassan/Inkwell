@@ -1,0 +1,686 @@
+/* ─────────────────────────────────────────────────────────────────────
+   InkWell — shared design system.
+
+   ONE source of truth for the InkWell editorial surface: colour tokens,
+   the ambient backdrop treatment, the card/stage language, the button
+   pair, the stats grid, and the motion vocabulary. The Home and About
+   pages both opt in by carrying an `ink`-prefixed class, so the two pages
+   are literally reading the same variables rather than two hand-matched
+   copies. The Navbar opts in separately via `.ink-nav`, because it renders
+   in the app shell (outside either page) and inside MUI portals.
+
+   Scoping rules:
+     • The token block is declared on `.ink` and `.ink-nav` only — it never
+       touches `:root`, so the rest of the app keeps its own light/dark
+       theme untouched.
+     • Every rule below is scoped under `.ink`/`.ink-nav` or an `ink-`
+       prefixed class, so nothing leaks outward.
+     • Home and About are deliberately always-dark (per the brief) and so
+       ignore the app's `data-theme`. This is the same approach the Login
+       page already takes with its own local accent system.
+
+   Accessibility note: the brief's muted tone `#77716A` only clears about
+   4.1:1 on this canvas, which fails AA for body copy. So muted *text* uses
+   the lifted `--ink-text-3` (#8E887F, ~5.6:1) while the original value
+   stays available as `--ink-text-3-decor` for purely decorative use.
+   ───────────────────────────────────────────────────────────────────── */
+
+.ink,
+.ink-nav {
+  /* Surfaces */
+  --ink-bg: #0f0e0d;
+  --ink-bg-alt: #151311;
+  --ink-card: #1b1917;
+  --ink-card-hi: #211e1a;
+
+  /* Lines */
+  --ink-border: rgba(255, 255, 255, 0.1);
+  --ink-border-soft: rgba(255, 255, 255, 0.06);
+  --ink-border-warm: rgba(255, 106, 0, 0.35);
+
+  /* Type */
+  --ink-text: #f5f1ea;
+  --ink-text-2: #b5aea5;
+  --ink-text-3: #8e887f;
+  --ink-text-3-decor: #77716a;
+
+  /* Accent — the only brand colour on these surfaces. */
+  --ink-orange: #ff6a00;
+  --ink-orange-2: #f97316;
+  --ink-orange-deep: #c2410c;
+  --ink-orange-soft: rgba(255, 106, 0, 0.14);
+  --ink-orange-softer: rgba(255, 106, 0, 0.06);
+
+  /* Depth */
+  --ink-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  --ink-shadow-card: 0 14px 40px rgba(0, 0, 0, 0.4);
+  --ink-glow: 0 0 60px rgba(255, 106, 0, 0.15);
+  --ink-glow-soft: 0 0 32px rgba(255, 106, 0, 0.12);
+  --ink-ring: 0 0 0 4px rgba(255, 106, 0, 0.22);
+
+  /* Type stacks — display for headings, body for copy. */
+  --ink-font-display: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+  --ink-font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* Rhythm. One spacing scale, used by both pages. */
+  --ink-gutter: clamp(1.25rem, 4vw, 2.5rem);
+  --ink-section-y: clamp(4rem, 9vw, 7.5rem);
+  --ink-radius: 22px;
+  --ink-radius-lg: 28px;
+}
+
+/* The page canvas. Home and About both mount one of these as their root. */
+.ink {
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
+  background: var(--ink-bg);
+  color: var(--ink-text);
+  font-family: var(--ink-font-body);
+}
+
+/* ── Backdrop: warm radial atmosphere + hairline grid + faint noise ────
+   All three sit at z-index 0 under a z-index 1 content layer and are
+   pointer-events:none, so decoration can never intercept a click or land
+   on top of text. */
+.ink-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.ink-backdrop::before {
+  content: "";
+  position: absolute;
+  inset: -20% -10%;
+  background:
+    radial-gradient(58% 42% at 78% 8%, rgba(255, 106, 0, 0.13), transparent 62%),
+    radial-gradient(46% 38% at 6% 30%, rgba(249, 115, 22, 0.07), transparent 66%),
+    radial-gradient(70% 50% at 50% 104%, rgba(255, 106, 0, 0.08), transparent 68%);
+}
+
+/* The brief's "extremely subtle, low contrast, barely visible" grid. */
+.ink-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, var(--ink-border-soft) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--ink-border-soft) 1px, transparent 1px);
+  background-size: 68px 68px;
+  /* Fade the grid at every edge so it never reads as a table. */
+  mask-image: radial-gradient(78% 66% at 50% 34%, #000 12%, transparent 78%);
+  -webkit-mask-image: radial-gradient(78% 66% at 50% 34%, #000 12%, transparent 78%);
+  opacity: 0.75;
+}
+
+/* Tighter variant for the hero, where the grid sits closest to the copy. */
+.ink-grid-hero {
+  background-size: 54px 54px;
+  opacity: 0.5;
+  mask-image: radial-gradient(64% 58% at 62% 30%, #000 0%, transparent 74%);
+  -webkit-mask-image: radial-gradient(64% 58% at 62% 30%, #000 0%, transparent 74%);
+}
+
+.ink-noise {
+  position: absolute;
+  inset: 0;
+  opacity: 0.022;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Hairline rule that fades at both ends — the section separator. */
+.ink-rule {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--ink-border) 18%,
+    rgba(255, 106, 0, 0.35) 50%,
+    var(--ink-border) 82%,
+    transparent
+  );
+}
+
+/* Decorative orange curve used to tie the two pages together. Sits behind
+   content, never interactive. */
+.ink-curve {
+  position: absolute;
+  pointer-events: none;
+  color: var(--ink-orange);
+  opacity: 0.16;
+}
+
+/* ── Stage: the frame the hero visual sits inside ─────────────────────
+   Used by the Home hero photo AND the About desk illustration, so the two
+   pages share one visual container — same radius, same border, same warm
+   spill, same glow. */
+.ink-stage {
+  position: relative;
+  border-radius: var(--ink-radius-lg);
+  overflow: hidden;
+  background: linear-gradient(165deg, #1a1714 0%, #131110 48%, #0c0a09 100%);
+  border: 1px solid var(--ink-border);
+  box-shadow: var(--ink-shadow), var(--ink-glow);
+}
+
+/* Warm light spill from the upper-left plus a cool edge at the lower
+   right. Deliberately restrained — the visual carries its own key light. */
+.ink-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    radial-gradient(68% 54% at 16% 2%, rgba(255, 106, 0, 0.13), transparent 62%),
+    radial-gradient(58% 48% at 98% 94%, rgba(194, 65, 12, 0.08), transparent 64%);
+  pointer-events: none;
+}
+
+/* Inner top highlight for depth. */
+.ink-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  pointer-events: none;
+}
+
+/* Media inside a stage: fills the frame, never clips. */
+.ink-stage-media {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Warm cinematic grade on the hero photograph so it sits in the same
+     amber register as the About illustration. */
+  filter: saturate(1.06) contrast(1.04) sepia(0.1) hue-rotate(-6deg);
+}
+
+/* ── Surfaces: the page's one card primitive ─────────────────────────
+   A dark editorial panel — hairline border, soft shadow, inner top
+   highlight. `--hover` adds the warm lift. Nothing here is "dashboard
+   card": radius is generous, borders are hairlines, shadows are soft. */
+.ink-surface {
+  position: relative;
+  border-radius: var(--ink-radius);
+  background: var(--ink-card);
+  border: 1px solid var(--ink-border);
+  box-shadow: var(--ink-shadow-card);
+  overflow: hidden;
+}
+
+.ink-surface-hi {
+  background: var(--ink-card-hi);
+}
+
+.ink-surface-quiet {
+  background: linear-gradient(150deg, #201c18 0%, #171513 55%, #131110 100%);
+}
+
+/* ── Floating cards ─────────────────────────────────────────────────── */
+.ink-float-card {
+  border-radius: 18px;
+  background: rgba(27, 25, 23, 0.72);
+  border: 1px solid var(--ink-border);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.ink-float-card:hover {
+  border-color: var(--ink-border-warm);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55), var(--ink-glow);
+}
+
+/* Three offset rhythms keep the cards from bobbing in lockstep. */
+.ink-float-a { animation: inkFloat 7.5s ease-in-out infinite; }
+.ink-float-b { animation: inkFloat 9s ease-in-out infinite; animation-delay: -2.2s; }
+.ink-float-c { animation: inkFloat 8.2s ease-in-out infinite; animation-delay: -4.1s; }
+
+@keyframes inkFloat {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -12px, 0); }
+}
+
+/* Slow counter-drift for the ambient glow blobs. */
+.ink-drift-a { animation: inkDriftA 16s ease-in-out infinite; }
+.ink-drift-b { animation: inkDriftB 21s ease-in-out infinite; }
+
+@keyframes inkDriftA {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(28px, -20px, 0) scale(1.07); }
+}
+
+@keyframes inkDriftB {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-26px, 18px, 0) scale(1.1); }
+}
+
+/* ── Micro-motion (illustration steam, caret, page lift, sparkle) ───── */
+.ink-steam {
+  animation: inkSteam 4s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+@keyframes inkSteam {
+  0% { opacity: 0.25; transform: translateY(2px); }
+  45% { opacity: 0.7; }
+  100% { opacity: 0; transform: translateY(-13px); }
+}
+
+.ink-caret {
+  animation: inkCaret 1.15s steps(1, end) infinite;
+}
+
+@keyframes inkCaret {
+  0%, 55% { opacity: 1; }
+  56%, 100% { opacity: 0; }
+}
+
+.ink-pulse {
+  animation: inkPulse 3.4s ease-in-out infinite;
+}
+
+@keyframes inkPulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.85; }
+}
+
+/* Live status dot (floating cards, hero identity chip). */
+.ink-dot-live {
+  animation: inkPulse 2.6s ease-in-out infinite;
+}
+
+/* ── Eyebrow: the small orange overline above every section heading ─── */
+.ink-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-orange);
+}
+
+.ink-eyebrow::before {
+  content: "";
+  width: 24px;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+/* Centred variant drops the leading rule so the type reads symmetric. */
+.ink-eyebrow-center::before {
+  display: none;
+}
+
+/* ── Badge: the small category / meta pill ──────────────────────────── */
+.ink-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-text-2);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--ink-border);
+  white-space: nowrap;
+}
+
+/* The orange category badge used on story cards. */
+.ink-badge-accent {
+  color: var(--ink-orange);
+  background: var(--ink-orange-soft);
+  border-color: rgba(255, 106, 0, 0.28);
+}
+
+/* ── Value / feature card hover: warm border, glow, icon nudge ──────── */
+.ink-value-card {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+.ink-value-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  background: radial-gradient(85% 70% at 22% 0%, rgba(255, 106, 0, 0.13), transparent 68%);
+  pointer-events: none;
+}
+
+.ink-value-card:hover,
+.ink-value-card:focus-within {
+  transform: translateY(-6px);
+  border-color: var(--ink-border-warm);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5), var(--ink-glow);
+}
+
+.ink-value-card:hover::after,
+.ink-value-card:focus-within::after {
+  opacity: 1;
+}
+
+.ink-value-card .ink-value-icon {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.35s ease, color 0.35s ease;
+}
+
+.ink-value-card:hover .ink-value-icon,
+.ink-value-card:focus-within .ink-value-icon {
+  transform: translateY(-3px) rotate(-4deg);
+  background-color: var(--ink-orange);
+  color: #17110c;
+}
+
+.ink-value-card .ink-bignum {
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.ink-value-card:hover .ink-bignum {
+  opacity: 0.13;
+  transform: translateY(-4px);
+}
+
+/* The orange icon chip shared by value and feature cards. */
+.ink-value-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  flex-shrink: 0;
+  color: var(--ink-orange);
+  background: var(--ink-orange-soft);
+  border: 1px solid rgba(255, 106, 0, 0.22);
+}
+
+/* Oversized ghost number behind a value card's content. */
+.ink-bignum {
+  position: absolute;
+  top: -0.35rem;
+  right: 0.5rem;
+  font-family: var(--ink-font-display);
+  font-weight: 800;
+  font-size: 5rem;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--ink-text);
+  opacity: 0.07;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── Stats grid: 4 → 2 → 1, with hairline dividers ──────────────────── */
+.ink-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.ink-stats > * {
+  border-left: 1px solid var(--ink-border-soft);
+}
+
+.ink-stats > *:first-child {
+  border-left: 0;
+}
+
+@media (max-width: 899.95px) {
+  .ink-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* On the 2×2 layout the divider pattern shifts so each row reads as its
+     own band rather than a 4-up strip. */
+  .ink-stats > *:nth-child(odd) {
+    border-left: 0;
+  }
+
+  .ink-stats > *:nth-child(n + 3) {
+    border-top: 1px solid var(--ink-border-soft);
+  }
+}
+
+@media (max-width: 479.95px) {
+  .ink-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .ink-stats > * {
+    border-left: 0;
+  }
+
+  .ink-stats > *:nth-child(n + 2) {
+    border-top: 1px solid var(--ink-border-soft);
+  }
+}
+
+/* ── Buttons: one primary, one ghost. Used verbatim on both pages. ──── */
+.ink-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  padding: 0.75rem 1.5rem;
+  border-radius: 999px;
+  border: 1.5px solid transparent;
+  font-family: var(--ink-font-body);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.22s ease, box-shadow 0.22s ease,
+    background-color 0.22s ease, border-color 0.22s ease, color 0.22s ease;
+}
+
+.ink-btn-primary {
+  background: var(--ink-orange);
+  color: #17110c;
+  box-shadow: 0 10px 28px rgba(255, 106, 0, 0.28);
+}
+
+.ink-btn-primary:hover {
+  background: var(--ink-orange-2);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 38px rgba(255, 106, 0, 0.4);
+}
+
+.ink-btn-ghost {
+  background: transparent;
+  color: var(--ink-text);
+  border-color: var(--ink-border);
+}
+
+.ink-btn-ghost:hover {
+  border-color: var(--ink-border-warm);
+  color: var(--ink-orange);
+  background: var(--ink-orange-softer);
+  transform: translateY(-2px);
+}
+
+.ink-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Form primitives ────────────────────────────────────────────────── */
+
+/* The newsletter pill. Lives here rather than in pages/Home.css so a
+   second page can consume it without reaching into a page stylesheet. */
+.ink-input {
+  flex: 1 1 260px;
+  min-width: 0;
+  min-height: 54px;
+  padding: 0.75rem 1.15rem;
+  border-radius: 999px;
+  background: rgba(15, 14, 13, 0.6);
+  border: 1.5px solid var(--ink-border);
+  color: var(--ink-text);
+  font-family: var(--ink-font-body);
+  font-size: 0.92rem;
+  outline: none;
+  transition: border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.ink-input::placeholder {
+  color: var(--ink-text-3-decor);
+}
+
+.ink-input:focus {
+  border-color: var(--ink-orange);
+  box-shadow: var(--ink-ring);
+}
+
+.ink-input[aria-invalid="true"] {
+  border-color: #f87171;
+}
+
+/* A labelled settings field: label above, control, then hint or error.
+   Deliberately a different shape from .ink-input — a 999px pill suits one
+   newsletter address, not a stack of labelled form rows. */
+.ink-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.ink-field-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-text-2);
+}
+
+.ink-field-control,
+.ink-textarea {
+  width: 100%;
+  min-height: 52px;
+  padding: 0.85rem 1.05rem;
+  border-radius: 14px;
+  background: rgba(15, 14, 13, 0.6);
+  border: 1.5px solid var(--ink-border);
+  color: var(--ink-text);
+  font-family: var(--ink-font-body);
+  font-size: 0.92rem;
+  outline: none;
+  transition: border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.ink-textarea {
+  min-height: 118px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.ink-field-control::placeholder,
+.ink-textarea::placeholder {
+  color: var(--ink-text-3-decor);
+}
+
+.ink-field-control:focus,
+.ink-textarea:focus {
+  border-color: var(--ink-orange);
+  box-shadow: var(--ink-ring);
+}
+
+/* Errors stay red. Orange is the brand accent everywhere else on these
+   surfaces, so it must never double as a warning colour. */
+.ink-field-control[aria-invalid="true"],
+.ink-textarea[aria-invalid="true"] {
+  border-color: #f87171;
+}
+
+.ink-field-hint,
+.ink-field-error {
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.ink-field-hint {
+  color: var(--ink-text-3-decor);
+}
+
+.ink-field-error {
+  color: #f87171;
+}
+
+/* ── Meter: one progress rail for level progress and the daily goal ──── */
+.ink-meter {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+
+.ink-meter-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--ink-orange-2), var(--ink-orange));
+  transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── Focus visibility ───────────────────────────────────────────────── */
+.ink :where(a, button, input, textarea, [tabindex]):focus-visible,
+.ink-nav :where(a, button, [tabindex]):focus-visible {
+  outline: 2px solid var(--ink-orange);
+  outline-offset: 3px;
+  border-radius: 12px;
+}
+
+/* ── Reduced motion: keep the layout, drop the movement ─────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .ink-float-a,
+  .ink-float-b,
+  .ink-float-c,
+  .ink-drift-a,
+  .ink-drift-b,
+  .ink-steam,
+  .ink-caret,
+  .ink-pulse,
+  .ink-dot-live {
+    animation: none !important;
+  }
+
+  /* Keep the steam visible as a static wisp rather than vanishing. */
+  .ink-steam {
+    opacity: 0.45;
+  }
+
+  .ink-value-card:hover,
+  .ink-value-card:focus-within,
+  .ink-btn-primary:hover,
+  .ink-btn-ghost:hover {
+    transform: none;
+  }
+
+  /* The fill still tracks its value, it just stops sliding to it. */
+  .ink-meter-fill {
+    transition: none;
+  }
+}

@@ -5,8 +5,12 @@ import toast from "react-hot-toast";
 // Routes that only make sense for a signed-in user. Clicking one of these
 // while anonymous should bounce to /login (and back again after sign-in)
 // rather than dropping the user on a broken/empty page.
+//
+// Browsing is deliberately absent: Explore (/explore, /blogs, /category/:name)
+// is a public catalog — every endpoint behind it is public, and Home already
+// links straight to it. Saving a story from there still asks for a session,
+// per-card, and returns the reader to where they were.
 export const AUTH_GATED_PATHS = [
-  "/blogs",
   "/leaderboard",
   "/profile",
   "/my-blogs",

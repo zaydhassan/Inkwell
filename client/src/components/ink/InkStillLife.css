@@ -1,0 +1,55 @@
+/* ─────────────────────────────────────────────────────────────────────
+   InkWell — the Explore still life.
+
+   Companion to components/ink/InkStillLife.js. Everything reads the shared
+   tokens from styles/inkwell.css, so the drawing sits in the same warm-black
+   register as the rest of the editorial pages.
+   ───────────────────────────────────────────────────────────────────── */
+
+/* No plate, no frame. The drawing is the whole element, so a radial mask is
+   all that is needed to melt its four corners into the page — the solid core
+   is set wide enough that every subject (the book's boards, the ribbon, the
+   floating quill) stays at full strength and only the diagonals fade. */
+.ink-still-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  mask-image: radial-gradient(78% 76% at 50% 48%, #000 62%, transparent 100%);
+  -webkit-mask-image: radial-gradient(78% 76% at 50% 48%, #000 62%, transparent 100%);
+}
+
+/* The ruled lines follow their page's angle rather than the grid, so the type
+   sits on the paper instead of floating above it. */
+.ink-sl-tilt-l {
+  transform: rotate(-3.2deg);
+  transform-origin: 302px 330px;
+}
+
+.ink-sl-tilt-r {
+  transform: rotate(3.2deg);
+  transform-origin: 302px 330px;
+}
+
+.ink-sl-ribbon-group {
+  transform: rotate(1.6deg);
+  transform-origin: 341px 300px;
+}
+
+/* The quill hovers a few pixels clear of the spread. Slow, small, and
+   independent of the page's other motion — it should read as held breath,
+   not as an animation. */
+.ink-sl-float {
+  animation: inkStillFloat 8.5s ease-in-out infinite;
+  transform-origin: 470px 150px;
+}
+
+@keyframes inkStillFloat {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  50% { transform: translate3d(0, -13px, 0) rotate(-1.6deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ink-sl-float {
+    animation: none;
+  }
+}

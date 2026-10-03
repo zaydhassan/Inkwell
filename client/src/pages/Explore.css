@@ -1,0 +1,915 @@
+/* ─────────────────────────────────────────────────────────────────────
+   InkWell — Explore page.
+
+   Layout only, plus the few pieces of furniture that are unique to this page
+   (the pill row, the sidebar cards, the search field). Every colour is a
+   `--ink-*` token from styles/inkwell.css, which is why nothing here needs a
+   light-theme variant: the page is dark in both app themes by design, exactly
+   like Home and About.
+
+   Everything is scoped inside `.ink-explore`, so it cannot leak into another
+   page's chrome.
+   ───────────────────────────────────────────────────────────────────── */
+
+/* ── Page frame ─────────────────────────────────────────────────────── */
+.ink-explore {
+  position: relative;
+  min-height: 100vh;
+  overflow-x: clip; /* the drifting glow blobs must not create a scrollbar */
+}
+
+.ink-explore-wrap {
+  position: relative;
+  z-index: 1;
+  padding-inline: var(--ink-gutter);
+  padding-block: clamp(2rem, 5vw, 3.5rem) clamp(4rem, 8vw, 6.5rem);
+  margin-inline: auto;
+  width: 100%;
+  /* Wider than Home's 1200px on purpose: with the fixed 340px rail, the story
+     column needs ~870px to seat three cards across at a usable width. */
+  max-width: 1360px;
+}
+
+/* ── Hero ───────────────────────────────────────────────────────────── */
+.ink-explore-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: center;
+}
+
+.ink-explore-lede {
+  margin: 1.5rem 0 0;
+  max-width: 560px;
+  font-family: var(--ink-font-body);
+  font-size: clamp(0.98rem, 1.1vw, 1.06rem);
+  line-height: 1.72;
+  color: var(--ink-text-2);
+}
+
+/* The still life is wider than it is tall and slightly overhangs its column,
+   so the drawing reads as art direction rather than as an illustration in a
+   box. Masked by the component's own radial gradient. */
+.ink-explore-hero-art {
+  position: relative;
+  margin-inline: -2% -6%;
+}
+
+/* ── Controls: the search field and the pill row ─────────────────────── */
+.ink-explore-controls {
+  margin-top: clamp(2.25rem, 5vw, 3.5rem);
+}
+
+.ink-explore-search-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ink-explore-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  height: 56px;
+  padding-inline: 1.1rem 0.7rem;
+  border-radius: 14px;
+  background: var(--ink-bg-alt);
+  border: 1px solid var(--ink-border);
+  box-shadow: var(--ink-shadow-card);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.ink-explore-search:focus-within {
+  border-color: var(--ink-border-warm);
+  box-shadow: var(--ink-shadow-card), var(--ink-glow-soft);
+}
+
+.ink-explore-search-icon {
+  flex-shrink: 0;
+  font-size: 21px !important;
+  color: var(--ink-text-3);
+  transition: color 0.25s ease;
+}
+
+.ink-explore-search:focus-within .ink-explore-search-icon {
+  color: var(--ink-orange);
+}
+
+.ink-explore-search-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-family: var(--ink-font-body);
+  font-size: 1rem;
+  color: var(--ink-text);
+  /* Safari draws its own clear button on `type=search`; the field has one. */
+  appearance: none;
+}
+
+.ink-explore-search-input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.ink-explore-search-input::placeholder {
+  color: var(--ink-text-3-decor);
+}
+
+/* The ⌘K chip — a real button that focuses the field. */
+.ink-explore-search-kbd {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  padding: 0.28rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--ink-border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink-text-3);
+  font-family: var(--ink-font-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.ink-explore-search-kbd:hover {
+  color: var(--ink-text);
+  border-color: var(--ink-border-warm);
+  background: var(--ink-orange-softer);
+}
+
+.ink-explore-search-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ink-text-3);
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.ink-explore-search-clear:hover {
+  color: var(--ink-orange);
+  background: var(--ink-orange-softer);
+}
+
+.ink-explore-search-status {
+  margin: 0.85rem 0 0;
+  font-size: 0.82rem;
+  color: var(--ink-text-3);
+}
+
+/* ── Category pills ─────────────────────────────────────────────────── */
+.ink-explore-filters {
+  margin-top: 1.5rem;
+}
+
+.ink-explore-filters-list {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  /* Centred to share an axis with the search field above it: `fit-content` plus
+     auto margins centres the row when it fits, and the cap at 100% means that
+     once it does not fit the row simply fills the column and scrolls — which is
+     also what keeps `justify-content: center`'s overflow trap (first pill
+     unreachable) out of the picture. */
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+  padding: 0.25rem 34px 0.75rem 0;
+  list-style: none;
+  /* One row, scrolled — wrapping nine pills makes a ragged block on tablets.
+     The 34px of trailing padding matches the fade below, so the last pill is
+     clear of the edge once the row is scrolled all the way across. */
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-snap-type: x proximity;
+  /* Fades only what actually reaches the right edge, i.e. exactly the pills the
+     reader has not scrolled to yet. */
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 34px), transparent);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 34px), transparent);
+}
+
+.ink-explore-filters-list::-webkit-scrollbar {
+  display: none;
+}
+
+.ink-explore-filters-list > li {
+  scroll-snap-align: start;
+}
+
+.ink-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 38px;
+  padding-inline: 1.05rem;
+  border-radius: 999px;
+  border: 1px solid var(--ink-border);
+  background: var(--ink-bg-alt);
+  color: var(--ink-text-2);
+  font-family: var(--ink-font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.ink-pill:hover {
+  color: var(--ink-text);
+  border-color: var(--ink-border-warm);
+  background: var(--ink-orange-softer);
+}
+
+/* The selected pill is the one place orange is allowed to fill a shape on this
+   page — it is the current filter, and it needs to be unmistakable. */
+.ink-pill--active,
+.ink-pill--active:hover {
+  background: var(--ink-orange);
+  border-color: var(--ink-orange);
+  color: #17110c;
+  font-weight: 700;
+  box-shadow: 0 8px 22px rgba(255, 106, 0, 0.24);
+}
+
+/* ── Two-column layout: stories + rail ──────────────────────────────── */
+.ink-explore-layout {
+  display: grid;
+  /* The rail is a fixed 350px column — compact but comfortable — and the
+     story column takes everything that is left. Both columns start on the
+     same line, so the Browse card's header sits beside the Featured
+     section's header, not above or below it. */
+  grid-template-columns: minmax(0, 1fr) 350px;
+  gap: 28px;
+  align-items: start;
+  margin-top: clamp(2rem, 4vw, 3rem);
+}
+
+.ink-explore-main {
+  min-width: 0;
+}
+
+/* ── Sections ───────────────────────────────────────────────────────── */
+.ink-explore-section + .ink-explore-section {
+  margin-top: clamp(3rem, 6vw, 4.5rem);
+}
+
+.ink-explore-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.75rem;
+}
+
+/* The result count, set as a quiet figure rather than a badge. */
+.ink-explore-count {
+  flex-shrink: 0;
+  padding-bottom: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-text-3);
+  white-space: nowrap;
+}
+
+/* ── Story grid ─────────────────────────────────────────────────────── */
+.ink-explore-grid {
+  display: grid;
+  /* Three across in the story column — the 220px floor is what drops it to two
+     columns on a narrow desktop and to one on a phone, without a media query
+     per breakpoint. The floor is deliberately low: at 260px the third column
+     did not fit at 1440 and the featured row wrapped to 2 + 1, which left a
+     hole beside the rail and blurred the boundary between the two sections. */
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 24px;
+  align-items: stretch;
+}
+
+/* An explicit cover height rather than an aspect ratio: at three columns the
+   ratio-derived height would be ~160px, which reads as a small card. A fixed
+   band keeps every card the same height and gives the photography the weight
+   the design calls for. */
+.ink-explore-grid .ink-story-media {
+  aspect-ratio: auto;
+  height: clamp(196px, 16vw, 220px);
+}
+
+.ink-explore-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 2.5rem;
+}
+
+/* The note under a short result set, in the space a third column would have
+   occupied. */
+.ink-explore-note {
+  margin: 1.5rem 0 0;
+  font-size: 0.86rem;
+  color: var(--ink-text-3);
+}
+
+.ink-explore-note-link {
+  font-weight: 700;
+  color: var(--ink-orange);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: opacity 0.2s ease;
+}
+
+.ink-explore-note-link:hover {
+  opacity: 0.82;
+}
+
+.ink-explore-tail {
+  margin: 0;
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--ink-text-3);
+}
+
+/* ── Empty / error states ───────────────────────────────────────────── */
+.ink-explore-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: clamp(2.5rem, 6vw, 4.5rem) 1.5rem;
+  border-radius: var(--ink-radius-lg);
+  border: 1px dashed var(--ink-border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent);
+}
+
+.ink-explore-state-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  color: var(--ink-orange);
+  background: var(--ink-orange-soft);
+  border: 1px solid var(--ink-border-warm);
+}
+
+.ink-explore-state-title {
+  margin: 1.35rem 0 0;
+  font-family: var(--ink-font-display);
+  font-size: clamp(1.15rem, 2vw, 1.4rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink-text);
+}
+
+.ink-explore-state-copy {
+  margin: 0.7rem 0 0;
+  max-width: 440px;
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: var(--ink-text-2);
+}
+
+.ink-explore-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.6rem;
+}
+
+/* ── Sidebar rail: the editorial discovery column ─────────────────────
+   Three modules that share one visual language but deliberately not one
+   identical treatment — Browse is the neutral navigational surface,
+   Trending is where the column's imagery lives, Newsletter is its single
+   warm surface. A faint wash sits behind the whole rail so the column
+   reads as part of the page's atmosphere rather than cards pasted onto
+   it; borders stay hairline and shadows stay soft so the surfaces blend
+   into the canvas instead of standing off it. */
+.ink-explore-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  /* Sticks below the floating navbar, with the Featured section head. Never
+     independently scrollable — the rail is the shorter column by design. */
+  position: sticky;
+  top: 90px;
+  /* Own stacking context, so the ambient wash behind the rail (z-index -1
+     below) never slips underneath the page canvas. */
+  z-index: 0;
+}
+
+.ink-explore-aside::before {
+  content: "";
+  position: absolute;
+  inset: -48px -72px;
+  background: radial-gradient(
+    circle at 50% 30%,
+    rgba(255, 106, 0, 0.035),
+    transparent 60%
+  );
+  pointer-events: none;
+  z-index: -1;
+}
+
+.ink-side-card {
+  padding: 22px;
+  border-radius: 18px;
+  /* Hairline borders and a wide, soft shadow: separation without the
+     dashboard drop. Hovering a card warms its hairline — the brief wants the
+     rail to feel responsive all the way out to its frames. */
+  border-color: var(--ink-border-soft);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  transition: border-color 0.25s ease;
+}
+
+.ink-side-card:hover {
+  border-color: rgba(255, 106, 0, 0.2);
+}
+
+/* Shared header: the title block left, "View all" sitting on the title's
+   optical baseline at the right edge. */
+.ink-side-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.ink-side-head-titles {
+  min-width: 0;
+}
+
+.ink-side-eyebrow {
+  display: block;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-orange);
+}
+
+/* The trending eyebrow runs one step larger: that module opens into imagery,
+   and its label should size with its content, not with its annotations. */
+.ink-side-eyebrow--trend {
+  font-size: 0.6875rem;
+  letter-spacing: 0.135em;
+}
+
+/* The eyebrow's optional inline icon (the trending flame) is sized here, not
+   by an MUI prop, so it scales with the eyebrow text rather than the icon's
+   1.5rem default. */
+.ink-side-eyebrow svg {
+  font-size: 13px !important;
+  margin-right: 0.3rem;
+  vertical-align: -2px;
+}
+
+.ink-side-title {
+  margin: 0.3rem 0 0;
+  font-family: var(--ink-font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  color: var(--ink-text);
+}
+
+.ink-side-copy {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: var(--ink-text-2);
+}
+
+.ink-side-note {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--ink-text-3);
+}
+
+/* "View all →" — a quiet affordance in the header's right corner: it lights
+   orange on hover rather than announcing itself in brand colour at rest. */
+.ink-side-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  padding-bottom: 0.2rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--ink-text-3);
+  text-decoration: none;
+  transition: color 0.2s ease, gap 0.2s ease;
+}
+
+.ink-side-more:hover {
+  color: var(--ink-orange);
+  gap: 0.55rem;
+}
+
+.ink-side-more svg {
+  font-size: 13px !important;
+}
+
+/* The newsletter card is the rail's one warm surface — the glow is the
+   background itself: an orange wash from the top-left corner falling into
+   the canvas colour, with a warm hairline to match. Nothing brighter. */
+.ink-side-card--glow {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 106, 0, 0.11),
+    rgba(27, 24, 21, 0.96)
+  );
+  border-color: rgba(255, 106, 0, 0.16);
+}
+
+/* Its title sits a step below the Browse title — a form card, not
+   navigation, and the scale should say so quietly. */
+.ink-side-card--glow .ink-side-title {
+  font-size: 1.125rem;
+}
+
+.ink-side-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: 0.95rem;
+}
+
+/* The shared .ink-input carries `flex: 1 1 260px` for Home's side-by-side
+   newsletter row. In this column that basis would become a 260px *height*, so
+   the field is taken out of flex sizing here and given its own compact height. */
+.ink-side-form .ink-input {
+  flex: none;
+  height: 44px;
+  min-height: 44px;
+  padding-inline: 1rem;
+  padding-block: 0;
+  border-width: 1px;
+  font-size: 0.86rem;
+  /* Denser than the shared pill, so it reads as a well cut into the warm
+     gradient rather than a raised field on top of it. */
+  background: rgba(15, 14, 13, 0.55);
+}
+
+.ink-side-form .ink-btn svg {
+  font-size: 14px !important;
+}
+
+.ink-side-msg {
+  margin: 0.6rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
+.ink-side-msg--ok {
+  color: #7ee2a8;
+}
+
+.ink-side-msg--err {
+  color: #fca5a5;
+}
+
+/* ── Browse categories: compact pills ─────────────────────────────────
+   A wrapping pill cloud instead of a bulleted row list — the card reads as
+   magazine navigation at a fraction of the former height. The pills mirror
+   the top filter row's shape so the two category systems feel like one. */
+.ink-cat-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ink-cat-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--ink-text-2);
+  white-space: nowrap;
+  text-decoration: none;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.ink-cat-pill:hover {
+  color: var(--ink-orange);
+  border-color: rgba(255, 106, 0, 0.25);
+  background: var(--ink-orange-softer);
+  transform: translateY(-1px);
+}
+
+/* The active pill is a warm tint at rest — unmistakable without ever being
+   a solid orange block inside a rail this small. */
+.ink-cat-pill--active,
+.ink-cat-pill--active:hover {
+  color: var(--ink-orange);
+  background: var(--ink-orange-soft);
+  border-color: rgba(255, 106, 0, 0.3);
+  transform: none;
+}
+
+/* ── Trending rail: ranked rows with real cover imagery ───────────────
+   Rank → thumbnail → title → author · counts, ~64px rows divided by
+   hairlines. The 42px covers are what lift the card from a ranking table
+   to an editorial list: the column is always present — a story without a
+   cover falls back to its author's initials mono tile, the same fallback
+   system the story cards use — so rows never collapse into ragged,
+   half-media lines. */
+.ink-trend-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ink-trend-list > li:not(:last-child) {
+  border-bottom: 1px solid var(--ink-border-soft);
+}
+
+.ink-trend-row {
+  display: grid;
+  grid-template-columns: 24px 42px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 11px 0;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+/* The hover is a whisper of warmth behind the row; the title brightens a
+   step. No colour jump, no lift — the rank list should feel calm. */
+.ink-trend-row:hover {
+  background: rgba(255, 106, 0, 0.04);
+}
+
+.ink-trend-rank {
+  font-family: var(--ink-font-display);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--ink-orange);
+}
+
+.ink-trend-thumb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ink-trend-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* The whisper of the story-card grade, so the rail's covers sit in the
+     same photographic register as the grid's. */
+  filter: saturate(1.05) contrast(1.03);
+}
+
+/* The mono tile behind a missing cover: initials in display type on the
+   fallback gradient, sized so the column never changes height. */
+.ink-trend-mono {
+  width: 100%;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--ink-font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: rgba(245, 241, 234, 0.85);
+}
+
+.ink-trend-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  min-width: 0;
+}
+
+.ink-trend-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink-text);
+  transition: color 0.2s ease;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ink-trend-row:hover .ink-trend-title {
+  color: #ffffff;
+}
+
+.ink-trend-meta {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: var(--ink-text-3);
+}
+
+/* Middot separators between author and counts, drawn so the dots read at
+   the decorative contrast tier rather than as body copy. */
+.ink-trend-meta > * + *::before {
+  content: "·";
+  margin: 0 0.4rem;
+  color: var(--ink-text-3-decor);
+}
+
+.ink-trend-author {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 118px;
+}
+
+.ink-trend-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-shrink: 0;
+}
+
+.ink-trend-stat svg {
+  font-size: 11px !important;
+}
+
+/* Skeleton rows: same geometry as the real ones, thumbnail column
+   included, so the card does not resize when the list lands. */
+.ink-trend-row--ghost {
+  pointer-events: none;
+  cursor: default;
+}
+
+.ink-ghost-thumb {
+  background: rgba(255, 255, 255, 0.05);
+  animation: inkGhostPulse 1.6s ease-in-out infinite;
+}
+
+.ink-ghost-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  flex: 1;
+  padding-top: 0.3rem;
+}
+
+.ink-ghost-line {
+  height: 12px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.06);
+  animation: inkGhostPulse 1.6s ease-in-out infinite;
+}
+
+.ink-ghost-line:last-child {
+  height: 9px;
+  animation-delay: -0.8s;
+}
+
+@keyframes inkGhostPulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────── */
+
+/* Tablet: the rail drops under the stories, full width, and lays its cards out
+   side by side so it does not become a tall column of its own. Same card
+   rhythm as the desktop rail. */
+@media (max-width: 1024px) {
+  .ink-explore-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ink-explore-aside {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+    /* Cards take their natural heights side by side — stretching them to the
+       row height would leave the short ones as mostly-empty dark surfaces. */
+    align-items: start;
+  }
+}
+
+/* Below tablet the hero stacks: copy first, drawing underneath it — never
+   beside it, where it would squeeze the headline into four lines. */
+@media (max-width: 860px) {
+  .ink-explore-hero-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+
+  .ink-explore-hero-art {
+    order: 2;
+    /* Centred once stacked — it then shares an axis with the search field and
+       the pill row beneath it, instead of sitting left with a hole beside it.
+       The explicit width matters: auto margins on a grid item cancel the
+       default stretch, and without it the drawing collapses to the SVG's
+       intrinsic 300px. */
+    width: 100%;
+    margin-inline: auto;
+    /* Stacked under the copy, the drawing has to stay a companion to the
+       headline rather than a second full-width panel above the controls. */
+    max-width: 440px;
+  }
+
+  .ink-explore-lede {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .ink-explore-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  /* One card per row, so the cover can afford to be taller. */
+  .ink-explore-grid .ink-story-media {
+    height: 200px;
+  }
+
+  .ink-explore-section-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
+  .ink-explore-search {
+    height: 52px;
+  }
+
+  .ink-explore-search-input {
+    font-size: 0.94rem;
+  }
+
+  /* No hardware keyboard to appeal to on a phone, and the chip otherwise eats
+     the room the placeholder needs. */
+  .ink-explore-search-kbd {
+    display: none;
+  }
+
+  .ink-explore-hero-art {
+    max-width: 340px;
+  }
+
+  .ink-explore-aside {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Keyboard focus, on the page's own controls. */
+.ink-explore a:focus-visible,
+.ink-explore button:focus-visible,
+.ink-explore input:focus-visible {
+  outline: 2px solid var(--ink-orange);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ink-explore *,
+  .ink-explore *::before,
+  .ink-explore *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

@@ -187,13 +187,62 @@ exports.getRelatedBlogs = async (req, res) => {
   }
 };
 
+// ── Listing helpers ─────────────────────────────────────────────────────
+// Blog documents carry no denormalized engagement counters (the old
+// blog.likes / blog.comments arrays were removed because they were never kept
+// in sync). Like and Comment live in their own collections, so attach real
+// counts to a page of blogs with two grouped aggregations scoped to just that
+// page's ids — O(1) queries per page instead of an N+1 per card.
+const attachEngagementCounts = async (blogs) => {
+  const ids = blogs.map((b) => b._id);
+  if (!ids.length) return blogs;
+
+  const countByBlog = async (Model) => {
+    const rows = await Model.aggregate([
+      { $match: { blog_id: { $in: ids } } },
+      { $group: { _id: "$blog_id", count: { $sum: 1 } } },
+    ]);
+    return new Map(rows.map((r) => [String(r._id), r.count]));
+  };
+
+  const [likeMap, commentMap] = await Promise.all([countByBlog(Like), countByBlog(Comment)]);
+
+  return blogs.map((blog) => {
+    // toObject() first: a Mongoose document silently drops non-schema paths on
+    // serialization, so the derived counters would never reach the client.
+    const plain = blog.toObject ? blog.toObject() : blog;
+    plain.likeCount = likeMap.get(String(plain._id)) || 0;
+    plain.commentCount = commentMap.get(String(plain._id)) || 0;
+    return plain;
+  });
+};
+
+// Public listing search. A reader types a title word, a phrase from the body,
+// a category, a tag or an author — so the $or covers all five. The tag and
+// author arms need their own id lookups because MongoDB cannot run a regex
+// against a populated field.
+const buildListingSearch = async (searchRegex) => {
+  if (!searchRegex) return null;
+  const [userIds, tagIds] = await Promise.all([
+    userModel.find({ username: searchRegex }).distinct("_id"),
+    Tag.find({ tag_name: searchRegex }).distinct("_id"),
+  ]);
+  const or = [
+    { title: searchRegex },
+    { description: searchRegex },
+    { category: searchRegex },
+  ];
+  if (userIds.length) or.push({ user: { $in: userIds } });
+  if (tagIds.length) or.push({ tags: { $in: tagIds } });
+  return or;
+};
+
 exports.getAllBlogsController = async (req, res) => {
   try {
     const { page, limit, skip, searchRegex } = parsePagination(req);
     const filter = { status: "Published" };
-    if (searchRegex) {
-      filter.$or = [{ title: searchRegex }, { description: searchRegex }];
-    }
+    const searchOr = await buildListingSearch(searchRegex);
+    if (searchOr) filter.$or = searchOr;
 
     const [blogs, total] = await Promise.all([
       blogModel
@@ -213,7 +262,7 @@ exports.getAllBlogsController = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "All Blogs lists",
-      blogs,
+      blogs: await attachEngagementCounts(blogs),
       ...paginateMeta(page, limit, total),
     });
   } catch (error) {
@@ -230,19 +279,19 @@ exports.getAllBlogsController = async (req, res) => {
     try {
         const { page, limit, skip, searchRegex } = parsePagination(req);
         const filter = { category, status: "Published" };
-        if (searchRegex) {
-          filter.$or = [{ title: searchRegex }, { description: searchRegex }];
-        }
+        const searchOr = await buildListingSearch(searchRegex);
+        if (searchOr) filter.$or = searchOr;
         const [blogs, total] = await Promise.all([
           blogModel
             .find(filter)
             .populate("user", "username profile_image")
+            .populate("tags", "tag_name")
             .sort({ created_at: -1 })
             .skip(skip)
             .limit(limit),
           blogModel.countDocuments(filter),
         ]);
-        return res.status(200).json({ success: true, blogs, ...paginateMeta(page, limit, total) });
+        return res.status(200).json({ success: true, blogs: await attachEngagementCounts(blogs), ...paginateMeta(page, limit, total) });
     } catch (error) {
         console.error("Error fetching blogs by category:", error.message);
         res.status(500).json({ success: false, message: "Error fetching blogs by category." });
@@ -265,7 +314,8 @@ exports.getBlogsByTag = async (req, res) => {
       filter = { tags: tag._id, status: "Published" };
     }
     if (searchRegex) {
-      filter.$or = [{ title: searchRegex }, { description: searchRegex }];
+      const searchOr = await buildListingSearch(searchRegex);
+      if (searchOr) filter.$or = searchOr;
     }
 
     const [blogs, total] = await Promise.all([
@@ -278,7 +328,7 @@ exports.getBlogsByTag = async (req, res) => {
         .limit(limit),
       blogModel.countDocuments(filter),
     ]);
-    return res.status(200).json({ success: true, blogs, ...paginateMeta(page, limit, total) });
+    return res.status(200).json({ success: true, blogs: await attachEngagementCounts(blogs), ...paginateMeta(page, limit, total) });
   } catch (error) {
     console.error("Error fetching blogs by tag:", error.message);
     return res.status(500).json({ success: false, message: "Server error." });

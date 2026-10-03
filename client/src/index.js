@@ -7,6 +7,10 @@ import 'regenerator-runtime/runtime';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
+// The InkWell editorial design system. Loaded globally (not per-page) because
+// the Navbar lives in the app shell, outside either page, and inside MUI
+// portals — it opts into the same tokens via the `.ink-nav` selector.
+import './styles/inkwell.css';
 import App from './App';
 import { BrowserRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';

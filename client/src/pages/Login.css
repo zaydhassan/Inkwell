@@ -1,0 +1,785 @@
+/* ─────────────────────────────────────────────────────────────────────
+   InkWell — Sign in.
+
+   Layout only. Every colour, surface, type ramp and motion curve comes
+   from the shared system in styles/inkwell.css, so this page is the same
+   product as Home and About rather than a lookalike: it mounts the same
+   `.ink` root (which is what supplies the token block), reuses the
+   system's `.ink-noise`, `.ink-value-icon` and `.ink-pulse`, and adds
+   nothing but arrangement.
+
+   Like Home and About, this page is deliberately always-dark and carries
+   no theme switch: it ignores the app's `data-theme` outright. That is
+   sound because every colour below is written against an `--ink-*` token
+   or an explicit value, never against a MUI theme key, so nothing here
+   can pick up the light palette.
+
+   Vertical rhythm is expressed in `vh` clamps rather than a stack of
+   width-style height breakpoints. A sign-in page has to compose in one
+   screen, and screens vary far more in height than in width: a fixed
+   rhythm fits a 16" display and spills the panel's own CTA off a 13" one.
+   Scaling the rhythm (and the still life) with the viewport keeps the
+   brief's measurements on a tall screen and quietly tightens them on a
+   short one. Where a clamp cannot reach — the fixed height of the
+   controls themselves — one short-viewport tier at the end of the file
+   takes over.
+
+   Nothing is scoped outside `.ink-login` (one exception, marked
+   "overscroll guard" below).
+   ───────────────────────────────────────────────────────────────────── */
+
+/* ── Page shell ─────────────────────────────────────────────────────── */
+.ink-login {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 34px clamp(1.25rem, 4vw, 4.25rem) clamp(1.75rem, 4vh, 3rem);
+  /* The panel's width, named once: the column below insets the card by
+     whatever room is left over after this much, so the two must agree. */
+  --ink-login-panel: 510px;
+  /* The brand lockup and the benefit rows share one icon column, so their
+     text starts on one edge. It tracks the icon chip, which steps down on
+     short viewports; the brand mark itself stays 42px either way. */
+  --ink-login-icon: 46px;
+  /* Native scrollbars and form-control chrome render dark to match. */
+  color-scheme: dark;
+}
+
+/* Overscroll guard. Scoped to this page by `:has()`, so it exists only
+   while Login is mounted and cannot affect any other route — without it,
+   a rubber-band scroll in light theme flashes the app's pale canvas
+   around an otherwise all-dark page. Literal value because the token
+   block lives on `.ink`, not on <body>. */
+body:has(.ink-login) {
+  background: #0f0e0d;
+}
+
+/* ── Backdrop: warm atmosphere, hairline grid, paper grain, vignette ──
+   Every layer is pointer-events:none inside one clipping box, so the
+   decoration can never intercept a click or sit above the copy. */
+.ink-login-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Ambient orange light behind the auth panel. */
+.ink-login-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 65% 35%, rgba(255, 106, 0, 0.12), transparent 35%);
+}
+
+/* And a second, quieter pool of warm light around the still life. */
+.ink-login-glow-bl {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 17% 76%, rgba(255, 106, 0, 0.1), transparent 42%);
+}
+
+/* The editorial grid — barely there, and faded at every edge so it never
+   reads as a table. */
+.ink-login-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, var(--ink-border-soft) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--ink-border-soft) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(80% 70% at 50% 32%, #000 6%, transparent 82%);
+  -webkit-mask-image: radial-gradient(80% 70% at 50% 32%, #000 6%, transparent 82%);
+  opacity: 0.55;
+}
+
+/* Wide-spaced hairlines: the "editorial page" register under the grid. */
+.ink-login-rules {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--ink-border-soft) 0 1px,
+    transparent 1px 216px
+  );
+  mask-image: linear-gradient(to right, #000, transparent 72%);
+  -webkit-mask-image: linear-gradient(to right, #000, transparent 72%);
+  opacity: 0.5;
+}
+
+/* Deep black vignette — pulls the eye to the centre of the composition. */
+.ink-login-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 96% at 50% 4%, transparent 38%, rgba(0, 0, 0, 0.52) 100%);
+}
+
+/* ── Top chrome: a way back ─────────────────────────────────────────── */
+.ink-login-chrome {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  /* One child, pinned right — the row no longer has a second end. */
+  justify-content: flex-end;
+  /* Holds the height the theme button used to give this row. The page is
+     always dark by design (see the header), and this row is the only thing
+     above the composition, so letting it collapse to the link's own 16px
+     would hand 20px to `.ink-login-main` and shift the whole page down
+     with it. */
+  min-height: 36px;
+  flex-shrink: 0;
+}
+
+.ink-login-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--ink-text-2);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.ink-login-back:hover {
+  color: var(--ink-orange);
+}
+
+.ink-login-back svg {
+  transition: transform 0.22s ease;
+}
+
+/* The arrow steps right on hover. */
+.ink-login-back:hover svg {
+  transform: translateX(3px);
+}
+
+/* ── Main composition: story left, auth panel right ─────────────────── */
+.ink-login-main {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  width: 100%;
+  max-width: 1560px;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 57fr) minmax(0, 43fr);
+  gap: clamp(2rem, 4vw, 4.5rem);
+  align-items: center;
+  padding-block: clamp(1.25rem, 3.5vh, 3.5rem);
+}
+
+.ink-login-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding-left: clamp(0rem, 5vw, 6.5rem);
+}
+
+/* ── Brand mark ─────────────────────────────────────────────────────── */
+/* The lockup and the benefit rows below it are the same shape — an icon
+   with text beside it — so they share one icon column and one gap, and
+   their text lands on the same left edge. Sizing the column rather than
+   leaning on the gap is what makes that hold at both tiers: the chip is
+   46px on a tall screen where the brand mark stays the brief's 42px, so
+   equal gaps would leave the wordmark 4px outside the benefit titles.
+   Stays `inline-grid` so the lockup still shrink-wraps and its hover
+   scale covers the mark and the wordmark only. */
+.ink-login-brand,
+.ink-login-feature {
+  grid-template-columns: var(--ink-login-icon) 1fr;
+  column-gap: 1.05rem;
+}
+
+.ink-login-brand {
+  display: inline-grid;
+  align-items: center;
+  transition: transform 0.25s ease;
+  transform-origin: left center;
+}
+
+.ink-login-brand:hover {
+  transform: scale(1.015);
+}
+
+.ink-login-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: var(--ink-orange);
+  box-shadow: 0 8px 22px rgba(255, 106, 0, 0.28);
+}
+
+.ink-login-word {
+  font-family: var(--ink-font-display);
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--ink-text);
+}
+
+/* ── Hero ───────────────────────────────────────────────────────────── */
+.ink-login-eyebrow {
+  margin-top: clamp(1.5rem, 3.6vh, 2.75rem);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink-orange);
+}
+
+.ink-login-hero {
+  margin-top: clamp(0.6rem, 1.3vh, 0.85rem);
+  font-family: var(--ink-font-display);
+  font-size: clamp(2.5rem, min(4.6vw, 6.3vh), 4.4rem);
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  color: var(--ink-text);
+}
+
+/* The product name carries the accent; no gradient anywhere on the type. */
+.ink-login-hero-accent {
+  color: var(--ink-orange);
+}
+
+.ink-login-lede {
+  margin-top: clamp(1rem, 2.4vh, 1.35rem);
+  max-width: 520px;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--ink-text-2);
+}
+
+/* ── Benefits ───────────────────────────────────────────────────────── */
+.ink-login-features {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.9rem, 1.7vh, 1.2rem);
+  margin-top: clamp(1.25rem, 4vh, 3rem);
+  list-style: none;
+}
+
+/* Reuses the system's icon chip (`.ink-value-icon`); only the tint is
+   dialled back here, because three of them in a row read stronger than
+   one inside a card. */
+.ink-login-feature {
+  display: grid;
+  align-items: start;
+}
+
+.ink-login-feature .ink-value-icon {
+  background: var(--ink-orange-softer);
+  border-color: rgba(255, 106, 0, 0.2);
+  transition: transform 0.25s ease, background-color 0.25s ease,
+    border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.ink-login-feature:hover .ink-value-icon {
+  transform: translateY(-2px);
+  background: rgba(255, 106, 0, 0.12);
+  border-color: var(--ink-border-warm);
+  box-shadow: var(--ink-glow-soft);
+}
+
+.ink-login-feature-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--ink-text);
+}
+
+.ink-login-feature-body {
+  margin-top: 0.2rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ink-text-3);
+}
+
+/* ── The still life, and the line that closes the page ────────────────
+   The artwork is sized against the viewport height — it grows into the
+   room a tall screen gives it and steps aside on a short one. The
+   constraint sits on the SVG, not on the wrapper, because the wrapper
+   also holds the quote: sizing the wrapper would squeeze the pull quote
+   into a column as narrow as the picture. */
+.ink-login-still {
+  margin-top: clamp(1.1rem, 3vh, 2.6rem);
+}
+
+/* No plate, no frame. An earlier mask had its solid core well inside the
+   box, which left the inkwell — the drawing's leftmost subject, and the
+   reason the artwork sits on this page at all — sitting in the fade. The
+   viewBox is now cropped to the composition (see LoginStillLife.js), so
+   the mask only has to melt the four corners: the solid stop is set where
+   it is because the inkwell's body lands exactly on it, which keeps every
+   subject in the drawing at full strength and drops only the diagonals —
+   and the one flat-filled bokeh circle that touches the top corner. */
+.ink-login-still-svg {
+  display: block;
+  width: 100%;
+  max-width: min(430px, 30vh);
+  height: auto;
+  mask-image: radial-gradient(84% 80% at 50% 50%, #000 62%, transparent 100%);
+  -webkit-mask-image: radial-gradient(84% 80% at 50% 50%, #000 62%, transparent 100%);
+}
+
+/* The rule sits ABOVE the quote rather than beside it, so the italic line
+   and the attribution both start on the column's left edge. Set beside,
+   the rule pushed the quote 40px in — a third left edge in a block that
+   already had two, matching nothing above it. The rule leads the quote
+   instead and every element in the column starts at the same place. */
+.ink-login-quote {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 470px;
+  margin-top: clamp(0.4rem, 1.5vh, 1.25rem);
+}
+
+.ink-login-quote-rule {
+  width: 26px;
+  height: 2px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  margin-bottom: 0.6rem;
+  background: var(--ink-orange-2);
+}
+
+.ink-login-quote p {
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-size: 1.125rem;
+  line-height: 1.55;
+  color: var(--ink-text);
+}
+
+.ink-login-quote cite {
+  display: block;
+  margin-top: 0.6rem;
+  font-family: var(--ink-font-body);
+  font-style: normal;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-text-3);
+}
+
+/* ── The auth panel ─────────────────────────────────────────────────── */
+/* The page has two margins: the gutter, where the theme button and "Back
+   to Home" sit, and an inset inside it, where the copy begins. The card
+   belongs on the second one — inset from the right by the same amount the
+   copy is inset from the left — so the composition is balanced rather
+   than the card running out to the gutter while the copy stands off it.
+   (`justify-content: center` looked like the neutral choice, but it makes
+   the card's right margin an artifact of the leftover space: ~50px at
+   1280, ~75px at 1440, 293px on a 1920 screen, so the card floated
+   further into the page the wider the window got.)
+
+   The inset mirrors the copy's own clamp, capped at whatever room the
+   column actually has once the card is at full width. On a narrow column
+   that cap wins and the card settles flush right instead of shrinking —
+   and because it is a cap rather than a breakpoint, the margin closes
+   smoothly as the window narrows instead of jumping. Below the stacked
+   breakpoint the panel centres itself and the inset is switched off. */
+.ink-login-panel-col {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: max(
+    0px,
+    min(clamp(0rem, 5vw, 6.5rem), calc(100% - var(--ink-login-panel)))
+  );
+  min-width: 0;
+}
+
+.ink-login-panel {
+  position: relative;
+  width: 100%;
+  max-width: var(--ink-login-panel);
+  padding: clamp(1.6rem, 3.4vh, 3rem);
+  border-radius: 26px;
+  border: 1px solid var(--ink-border);
+  /* A deep, slightly lit charcoal — elevated over the page canvas without
+     any glass effect. */
+  background: linear-gradient(
+    158deg,
+    rgba(33, 30, 26, 0.94) 0%,
+    rgba(26, 24, 22, 0.93) 46%,
+    rgba(23, 21, 19, 0.95) 100%
+  );
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* A whisper of warm light on the upper-left edge of the panel. Behind the
+   content (negative z, inside the panel's own stacking context), and far
+   too faint to read as a neon border. */
+.ink-login-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(58% 34% at 4% -2%, rgba(255, 106, 0, 0.12), transparent 62%);
+}
+
+.ink-login-panel-title {
+  font-family: var(--ink-font-display);
+  font-size: 2.1rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--ink-text);
+}
+
+.ink-login-panel-sub {
+  margin-top: 0.5rem;
+  margin-bottom: clamp(1.3rem, 2.6vh, 1.9rem);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--ink-text-3);
+}
+
+/* Inline error — red, the system's one non-brand signal colour. */
+.ink-login-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.4rem;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: #f87171;
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* ── Social row, divider, fields ────────────────────────────────────── */
+.ink-login-social {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.6rem, 1.4vh, 0.75rem);
+}
+
+.ink-login-divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: clamp(1.3rem, 2.6vh, 1.9rem) 0;
+}
+
+.ink-login-divider::before,
+.ink-login-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--ink-border);
+}
+
+.ink-login-divider span {
+  font-size: 0.72rem;
+  white-space: nowrap;
+  color: var(--ink-text-3);
+}
+
+.ink-login-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--ink-text-2);
+}
+
+/* Stacks the next label clear of the field above it. */
+.ink-login-label-stack {
+  margin-top: clamp(0.9rem, 2.2vh, 1.15rem);
+}
+
+.ink-login-label-req {
+  color: var(--ink-orange);
+}
+
+.ink-login-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: clamp(0.6rem, 1.5vh, 0.8rem);
+}
+
+.ink-login-link {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-orange);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.ink-login-link:hover {
+  color: var(--ink-orange-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ink-login-legal {
+  margin-top: clamp(1.3rem, 2.4vh, 1.9rem);
+  text-align: center;
+  font-size: 0.66rem;
+  line-height: 1.6;
+  color: var(--ink-text-3);
+}
+
+.ink-login-legal a {
+  color: var(--ink-orange);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ink-login-legal a:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ── Vertical rhythm: the form is the page's most-read column, so the
+   spacing between its blocks is stated once here rather than inline. ── */
+.ink-login-field {
+  margin-top: clamp(0.5rem, 1.3vh, 0.7rem);
+}
+
+.ink-login-submit {
+  margin-top: clamp(1.2rem, 2.7vh, 1.6rem);
+}
+
+.ink-login-alt {
+  margin-top: clamp(0.7rem, 1.6vh, 0.9rem);
+}
+
+/* ── Short viewports ──────────────────────────────────────────────────
+   The clamps above scale the *margins*, but a sign-in card's height is
+   set by things that do not scale: two social buttons, two labelled
+   fields each reserving an error line, two buttons and the legal note.
+   A 1600×900 laptop leaves roughly 800px of viewport once the browser
+   has drawn its own chrome, and that floor — not the design's ideal —
+   decides whether the card fits. So here the controls, the icon chips,
+   the still life and the page padding step down together, and the page
+   composes in one screen again. Nothing is dropped: every element the
+   brief asks for is still present, just tighter.
+
+   Below roughly 760px of viewport the form genuinely cannot fit without
+   becoming cramped, and the page scrolls — which is the honest answer
+   for a card of this much content, and far better than shrinking it
+   past the point of legibility. */
+@media (max-height: 980px) {
+  .ink-login {
+    padding-top: 24px;
+    /* The row's contents are centred, so the leftover space is already
+       split evenly above and below them; carrying the usual bottom
+       padding as well would only push the page into a scrollbar that
+       reveals nothing. */
+    padding-bottom: 0;
+  }
+
+  .ink-login-main {
+    padding-block: 0.75rem;
+  }
+
+  .ink-login-eyebrow {
+    margin-top: 1.1rem;
+  }
+
+  .ink-login-hero {
+    margin-top: 0.45rem;
+    font-size: clamp(2.3rem, min(4.2vw, 5.6vh), 3.3rem);
+  }
+
+  .ink-login-lede {
+    margin-top: 0.85rem;
+  }
+
+  .ink-login-features {
+    margin-top: 1.1rem;
+    gap: 0.7rem;
+  }
+
+  .ink-login-feature .ink-value-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+  }
+
+  /* The shared icon column follows the chip down, so the wordmark keeps
+     landing on the benefit titles' edge at this tier too. */
+  .ink-login {
+    --ink-login-icon: 42px;
+  }
+
+  .ink-login-still {
+    margin-top: 1rem;
+  }
+
+  .ink-login-still-svg {
+    max-width: min(400px, 30vh);
+  }
+
+  .ink-login-quote {
+    margin-top: 0.6rem;
+  }
+
+  /* ── The card: the part that must never be clipped ── */
+  .ink-login-panel {
+    padding: 1.5rem;
+  }
+
+  .ink-login-panel-title {
+    font-size: 1.85rem;
+  }
+
+  .ink-login-panel-sub {
+    margin-bottom: 0.9rem;
+  }
+
+  .ink-login-divider {
+    margin: 0.8rem 0;
+  }
+
+  .ink-login-label-stack {
+    margin-top: 0.7rem;
+  }
+
+  .ink-login-field,
+  .ink-login-row {
+    margin-top: 0.45rem;
+  }
+
+  .ink-login-submit {
+    margin-top: 0.9rem;
+  }
+
+  .ink-login-alt {
+    margin-top: 0.6rem;
+  }
+
+  .ink-login-legal {
+    margin-top: 0.9rem;
+  }
+
+  /* Control heights, declared in the MUI `sx` props in Login.js. Reaching
+     them from CSS needs one more class than the `sx` class emotion
+     generates, hence the `.ink-login` prefix. */
+  .ink-login .ink-login-social .MuiButton-root,
+  .ink-login .ink-login-field {
+    min-height: 50px;
+  }
+
+  .ink-login .ink-login-submit {
+    min-height: 52px;
+  }
+
+  .ink-login .ink-login-alt {
+    min-height: 48px;
+  }
+
+  /* The reserved error line is worth 20px twice over; the type comes down
+     a step rather than the reservation being dropped, so the form still
+     doesn't jump when validation appears. */
+  .ink-login .ink-login-field .MuiFormHelperText-root {
+    font-size: 0.72rem;
+    line-height: 1.3;
+  }
+}
+
+/* ── Tablet / narrow desktop ────────────────────────────────────────── */
+@media (max-width: 1180px) {
+  .ink-login-panel {
+    padding: 2.25rem;
+  }
+}
+
+/* ── Stacked: the copy, then the panel. Same DOM order as the desktop
+   composition, so nothing has to be reordered. ─────────────────────── */
+@media (max-width: 979.95px) {
+  .ink-login-main {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.5rem;
+    padding-block: 1.75rem 2.5rem;
+  }
+
+  .ink-login-copy {
+    padding-left: 0;
+  }
+
+  /* The panel centres itself here, so the desktop inset — which only
+     exists to balance it against the copy's own inset — must come off:
+     left in place it would push the centred card off-centre by half. */
+  .ink-login-panel-col {
+    padding-right: 0;
+  }
+
+  /* The still life is a large decorative block; on a stacked layout it
+     would push the form below the fold. Hidden outright rather than
+     shrunk. */
+  .ink-login-still {
+    display: none;
+  }
+
+  .ink-login-panel {
+    max-width: 520px;
+    margin-inline: auto;
+    padding: clamp(1.9rem, 4vh, 3rem);
+  }
+
+  .ink-login-hero {
+    font-size: clamp(2.6rem, 6vw, 3.4rem);
+  }
+}
+
+/* ── Phone ──────────────────────────────────────────────────────────── */
+@media (max-width: 599.95px) {
+  .ink-login {
+    /* 16px gutters either side — which is exactly the brief's
+       `calc(100% - 32px)` panel width, with no second subtraction. */
+    padding: 20px 16px 28px;
+  }
+
+  .ink-login-hero {
+    /* 44–48px across the phone range, per the page's brief. */
+    font-size: clamp(2.75rem, 12vw, 3rem);
+    letter-spacing: -0.035em;
+  }
+
+  .ink-login-lede {
+    margin-top: 1.1rem;
+    font-size: 1rem;
+  }
+
+  .ink-login-features {
+    margin-top: 1.6rem;
+    gap: 0.95rem;
+  }
+
+  .ink-login-panel {
+    padding: 1.6rem 1.35rem;
+    border-radius: 22px;
+  }
+
+  .ink-login-panel-title {
+    font-size: 1.85rem;
+  }
+
+  .ink-login-panel-sub {
+    margin-bottom: 1.5rem;
+  }
+
+  .ink-login-divider {
+    margin: 1.5rem 0;
+  }
+}

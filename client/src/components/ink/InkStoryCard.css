@@ -1,0 +1,274 @@
+/* ─────────────────────────────────────────────────────────────────────
+   InkWell story card — the editorial card used by the Home grid.
+
+   Companion to components/ink/InkStoryCard.js. Everything reads the shared
+   tokens from styles/inkwell.css, so the card is identical wherever it is
+   mounted and never depends on the active MUI theme.
+   ───────────────────────────────────────────────────────────────────── */
+
+.ink-story-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--ink-radius);
+  /* Restrained transition set: lift, border, shadow. The image and title
+     carry their own hovers below. */
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+.ink-story-card:hover,
+.ink-story-card:focus-visible {
+  border-color: var(--ink-border-warm);
+  box-shadow: 0 22px 52px rgba(0, 0, 0, 0.5), var(--ink-glow-soft);
+}
+
+/* Real cards are links, so they are focusable; the hover lift is a nicety but
+   the ring is the affordance that has to survive a keyboard. */
+.ink-story-card:focus-visible {
+  outline: 2px solid var(--ink-orange);
+  outline-offset: 3px;
+}
+
+/* ── Cover ──────────────────────────────────────────────────────────── */
+.ink-story-media {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #14110F;
+  flex-shrink: 0;
+  /* Warm cinematic grade. It lives on the container, not the <img>, because the
+     image animates its own inline `filter` for the blur-up entrance and an
+     inline filter would win there. Muting saturation is what does the heavy
+     lifting — it pulls the saturated reds and blues of arbitrary covers back
+     toward neutral — and sepia then warms what's left, so every cover, real or
+     demo and from any source, lands in the same amber register as the hero
+     instead of reading as a stock-photo mosaic. */
+  filter: saturate(0.8) sepia(0.26) contrast(1.05) brightness(0.95);
+}
+
+.ink-story-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Slow zoom on hover — transform only, so it stays on the compositor. */
+.ink-story-img {
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ink-story-card:hover .ink-story-img,
+.ink-story-card:focus-visible .ink-story-img {
+  transform: scale(1.06);
+}
+
+/* Warm cinematic grade + a bottom scrim so the badge and title edge read
+   against any cover. Pointer-transparent. */
+.ink-story-grade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(15, 14, 13, 0) 40%, rgba(15, 14, 13, 0.78) 100%),
+    linear-gradient(150deg, rgba(255, 106, 0, 0.16), rgba(0, 0, 0, 0) 58%);
+}
+
+/* The featured row's variant: a taller plate and a slightly larger title, so
+   "hand-picked" reads as a promotion rather than as three ordinary cards.
+   Every card in that row uses it, so the row's internal alignment holds. */
+.ink-story-card--feature .ink-story-media {
+  aspect-ratio: 3 / 2;
+}
+
+.ink-story-card--feature .ink-story-title {
+  font-size: 1.16rem !important;
+}
+
+/* ── Body ───────────────────────────────────────────────────────────── */
+.ink-story-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 1.25rem 1.35rem 1.35rem;
+  flex: 1;
+}
+
+.ink-story-title {
+  font-family: var(--ink-font-display) !important;
+  font-weight: 800 !important;
+  font-size: 1.06rem !important;
+  line-height: 1.32 !important;
+  letter-spacing: -0.015em;
+  color: var(--ink-text);
+  transition: color 0.25s ease;
+  /* Two-line clamp keeps every card in the grid the same height. The matching
+     min-height reserves both lines even for a one-line title, so the footers of
+     neighbouring cards line up instead of the whole row going ragged. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.64em;
+}
+
+.ink-story-card:hover .ink-story-title,
+.ink-story-card:focus-visible .ink-story-title {
+  color: var(--ink-orange);
+}
+
+/* ── Flags row: category, trending, reading time ────────────────────── */
+.ink-story-flags {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  /* Wraps rather than pushing the card wider on a very narrow column. */
+  flex-wrap: wrap;
+}
+
+.ink-story-time {
+  margin-left: auto;
+  padding-left: 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  color: var(--ink-text-3);
+}
+
+.ink-story-excerpt {
+  font-size: 0.86rem !important;
+  line-height: 1.62 !important;
+  color: var(--ink-text-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  /* Same reasoning as the title: hold two lines of space so a short excerpt
+     does not pull its card's footer up out of line with its neighbours. */
+  min-height: 3.24em;
+}
+
+/* ── Footer: author identity + engagement actions ───────────────────── */
+.ink-story-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* Deliberately tight: at three columns the identity block and the three
+     actions have to share ~240px, and every pixel spent here comes out of the
+     author's name. */
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--ink-border-soft);
+}
+
+.ink-story-avatar {
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #f5f1ea;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--ink-border);
+}
+
+/* A real uploaded avatar, when the author has one. Same disc geometry as the
+   initials fallback so a mixed feed never goes ragged. */
+.ink-story-avatar--img {
+  object-fit: cover;
+}
+
+.ink-story-author {
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  color: var(--ink-text) !important;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ink-story-date {
+  font-size: 0.7rem !important;
+  color: var(--ink-text-3) !important;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The icon-only / count-prefixed action button in the card footer. */
+.ink-story-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.22rem;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ink-text-3);
+  font-family: var(--ink-font-body);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.ink-story-action:hover {
+  color: var(--ink-orange);
+  background: var(--ink-orange-softer);
+}
+
+/* A disabled action (the bookmark on a demo card, which has nothing to save)
+   must not light up on hover, or it reads as a working control. */
+.ink-story-action:disabled {
+  cursor: default;
+}
+
+.ink-story-action:disabled:hover {
+  color: var(--ink-text-3);
+  background: transparent;
+}
+
+/* ── Demo marker ────────────────────────────────────────────────────── */
+/* Small, low-contrast, out of the way — but present, so an illustrative
+   card is never mistaken for a published post. */
+.ink-story-demo {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-text-2);
+  background: rgba(15, 14, 13, 0.72);
+  border: 1px solid var(--ink-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ink-story-card,
+  .ink-story-img,
+  .ink-story-title {
+    transition: none;
+  }
+
+  .ink-story-card:hover .ink-story-img,
+  .ink-story-card:focus-visible .ink-story-img {
+    transform: none;
+  }
+}

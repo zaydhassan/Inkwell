@@ -1,30 +1,29 @@
-/* Social icon buttons for the About page. Colors read the CSS-variable
-   layer from index.css so the icons flip correctly in dark mode via the
-   `data-theme` attribute. */
-.icon {
-  color: var(--text);
-  font-size: 22px;
-  height: 56px;
-  width: 56px;
-  background: var(--surface-glass);
-  line-height: 56px;
-  border-radius: 50%;
-  margin: 0 10px;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-  border: 1px solid var(--divider);
-  box-shadow: var(--shadow-glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition: transform 0.3s ease, box-shadow 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-}
+/* ─────────────────────────────────────────────────────────────────────
+   InkWell — About page: About-specific rules ONLY.
 
-.icon:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-glow);
+   The shared design system (tokens, canvas, backdrop, stage, surfaces,
+   floating cards, buttons, stats grid, value cards, motion vocabulary and
+   the reduced-motion kill-switch) lives in `src/styles/inkwell.css` and is
+   consumed through `src/components/ink`. The page root carries `.ink`
+   (tokens + canvas) and `.ink-about` (About identity) — nothing here
+   redeclares a token or a shared primitive.
+   ───────────────────────────────────────────────────────────────────── */
+
+/* ── How-it-works: below the md breakpoint the three stages stack, so the
+   horizontal connector becomes a single vertical spine down the timeline.
+   (The desktop connectors are rendered per-gap in About.js.) ─────────── */
+@media (max-width: 899.95px) {
+  .ink-timeline {
+    position: relative;
+  }
+
+  .ink-timeline::before {
+    content: "";
+    position: absolute;
+    left: 27px;
+    top: 14px;
+    bottom: 14px;
+    width: 1px;
+    background: linear-gradient(180deg, rgba(255, 106, 0, 0.6), rgba(255, 106, 0, 0.08));
+  }
 }

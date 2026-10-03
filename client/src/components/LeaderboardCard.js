@@ -61,7 +61,9 @@ const LeaderboardCard = ({ title, emoji, rows, currentUserId }) => (
             <Stack direction="row" spacing={0.75} alignItems="center">
               {entry.level && (
                 <Chip
-                  label={`Lv ${entry.level}`}
+                  /* Level names are the full phrase ("Engaged Contributor"), so
+                     the badge shows it verbatim rather than prefixed with "Lv". */
+                  label={entry.level}
                   size="small"
                   sx={{ height: 18, fontSize: "0.6rem", display: { xs: "none", sm: "inline-flex" } }}
                 />

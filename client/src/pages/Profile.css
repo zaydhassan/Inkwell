@@ -1,0 +1,751 @@
+/* ─────────────────────────────────────────────────────────────────────
+   Profile page — shell, rail, and page-local section rules.
+
+   Page-scoped only. Tokens, buttons, badges, meters, fields and surfaces come
+   from styles/inkwell.css; the rail and each section are styled from the
+   classes declared here, mirroring the Home.css / About.css split.
+
+   Every rule assumes the `.ink` ancestor on the page root — that is what makes
+   the --ink-* tokens resolve at all.
+   ───────────────────────────────────────────────────────────────────── */
+
+.ink-profile {
+  /* Six product sections, not a marketing page: the shared --ink-section-y
+     (clamp(4rem, 9vw, 7.5rem)) would leave ~45rem of dead air down one
+     column. Page-local rhythm; the shared token stays untouched for
+     Home/About. */
+  --ink-profile-content: 1100px;
+  --ink-profile-section-y: clamp(2.5rem, 5vw, 4rem);
+  min-height: 100vh;
+}
+
+/* ── Shell: rail beside content ─────────────────────────────────────── */
+.ink-profile-shell {
+  display: grid;
+  grid-template-columns: 264px minmax(0, 1fr);
+  gap: clamp(1.5rem, 3vw, 3rem);
+  width: 100%;
+  max-width: calc(var(--ink-profile-content) + 264px + 3rem);
+  margin: 0 auto;
+  padding: clamp(1.5rem, 3.5vw, 2.75rem) var(--ink-gutter)
+    clamp(3.5rem, 7vw, 6rem);
+  align-items: start;
+  /* The backdrop is `position: absolute; z-index: 0`, and a non-positioned
+     block paints *below* a positioned zero-index sibling — so without this the
+     gradients and hairline grid wash over the text. One stacking context here
+     lifts the whole page above the decoration. */
+  position: relative;
+  z-index: 1;
+}
+
+/* `min-width: 0` is load-bearing: a grid item defaults to its min-content
+   width, so without it the heatmap or a reward grid would scroll the page. */
+.ink-profile-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ink-profile-section-y);
+  min-width: 0;
+}
+
+/* Section widths differ on purpose. With a single accent colour there is no
+   palette to distinguish six sections, so geometry has to do it — alternating
+   wide / narrow gives the column a rhythm instead of six identical cards. */
+.ink-profile-section {
+  min-width: 0;
+}
+
+.ink-profile-section-wide {
+  width: 100%;
+}
+
+.ink-profile-section-mid {
+  width: 100%;
+  max-width: 900px;
+  margin-inline: auto;
+}
+
+.ink-profile-section-narrow {
+  width: 100%;
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+/* ── Rail ───────────────────────────────────────────────────────────── */
+.ink-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  min-width: 0;
+}
+
+.ink-rail-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ink-rail-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: none;
+  /* Buttons don't inherit type — without these the rail renders in the UA's
+     default 13px system font. */
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-align: left;
+  color: var(--ink-text-2);
+  cursor: pointer;
+  /* Colour only, no transform: this stays correct under reduced motion
+     without needing an entry in the global block. */
+  transition: background-color 0.18s ease, color 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.ink-rail-link:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink-text);
+}
+
+.ink-rail-link.is-active {
+  background: var(--ink-orange-softer);
+  border-color: var(--ink-border-warm);
+  color: var(--ink-text);
+}
+
+.ink-rail-link svg {
+  font-size: 18px;
+  color: var(--ink-text-3);
+  flex-shrink: 0;
+}
+
+.ink-rail-link.is-active svg {
+  color: var(--ink-orange);
+}
+
+/* Focus rings come from the global `.ink :where(button)` rule in
+   inkwell.css — deliberately not duplicated here. */
+
+.ink-rail-sep {
+  height: 1px;
+  border: 0;
+  margin: 0.5rem 0;
+  background: var(--ink-border-soft);
+}
+
+/* ── Rail leaderboards ──────────────────────────────────────────────── */
+.ink-rail-board-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-text-3);
+}
+
+.ink-rail-board-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ink-rail-board-row {
+  display: grid;
+  grid-template-columns: 18px 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 10px;
+}
+
+.ink-rail-board-row.is-me {
+  background: var(--ink-orange-softer);
+}
+
+.ink-rail-board-rank {
+  font-size: 0.74rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-text-3);
+}
+
+.ink-rail-board-row.is-me .ink-rail-board-rank {
+  color: var(--ink-orange);
+}
+
+.ink-rail-board-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink-text-2);
+  /* Long display names must not push the points column out of the rail. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ink-rail-board-row.is-me .ink-rail-board-name {
+  color: var(--ink-text);
+  font-weight: 700;
+}
+
+.ink-rail-board-pts {
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-text-3);
+  white-space: nowrap;
+}
+
+.ink-rail-empty {
+  font-size: 0.78rem;
+  color: var(--ink-text-3);
+}
+
+/* ── Section 1: hero (identity, full-bleed, no card) ────────────────── */
+.ink-profile-hero {
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "avatar id"
+    "meter meter"
+    "stats stats";
+  align-items: center;
+}
+
+.ink-profile-hero-avatar {
+  grid-area: avatar;
+  position: relative;
+  width: clamp(96px, 11vw, 132px);
+  height: clamp(96px, 11vw, 132px);
+  border-radius: 50%;
+  flex-shrink: 0;
+  /* The level ring and its warm spill — the hero's one piece of ornament. */
+  box-shadow: var(--ink-ring), var(--ink-glow);
+}
+
+.ink-profile-hero-id {
+  grid-area: id;
+  min-width: 0;
+}
+
+.ink-profile-bio {
+  margin: 0.85rem 0 0;
+  max-width: 56ch;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--ink-text-2);
+}
+
+.ink-profile-hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.15rem;
+}
+
+.ink-profile-hero-meter {
+  grid-area: meter;
+  min-width: 0;
+}
+
+.ink-profile-hero-meter-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.ink-profile-meter-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-text-3);
+}
+
+.ink-profile-meter-value {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink-text);
+}
+
+.ink-profile-hero-note {
+  margin: 0.7rem 0 0;
+  font-size: 0.78rem;
+  color: var(--ink-text-3);
+}
+
+.ink-profile-hero-hint {
+  margin: 0.6rem 0 0;
+  font-size: 0.74rem;
+  color: var(--ink-text-3);
+}
+
+/* Identity figures (followers / following). A page-local grid rather than
+   `.ink-stats`: that class is a hardcoded 4-up and would leave two empty
+   cells behind a two-figure hero. */
+.ink-profile-hero-stats {
+  grid-area: stats;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--ink-border-soft);
+}
+
+.ink-profile-hero-stat-value {
+  display: block;
+  font-family: var(--ink-font-display);
+  font-size: clamp(1.4rem, 3vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--ink-text);
+}
+
+.ink-profile-hero-stat-label {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-text-3);
+}
+
+/* ── Section 2: creator stats (borderless rail, hairline separated) ─── */
+.ink-profile-statgrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid var(--ink-border-soft);
+  border-bottom: 1px solid var(--ink-border-soft);
+}
+
+.ink-profile-stat {
+  padding: clamp(1.1rem, 2.5vw, 1.6rem) clamp(0.75rem, 2vw, 1.35rem);
+  border-left: 1px solid var(--ink-border-soft);
+}
+
+.ink-profile-stat:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+
+.ink-profile-stat-value {
+  display: block;
+  font-family: var(--ink-font-display);
+  font-size: clamp(1.6rem, 3.4vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--ink-text);
+}
+
+.ink-profile-stat-label {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-text-3);
+}
+
+/* ── Section 3: writing activity ────────────────────────────────────── */
+.ink-profile-activity {
+  position: relative;
+  padding: clamp(1.4rem, 3vw, 2.25rem);
+  overflow: hidden;
+}
+
+.ink-profile-activity-body {
+  position: relative;
+}
+
+/* ── Section 4: achievements — glass case vs empty slot ─────────────── */
+.ink-badge-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.85rem, 2vw, 1.25rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ink-badge-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: clamp(1.1rem, 2.5vw, 1.5rem);
+  border-radius: var(--ink-radius);
+  border: 1px solid var(--ink-border-soft);
+  background: rgba(255, 255, 255, 0.015);
+  min-height: 100%;
+}
+
+/* Earned: lifted onto the floating-card fill so it reads as "in the case". */
+.ink-badge-tile.is-earned {
+  border-color: var(--ink-border-warm);
+  background: var(--ink-card-hi);
+  box-shadow: var(--ink-shadow-card);
+}
+
+.ink-badge-tile-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  flex-shrink: 0;
+  color: var(--ink-orange);
+  background: var(--ink-orange-soft);
+  border: 1px solid rgba(255, 106, 0, 0.22);
+}
+
+/* Locked: greyed, and visibly a slot rather than a broken card. */
+.ink-badge-tile.is-locked .ink-badge-tile-icon {
+  color: var(--ink-text-3);
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--ink-border-soft);
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+
+.ink-badge-tile-name {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--ink-text);
+}
+
+.ink-badge-tile.is-locked .ink-badge-tile-name {
+  color: var(--ink-text-2);
+}
+
+.ink-badge-tile-blurb {
+  margin: 0;
+  font-size: 0.83rem;
+  line-height: 1.6;
+  color: var(--ink-text-3);
+}
+
+.ink-badge-tile-status {
+  margin-top: auto;
+  padding-top: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-text-3);
+}
+
+.ink-badge-tile.is-earned .ink-badge-tile-status {
+  color: var(--ink-orange);
+}
+
+/* ── Section 5: rewards grid ────────────────────────────────────────── */
+.ink-reward-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: clamp(0.85rem, 2vw, 1.25rem);
+}
+
+.ink-reward-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: clamp(1.1rem, 2.5vw, 1.5rem);
+}
+
+.ink-reward-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.ink-reward-name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--ink-text);
+}
+
+.ink-reward-cost {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--ink-text-3);
+  white-space: nowrap;
+}
+
+.ink-reward-meter-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ink-reward-action {
+  margin-top: auto;
+}
+
+.ink-reward-action .ink-btn {
+  width: 100%;
+}
+
+/* ── Section 6: settings — the page's one plain surface ─────────────── */
+.ink-profile-settings {
+  padding: clamp(1.4rem, 3vw, 2.25rem);
+}
+
+/* ── "Your stories" (between Rewards and Settings) ──────────────────── */
+.ink-profile-stories {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--ink-border-soft);
+}
+
+.ink-profile-story {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1rem 0.25rem;
+  border-bottom: 1px solid var(--ink-border-soft);
+}
+
+.ink-profile-story-main {
+  min-width: 0;
+}
+
+.ink-profile-story-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.ink-profile-story-title a {
+  color: var(--ink-text);
+  text-decoration: none;
+}
+
+.ink-profile-story-title a:hover {
+  color: var(--ink-orange);
+}
+
+.ink-profile-story-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0.35rem 0 0;
+  font-size: 0.76rem;
+  color: var(--ink-text-3);
+}
+
+/* A long title must not squash the status badge. */
+.ink-profile-story .ink-badge {
+  flex-shrink: 0;
+}
+
+.ink-profile-stories-more {
+  margin-top: 1.25rem;
+}
+
+/* Empty / loading copy, shared by the rewards and stories sections. */
+.ink-profile-empty {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--ink-text-3);
+}
+
+/* Two columns for the two short fields; Bio and the password take the full
+   width below them (set inline on each InkField). */
+.ink-profile-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.15rem;
+}
+
+.ink-profile-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--ink-border-soft);
+}
+
+.ink-profile-form-note {
+  font-size: 0.78rem;
+  color: var(--ink-text-3);
+}
+
+/* ── Desktop rail: sticky column ────────────────────────────────────── */
+@media (min-width: 1024px) {
+  .ink-rail {
+    position: sticky;
+    /* Clears the sticky Navbar. */
+    top: 104px;
+    max-height: calc(100vh - 128px);
+    overflow-y: auto;
+    padding-right: clamp(1rem, 2vw, 1.75rem);
+    border-right: 1px solid var(--ink-border-soft);
+  }
+
+  .ink-rail-boards {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .ink-profile-hero {
+    grid-template-columns: auto minmax(0, 1fr) minmax(240px, 320px);
+    grid-template-areas:
+      "avatar id    meter"
+      "stats  stats stats";
+  }
+}
+
+/* ── ≤1023.95: rail becomes a pill row above the content ────────────── */
+@media (max-width: 1023.95px) {
+  .ink-profile-shell {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.75rem;
+  }
+
+  /* One DOM, two layouts: no second drawer, no duplicated nav. */
+  .ink-rail {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .ink-rail-nav {
+    flex-direction: row;
+    gap: 0.5rem;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    padding-bottom: 0.35rem;
+    /* Bleed to the gutters so the row reads as scrollable rather than
+       clipped mid-pill. */
+    margin-inline: calc(var(--ink-gutter) * -1);
+    padding-inline: var(--ink-gutter);
+  }
+
+  .ink-rail-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ink-rail-link {
+    width: auto;
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    border-radius: 999px;
+    border-color: var(--ink-border-soft);
+    white-space: nowrap;
+  }
+
+  /* Not sticky here: the Navbar's sticky row has a variable height that the
+     rail would drift under. Sticky only at ≥1024, where it is a column. */
+  .ink-rail-boards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+
+  .ink-rail-sep {
+    display: none;
+  }
+}
+
+/* ── ≤899.95: stats and achievements reflow ─────────────────────────── */
+@media (max-width: 899.95px) {
+  .ink-profile-statgrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Rebuild the hairline pattern for the 2×2 so each row reads as its own
+     band instead of inheriting the 4-up left borders. */
+  .ink-profile-stat:nth-child(odd) {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .ink-profile-stat:nth-child(n + 3) {
+    border-top: 1px solid var(--ink-border-soft);
+  }
+
+  .ink-badge-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* The third badge takes the full row rather than sitting alone at half
+     width beside a gap. */
+  .ink-badge-tile:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ── ≤639.95: single column everywhere ──────────────────────────────── */
+@media (max-width: 639.95px) {
+  .ink-profile-hero {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "avatar"
+      "id"
+      "meter"
+      "stats";
+    justify-items: start;
+  }
+
+  .ink-badge-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ink-badge-tile:last-child {
+    grid-column: auto;
+  }
+
+  .ink-profile-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ink-profile-form-actions .ink-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 479.95px) {
+  .ink-profile-statgrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ink-profile-stat {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .ink-profile-stat:nth-child(n + 2) {
+    border-top: 1px solid var(--ink-border-soft);
+  }
+}

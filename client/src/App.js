@@ -16,7 +16,7 @@ import CommandPalette from "./components/CommandPalette";
 // and vice-versa. Keep the shell (Navbar, Toaster, providers) eager so the
 // chrome renders instantly.
 const Home = lazy(() => import("./pages/Home"));
-const Blogs = lazy(() => import("./pages/Blogs"));
+const Explore = lazy(() => import("./pages/Explore"));
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
@@ -49,15 +49,21 @@ function AppWrapper() {
   const location = useLocation();
   const isAdmin = user?.role === "Admin";
   const isAdminRoute = location.pathname.startsWith("/admin");
-  // The redesigned login page owns its own chrome (theme toggle + back home).
+  // The redesigned login page owns its own chrome (a way back home) and is
+  // a fixed dark composition, so the shell's navbar, footer and — via the
+  // palette — its theme switch all stay off it.
   const isImmersiveAuthRoute = location.pathname === "/login";
+  // The writing studio is an application shell of its own: a top bar, a
+  // 72px tool rail and a copilot panel replace the site's navbar/footer,
+  // which would otherwise sandwich a full-height app inside page chrome.
+  const isStudioRoute = location.pathname === "/create-blog";
 
   return (
     <MuiThemeProvider theme={themeInstance}>
       <CssBaseline />
       <CommandPalette />
       <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-        {!isAdminRoute && !isImmersiveAuthRoute && <Navbar />}
+        {!isAdminRoute && !isImmersiveAuthRoute && !isStudioRoute && <Navbar />}
         {/* Global toast shell — a glass card on the theme's surface. The
             unique per-event badges/icons live in utils/toasts.js. */}
         <Toaster
@@ -86,7 +92,11 @@ function AppWrapper() {
             {!isAdmin && (
                 <>
                   <Route path="/" element={<Home />} />
-                  <Route path="/blogs" element={<Blogs />} />
+                  {/* Explore is the rebuilt discovery page. `/blogs` is kept as
+                      a second path onto it so every existing link, bookmark and
+                      the navbar's own entry keep working unchanged. */}
+                  <Route path="/explore" element={<Explore />} />
+                  <Route path="/blogs" element={<Explore />} />
                   <Route path="/my-blogs" element={<UserBlogs />} />
                   <Route path="/blog-details/:id" element={<BlogDetails />} />
                   <Route path="/create-blog" element={<CreateBlog />} />
@@ -96,7 +106,7 @@ function AppWrapper() {
                   <Route path="/register" element={<Register />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/profile" element={<Profile />} />
-                  <Route path="/category/:category" element={<Blogs />} />
+                  <Route path="/category/:category" element={<Explore />} />
                   <Route path="/rewards" element={<Rewards />} />
                   <Route path="/notifications" element={<Notifications />} />
                   <Route path="/bookmarks" element={<Bookmarks />} />
@@ -118,7 +128,7 @@ function AppWrapper() {
           </ErrorBoundary>
           </Suspense>
         </Box>
-        {!isAdminRoute && !isImmersiveAuthRoute && <Footer />}
+        {!isAdminRoute && !isImmersiveAuthRoute && !isStudioRoute && <Footer />}
       </Box>
     </MuiThemeProvider>
   );

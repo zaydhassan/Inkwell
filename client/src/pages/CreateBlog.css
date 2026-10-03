@@ -1,0 +1,3238 @@
+/* ─────────────────────────────────────────────────────────────────────
+   Create Blog — the InkWell writing studio.
+
+   The studio is a three-zone application shell (72px tool rail · writing
+   canvas · 420px copilot panel) under a 64px top bar, replacing the site's
+   navbar/footer on this route — the studio IS the page.
+
+   Page-scoped only, mirroring the Home.css / About.css / Profile.css split.
+   Tokens, buttons, badges, fields, meters and surfaces come from
+   styles/inkwell.css; nothing there is redeclared. The few values the
+   studio needs that no token carries (the editor surface, the panel
+   surface, the 0.08 border) are declared as page-local custom properties
+   on .ist-row's ancestors below, never as literals scattered in rules.
+
+   The Quill skin lives HERE rather than in styles/quill-terracotta.css on
+   purpose: that sheet is global and still skins the light Edit Blog editor,
+   so repainting it would change a page this redesign does not touch.
+   ───────────────────────────────────────────────────────────────────── */
+
+.ink-write {
+  /* Studio surfaces + lines. The brief gives exact values for these three:
+     the editor canvas reads a touch deeper than the token card, the panel
+     a touch deeper than that, and its hairline sits between the shared
+     border tokens. */
+  --ist-editor: #171614;
+  --ist-panel: #11100F;
+  --ist-border: rgba(255, 255, 255, 0.08);
+  /* The right panel's width; immersive mode zeroes it via the shell. */
+  --ist-aside: 420px;
+  min-height: 100dvh;
+}
+
+.ink-write-shell {
+  /* The backdrop is `position: absolute; z-index: 0`, and a non-positioned
+     block paints BELOW a positioned zero-index sibling — without this the
+     glow, grid and grain would wash over the text. One stacking context
+     here lifts the whole page above the decoration. */
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   Top bar — 64px, translucent, three zones.
+   ═════════════════════════════════════════════════════════════════════ */
+
+.ist-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  height: 64px;
+  padding: 0 clamp(0.75rem, 2vw, 1.5rem);
+  background: rgba(15, 14, 13, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--ist-border);
+}
+
+.ist-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.ist-topbar-home {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  color: var(--ink-text-2);
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.ist-topbar-home .ist-topbar-back-icon {
+  font-size: 18px !important;
+}
+
+.ist-topbar-home:hover {
+  color: var(--ink-text);
+  border-color: var(--ist-border);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.ist-topbar-brand {
+  font-family: var(--ink-font-display);
+  font-size: 1.06rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink-text);
+  white-space: nowrap;
+}
+
+.ist-topbar-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--ist-border);
+}
+
+.ist-topbar-context {
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-text-3);
+  white-space: nowrap;
+}
+
+/* Center zone: the real autosave readout. Absolutely centered so it holds
+   its instrument-panel seat regardless of the side zones' widths. */
+.ist-topbar-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.ist-save-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  height: 32px;
+  padding: 0 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--ist-border);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-text-2);
+  white-space: nowrap;
+  transition: color 0.25s ease, border-color 0.25s ease;
+}
+
+.ist-save-chip .ist-save-icon {
+  font-size: 15px !important;
+  color: var(--ink-text-3);
+}
+
+.ist-save-chip.is-saving .ist-save-icon {
+  color: var(--ink-text-2);
+  animation: istSavePulse 1.1s ease-in-out infinite;
+}
+
+.ist-save-chip.is-saved {
+  color: var(--ink-text-2);
+}
+
+.ist-save-chip.is-saved .ist-save-icon {
+  color: var(--ink-orange);
+}
+
+@keyframes istSavePulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+
+.ist-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+/* Live figures, small-caps instrument style — reads as a gauge, not a link. */
+.ist-topbar-stats {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-text-3);
+  white-space: nowrap;
+}
+
+.ist-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* The studio's verbs are sentence-case and quiet — Notion/Linear register,
+   not the editorial page's tracked uppercase CTAs. Page-scoped override of
+   .ink-btn inside the top bar only. */
+.ist-topbar .ink-btn {
+  min-height: 40px;
+  padding: 0 1.05rem;
+  border-radius: 22px;
+  border-width: 1px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  gap: 0.4rem;
+}
+
+.ist-topbar .ink-btn-ghost {
+  background: rgba(21, 19, 17, 0.9);
+  color: var(--ink-text-2);
+}
+
+.ist-topbar .ink-btn-ghost:hover {
+  color: var(--ink-text);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--ist-border);
+  transform: none;
+}
+
+.ist-topbar .ist-topbar-publish {
+  min-height: 40px;
+}
+
+.ist-topbar .ist-topbar-publish:hover {
+  transform: none;
+}
+
+/* The mobile copilot doorknob (sparkle) — hidden where the pill sits. */
+.ist-topbar-ai-fab {
+  display: none;
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   The row: rail · main · side
+   ═════════════════════════════════════════════════════════════════════ */
+
+.ist-row {
+  display: grid;
+  /* The aside's track carries the panel's 20px side gutters, so the panel
+     element itself is exactly var(--ist-aside) wide. */
+  grid-template-columns: 72px minmax(0, 1fr) calc(var(--ist-aside) + 40px);
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Rail: the 72px instrument strip ────────────────────────────────── */
+
+.ist-rail {
+  position: sticky;
+  top: 64px;
+  height: calc(100dvh - 64px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 0 16px;
+  border-right: 1px solid var(--ink-border-soft);
+}
+
+.ist-rail-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 1.3rem;
+  border-radius: 12px;
+  color: var(--ink-orange);
+  transition: background-color 0.2s ease;
+}
+
+.ist-rail-logo svg {
+  display: block;
+  width: 26px;
+  height: 26px;
+}
+
+.ist-rail-logo:hover {
+  background: var(--ink-orange-softer);
+}
+
+.ist-rail-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.ist-rail-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.28rem;
+  width: 56px;
+  height: 54px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--ink-text-3);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.ist-rail-item .ist-rail-icon svg {
+  font-size: 20px !important;
+  transition: color 0.2s ease;
+}
+
+.ist-rail-label {
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.ist-rail-item:hover {
+  color: var(--ink-text-2);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.ist-rail-item.is-active {
+  color: var(--ink-text);
+  background: var(--ink-orange-soft);
+}
+
+.ist-rail-item.is-active .ist-rail-icon svg {
+  color: var(--ink-orange);
+}
+
+.ist-rail-bottom {
+  margin-top: auto;
+}
+
+/* Popover close button shared with the templates card. */
+.ist-rail-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink-text-3);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.ist-rail-x:hover {
+  color: var(--ink-text);
+  border-color: var(--ist-border);
+}
+
+.ist-rail-x svg {
+  font-size: 16px !important;
+}
+
+/* ── Main column: the canvas floats centered over the page canvas ───── */
+
+.ist-main {
+  min-width: 0;
+  position: relative;
+  padding: clamp(1.1rem, 2.4vw, 2rem) var(--ink-gutter) clamp(6.5rem, 12vh, 8.5rem);
+}
+
+/* ── Canvas card ────────────────────────────────────────────────────── */
+
+.ist-canvas {
+  position: relative;
+  max-width: 880px;
+  margin: 0 auto;
+  border: 1px solid var(--ist-border);
+  border-radius: 16px;
+  background: var(--ist-editor);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  /* NO `overflow: hidden` here on purpose — Quill's pickers open as
+     absolutely-positioned dropdowns INSIDE the toolbar, and clipping the
+     canvas would cut them off. Radii are matched per-corner below instead. */
+  isolation: isolate;
+}
+
+/* The brief's one ambient moment: an extremely subtle warm wash high in
+   the card, never a hero gradient. Layered UNDER content (the canvas's
+   own stacking context keeps it below text). */
+.ist-canvas::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 15.5px;
+  background:
+    radial-gradient(58% 30% at 50% -6%, rgba(255, 106, 0, 0.05), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* The grid texture — 44px hairlines at ~2% white, a print-press feel at
+   arm's length, invisible in the way a texture should be. */
+.ist-canvas::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 15.5px;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.75), transparent 62%);
+  -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.75), transparent 62%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ist-canvas > * {
+  position: relative;
+  z-index: 1;
+}
+
+.ist-canvas-toprow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.05rem clamp(1.25rem, 3vw, 2rem) 0;
+}
+
+.ist-cover-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 34px;
+  padding: 0 0.95rem;
+  border-radius: 999px;
+  border: 1px solid var(--ist-border);
+  background: rgba(255, 255, 255, 0.025);
+  font-family: var(--ink-font-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-text-2);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.ist-cover-pill:hover {
+  color: var(--ink-text);
+  border-color: var(--ink-border-warm);
+  background: var(--ink-orange-softer);
+}
+
+.ist-cover-pill--set {
+  color: var(--ink-orange);
+  border-color: rgba(255, 106, 0, 0.28);
+  background: var(--ink-orange-softer);
+}
+
+.ist-cover-pill-icon,
+.ist-immersive-toggle svg {
+  font-size: 15px !important;
+}
+
+.ist-immersive-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--ink-text-3);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.ist-immersive-toggle:hover {
+  color: var(--ink-text);
+  border-color: var(--ist-border);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* ── The compact cover strip, expanded from the pill ────────────────── */
+
+.ist-cover-strip {
+  margin: 0.85rem clamp(1.25rem, 3vw, 2rem) 0;
+  padding: 0.9rem;
+  border: 1px solid var(--ink-border-soft);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.ist-cover-strip .ink-cover-modes {
+  margin-bottom: 0.75rem;
+  gap: 0.4rem;
+}
+
+.ist-cover-strip .ink-cover-mode {
+  padding: 0.35rem 0.8rem;
+  font-size: 0.7rem;
+}
+
+.ist-cover-strip-foot {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ist-cover-strip-ghost {
+  padding: 0.25rem 0;
+  border: 0;
+  background: none;
+  font-family: var(--ink-font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-text-3);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.ist-cover-strip-ghost:hover {
+  color: #f87171;
+}
+
+/* ── The cover band: the chosen image as the story's masthead ───────── */
+
+.ist-cover-band {
+  margin: 1rem clamp(1.25rem, 3vw, 2rem) 0.25rem;
+  border-radius: 12px;
+  border: 1px solid var(--ink-border-soft);
+  overflow: hidden;
+  max-height: 260px;
+}
+
+.ist-cover-band img {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+  object-fit: cover;
+}
+
+/* ── Headline + byline ──────────────────────────────────────────────── */
+
+.ist-title-block {
+  padding: 1.15rem clamp(1.25rem, 3vw, 2rem) 0;
+}
+
+/* Borderless headline — reads as an editor, not a form field. */
+.ist-title {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--ink-font-display);
+  font-size: clamp(2.1rem, 4.4vw, 3.6rem);
+  font-weight: 800;
+  letter-spacing: -0.028em;
+  line-height: 1.08;
+  color: var(--ink-text);
+}
+
+.ist-title::placeholder {
+  color: var(--ink-text-3-decor);
+  font-weight: 700;
+  opacity: 1;
+}
+
+/* No `outline: none` on focus here, deliberately: the shared
+   `.ink :where(input):focus-visible` rule paints the orange ring, and a
+   borderless headline still needs a visible focus indicator. */
+
+.ist-byline {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+  font-size: 0.76rem;
+  color: var(--ink-text-3);
+}
+
+.ist-byline-name {
+  font-weight: 700;
+  color: var(--ink-text-2);
+}
+
+.ist-byline-dot {
+  color: var(--ink-text-3-decor);
+}
+
+.ist-byline-meta {
+  min-width: 0;
+}
+
+/* ── Quill skin ─────────────────────────────────────────────────────── */
+
+/* The toolbar WRAPS rather than scrolling. `overflow-x: auto` forces
+   `overflow-y` to compute to `auto` as well, which would trap every picker
+   dropdown in a scroll box — so a scrolling toolbar and working pickers are
+   mutually exclusive. Wrapping keeps every format reachable at every width,
+   and on wide screens the wrapped rows still fit the 52–58px pill. */
+.ink-write .ql-toolbar.ql-snow {
+  /* The floating pill: detached from the canvas edges as a hairline card that
+     rides the viewport (sticky) while the draft scrolls past. One layer above
+     the canvas content so an open picker dropdown is never painted under it. */
+  position: sticky;
+  top: 76px;
+  z-index: 2;
+  margin: 0.8rem clamp(1.25rem, 3vw, 2rem) 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 0.55rem clamp(0.8rem, 2vw, 1.1rem);
+  border: 1px solid var(--ist-border);
+  border-radius: 14px;
+  background: var(--ink-bgAlt);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
+  font-family: var(--ink-font-body);
+}
+
+.ink-write .ql-snow .ql-formats {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 0.35rem;
+  margin-bottom: 0.12rem;
+}
+
+.ink-write .ql-snow .ql-formats:last-child {
+  margin-right: 0;
+}
+
+.ink-write .ql-snow.ql-toolbar button {
+  width: 30px;
+  height: 30px;
+  padding: 5px;
+  border-radius: 8px;
+  transition: background-color 0.18s ease;
+}
+
+.ink-write .ql-snow.ql-toolbar button:hover,
+.ink-write .ql-snow.ql-toolbar button:focus-visible {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.ink-write .ql-snow.ql-toolbar button.ql-active {
+  background: var(--ink-orange-soft);
+}
+
+/* Outline icons carry `.ql-stroke` (whose own `fill: none` must be left
+   alone), solid icons carry `.ql-fill`. Kept as separate rules so setting a
+   fill never accidentally floods a stroke-only glyph. Order is
+   base → hover → active, so an active control keeps the orange on hover. */
+.ink-write .ql-snow .ql-stroke {
+  stroke: var(--ink-text-2);
+}
+
+.ink-write .ql-snow.ql-toolbar button:hover .ql-stroke {
+  stroke: var(--ink-text);
+}
+
+.ink-write .ql-snow.ql-toolbar button.ql-active .ql-stroke {
+  stroke: var(--ink-orange);
+}
+
+.ink-write .ql-snow .ql-fill,
+.ink-write .ql-snow .ql-stroke.ql-fill {
+  fill: var(--ink-text-2);
+}
+
+.ink-write .ql-snow.ql-toolbar button:hover .ql-fill,
+.ink-write .ql-snow.ql-toolbar button:hover .ql-stroke.ql-fill {
+  fill: var(--ink-text);
+}
+
+.ink-write .ql-snow.ql-toolbar button.ql-active .ql-fill,
+.ink-write .ql-snow.ql-toolbar button.ql-active .ql-stroke.ql-fill {
+  fill: var(--ink-orange);
+}
+
+/* Pickers: size, header, colour, background, font, align. */
+.ink-write .ql-snow .ql-picker {
+  color: var(--ink-text-2);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.ink-write .ql-snow .ql-picker-label {
+  border: 0;
+  border-radius: 8px;
+  padding-left: 6px;
+  padding-right: 3px;
+  transition: color 0.18s ease;
+}
+
+.ink-write .ql-snow .ql-picker-label:hover {
+  color: var(--ink-text);
+}
+
+.ink-write .ql-snow .ql-picker-label.ql-active {
+  color: var(--ink-orange);
+}
+
+.ink-write .ql-snow .ql-picker-label .ql-stroke {
+  stroke: var(--ink-text-2);
+}
+
+.ink-write .ql-snow .ql-picker-label:hover .ql-stroke {
+  stroke: var(--ink-text);
+}
+
+.ink-write .ql-snow .ql-picker-options {
+  z-index: 3;
+  padding: 0.4rem 0.5rem;
+  border-radius: 12px;
+  background: var(--ink-card-hi);
+  border: 1px solid var(--ink-border);
+  box-shadow: var(--ink-shadow-card);
+}
+
+.ink-write .ql-snow .ql-picker-item {
+  padding: 0.3rem 0.35rem;
+  border-radius: 8px;
+  color: var(--ink-text-2);
+  transition: background-color 0.16s ease, color 0.16s ease;
+}
+
+.ink-write .ql-snow .ql-picker-item:hover,
+.ink-write .ql-snow .ql-picker-item.ql-selected {
+  color: var(--ink-text);
+  background: var(--ink-orange-softer);
+}
+
+/* The editor grows with the writing instead of scrolling inside a fixed box,
+   so the canvas reads as a page rather than a textarea. Body copy sits at
+   17–19px / 1.75 within a measure that never stretches at desktop width. */
+.ink-write .ql-container.ql-snow {
+  height: auto;
+  border: 0;
+  font-family: var(--ink-font-body);
+  font-size: 1.1rem;
+  color: var(--ink-text);
+}
+
+.ink-write .ql-editor {
+  height: auto;
+  min-height: clamp(420px, calc(100dvh - 64px - 330px), 680px);
+  overflow-y: visible;
+  /* Measure: the editor's own comfortable width, never the full card. */
+  max-width: 760px;
+  margin-inline: auto;
+  padding: clamp(1.25rem, 3vw, 2.25rem) clamp(1.15rem, 3vw, 2.25rem);
+  line-height: 1.75;
+  color: var(--ink-text);
+  background: transparent;
+}
+
+.ink-write .ql-editor.ql-blank::before {
+  left: clamp(1.15rem, 3vw, 2.25rem);
+  right: clamp(1.15rem, 3vw, 2.25rem);
+  color: var(--ink-text-3-decor);
+  font-style: normal;
+  opacity: 1;
+}
+
+/* Content styles inside the canvas. */
+.ink-write .ql-editor h1,
+.ink-write .ql-editor h2,
+.ink-write .ql-editor h3,
+.ink-write .ql-editor h4,
+.ink-write .ql-editor h5,
+.ink-write .ql-editor h6 {
+  font-family: var(--ink-font-display);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink-text);
+}
+
+.ink-write .ql-editor blockquote {
+  margin: 0.9rem 0;
+  padding: 0.5rem 0 0.5rem 1.1rem;
+  border-left: 3px solid var(--ink-orange);
+  background: var(--ink-orange-softer);
+  color: var(--ink-text-2);
+}
+
+.ink-write .ql-editor pre,
+.ink-write .ql-editor code {
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ink-text);
+}
+
+.ink-write .ql-editor pre {
+  padding: 0.85rem 1rem;
+}
+
+.ink-write .ql-editor a {
+  color: var(--ink-orange);
+}
+
+.ink-write .ql-snow .ql-tooltip {
+  padding: 0.5rem 0.75rem;
+  border-radius: 12px;
+  background: var(--ink-card-hi);
+  border: 1px solid var(--ink-border);
+  color: var(--ink-text);
+  box-shadow: var(--ink-shadow-card);
+}
+
+.ink-write .ql-snow .ql-tooltip input[type="text"] {
+  padding: 0.3rem 0.5rem;
+  border-radius: 8px;
+  background: rgba(15, 14, 13, 0.6);
+  border: 1px solid var(--ink-border);
+  color: var(--ink-text);
+}
+
+/* The helper under the empty editor — the AI nudge. The bottom clearance
+   keeps it out of the floating voice dock's band at small viewport heights. */
+.ist-editor-helper {
+  margin: 0.4rem 0 4.25rem;
+  text-align: center;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--ink-text-3);
+}
+
+.ist-editor-helper-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink-orange);
+  cursor: pointer;
+}
+
+.ist-editor-helper-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Editor foot: the streak chip ────────────────────────────────────── */
+.ist-canvas-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding: 0.85rem clamp(1.15rem, 3vw, 2.25rem) 1rem;
+  border-top: 1px solid var(--ink-border-soft);
+}
+
+/* Field errors: inside the padded card, with a shared side inset. */
+.ink-write-error {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: #f87171;
+}
+
+.ist-canvas-error-inset {
+  padding: 0 1.5rem;
+  margin: 0.35rem 0 0;
+}
+
+/* The conventional visually-hidden recipe, page-scoped so it can't collide
+   with anything global. Used by the checklist to state each item's done-ness
+   in text, since the tick itself is aria-hidden. */
+.ink-write-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Voice dictation: compact, floating bottom-left of the canvas ────── */
+
+.ink-voice {
+  position: fixed;
+  left: 92px; /* clear of the 72px rail */
+  bottom: 22px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: min(420px, calc(100vw - 24px));
+  padding: 0.65rem 0.9rem;
+  border-radius: 16px;
+  border: 1px solid var(--ist-border);
+  background: rgba(17, 16, 15, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.ink-voice.is-live {
+  border-color: var(--ink-border-warm);
+  box-shadow: var(--ink-glow-soft), 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* Immersive: the canvas floats alone — tuck the dock beside its edge. */
+[data-immersive] .ink-voice {
+  left: calc(50% - min(370px, 44vw) - 1.5rem);
+}
+
+.ink-voice-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--ink-border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink-text-2);
+  cursor: pointer;
+  transition: background-color 0.22s ease, color 0.22s ease,
+    border-color 0.22s ease;
+}
+
+.ink-voice-btn svg {
+  font-size: 18px !important;
+}
+
+.ink-voice-btn:hover {
+  color: var(--ink-text);
+  border-color: var(--ink-border-warm);
+  background: var(--ink-orange-softer);
+}
+
+.ink-voice.is-live .ink-voice-btn {
+  background: var(--ink-orange);
+  border-color: var(--ink-orange);
+  color: #17110c;
+  animation: inkVoicePulse 2.2s ease-in-out infinite;
+}
+
+@keyframes inkVoicePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 106, 0, 0.42); }
+  70% { box-shadow: 0 0 0 12px rgba(255, 106, 0, 0); }
+}
+
+.ink-voice-text {
+  min-width: 0;
+}
+
+.ink-voice-title {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink-text);
+}
+
+.ink-voice-hint {
+  margin: 0.1rem 0 0;
+  font-size: 0.68rem;
+  color: var(--ink-text-3);
+}
+
+/* Five bars breathing out of phase — enough to read as "live" without
+   becoming a light show. */
+.ink-voice-wave {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 20px;
+  margin-left: auto;
+}
+
+.ink-voice-bar {
+  width: 3px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--ink-orange);
+  animation: inkVoiceBar 1.05s ease-in-out infinite;
+}
+
+.ink-voice-bar:nth-child(2) { animation-delay: 0.14s; }
+.ink-voice-bar:nth-child(3) { animation-delay: 0.28s; }
+.ink-voice-bar:nth-child(4) { animation-delay: 0.42s; }
+.ink-voice-bar:nth-child(5) { animation-delay: 0.56s; }
+
+@keyframes inkVoiceBar {
+  0%, 100% { height: 6px; }
+  50% { height: 18px; }
+}
+
+.ink-voice-time {
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-orange);
+  white-space: nowrap;
+}
+
+/* ── The Ask InkWell AI pill — the copilot's doorknob ───────────────── */
+
+.ist-ai-pill {
+  position: fixed;
+  right: calc(var(--ist-aside) + 26px);
+  bottom: 26px;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  height: 46px;
+  padding: 0 1.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 106, 0, 0.45);
+  background: rgba(255, 106, 0, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-family: var(--ink-font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink-text);
+  cursor: pointer;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.35), 0 6px 26px rgba(255, 106, 0, 0.12);
+  transition: border-color 0.22s ease, background-color 0.22s ease,
+    box-shadow 0.22s ease, transform 0.22s ease;
+}
+
+.ist-ai-pill > span:first-child {
+  color: var(--ink-orange);
+  font-size: 0.95rem;
+}
+
+.ist-ai-pill:hover {
+  border-color: rgba(255, 106, 0, 0.7);
+  background: rgba(255, 106, 0, 0.09);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.35), 0 8px 32px rgba(255, 106, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+.ist-ai-pill-kbd {
+  padding: 0.1rem 0.42rem;
+  border-radius: 6px;
+  border: 1px solid var(--ist-border);
+  background: rgba(15, 14, 13, 0.65);
+  font-family: var(--ink-font-body);
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--ink-text-3);
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   Right panel — tabs + scrolling content
+   ═════════════════════════════════════════════════════════════════════ */
+
+.ist-side {
+  display: flex;
+  flex-direction: column;
+  align-self: start;
+  width: calc(100% - 40px);
+  position: sticky;
+  top: 80px;
+  height: calc(100dvh - 96px);
+  margin: 16px 20px;
+  border: 1px solid var(--ist-border);
+  border-radius: 18px;
+  background: var(--ist-panel);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.ist-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 0.15rem;
+  padding: 0.65rem 0.6rem 0;
+  border-bottom: 1px solid var(--ink-border-soft);
+}
+
+.ist-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  flex: 1 1 0;
+  padding: 0.55rem 0.3rem 0.7rem;
+  border: 0;
+  background: none;
+  font-family: var(--ink-font-body);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--ink-text-3);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.ist-tab svg {
+  font-size: 14px !important;
+}
+
+.ist-tab:hover {
+  color: var(--ink-text-2);
+}
+
+.ist-tab.is-active {
+  color: var(--ink-text);
+}
+
+.ist-tab-spark {
+  color: var(--ink-orange);
+}
+
+/* The shared underline — a 2px orange rail that slides between tabs. */
+.ist-tab-underline {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--ink-orange);
+}
+
+.ist-side-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Gutter for the content + room for the focus ring. */
+  padding: 1.15rem 1.05rem 1.8rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
+.ist-side-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ist-side-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+}
+
+.ist-panel-slot > * + * {
+  margin-top: 0.35rem;
+}
+
+/* ── Drawer chrome (grabber row) — desktop hides it ─────────────────── */
+.ist-drawer-bar {
+  display: none;
+}
+
+.ist-drawer-grab {
+  width: 42px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.ist-drawer-title {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-text-3);
+}
+
+.ist-drawer-quick {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: none;
+  color: var(--ink-text-3);
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.ist-drawer-quick:hover {
+  color: var(--ink-text);
+  border-color: var(--ist-border);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.ist-drawer-quick svg {
+  font-size: 18px !important;
+}
+
+/* Drawer backdrop — desktop never shows it (panelOpen also true there). */
+.ist-drawer-backdrop {
+  display: none;
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   The copilot column
+   ═════════════════════════════════════════════════════════════════════ */
+
+.ist-ai {
+  display: flex;
+  flex-direction: column;
+}
+
+.ist-ai-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.ist-ai-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-family: var(--ink-font-display);
+  font-size: 1.32rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink-text);
+}
+
+.ist-ai-title-icon {
+  color: var(--ink-orange) !important;
+  font-size: 19px !important;
+}
+
+.ist-ai-sub {
+  margin: 0.35rem 0 0;
+  font-size: 0.74rem;
+  letter-spacing: 0.01em;
+  color: var(--ink-text-3);
+}
+
+.ist-ai-how {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-shrink: 0;
+  padding: 0.2rem 0;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 106, 0, 0.5);
+  background: none;
+  font-family: var(--ink-font-body);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--ink-orange);
+  cursor: pointer;
+}
+
+.ist-ai-how:hover {
+  color: #ff8a3d;
+}
+
+.ist-ai-how-body {
+  margin: 0.55rem 0 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--ink-border-soft);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 0.74rem;
+  line-height: 1.65;
+  color: var(--ink-text-2);
+}
+
+/* ── Offline notice: shown whenever no provider is configured ──────── */
+
+.ist-ai-offline {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.ist-ai-offline-icon {
+  flex-shrink: 0;
+  color: var(--ink-text-3) !important;
+  font-size: 17px !important;
+  margin-top: 2px;
+}
+
+.ist-ai-offline-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: var(--ink-text-2);
+}
+
+.ist-ai-offline-text strong {
+  color: var(--ink-text);
+  font-weight: 700;
+}
+
+.ist-ai-offline-hint {
+  width: 100%;
+  margin: 0.3rem 0 0;
+  font-size: 0.66rem;
+  line-height: 1.5;
+  color: var(--ink-text-3);
+}
+
+/* ── Chat thread ─────────────────────────────────────────────────────── */
+
+.ist-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-bottom: 0.55rem;
+}
+
+.ist-chat-empty {
+  margin: 0 0 0.35rem;
+  font-size: 0.74rem;
+  line-height: 1.55;
+  color: var(--ink-text-3);
+}
+
+.ist-chat-msg {
+  padding: 0.55rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.76rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ist-chat-msg.is-user {
+  align-self: flex-end;
+  max-width: 92%;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--ink-border-soft);
+  color: var(--ink-text);
+}
+
+.ist-chat-msg.is-ai {
+  align-self: flex-start;
+  max-width: 96%;
+  background: rgba(255, 106, 0, 0.05);
+  border: 1px solid rgba(255, 106, 0, 0.14);
+  color: var(--ink-text-2);
+}
+
+.ist-thinking {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--ink-text-3);
+}
+
+.ist-thinking-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-orange);
+  animation: istSavePulse 1s ease-in-out infinite;
+}
+
+/* ── Chat input ──────────────────────────────────────────────────────── */
+
+.ist-chat-input {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 52px;
+  padding: 0 0.5rem 0 0.95rem;
+  border: 1px solid var(--ink-border);
+  border-radius: 15px;
+  background: rgba(21, 19, 17, 0.65);
+  transition: border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.ist-chat-input:focus-within {
+  border-color: rgba(255, 106, 0, 0.4);
+  box-shadow: var(--ink-glow-soft);
+}
+
+.ist-chat-input input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--ink-font-body);
+  font-size: 0.8rem;
+  color: var(--ink-text);
+  outline: none;
+}
+
+.ist-chat-input input::placeholder {
+  color: var(--ink-text-3-decor);
+}
+
+.ist-chat-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 12px;
+  border: 0;
+  background: var(--ink-orange);
+  color: #17110c;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(255, 106, 0, 0.25);
+  transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+}
+
+.ist-chat-send svg {
+  font-size: 17px !important;
+}
+
+.ist-chat-send:hover {
+  background: var(--ink-orange-2);
+  transform: translateY(-1px);
+}
+
+.ist-chat-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Section eyebrow — shared by all three copilot sections ─────────── */
+
+.ist-ai-eyebrow {
+  margin: 1.25rem 0 0.6rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-text-3);
+}
+
+/* ── Quick actions: the 2×4 grid ────────────────────────────────────── */
+
+.ist-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ist-quick {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: #191816;
+  font-family: var(--ink-font-body);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease,
+    transform 0.2s ease, opacity 0.2s ease;
+}
+
+.ist-quick:hover {
+  border-color: rgba(255, 106, 0, 0.3);
+  background: #1D1C19;
+}
+
+.ist-quick:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.ist-quick-icon {
+  flex-shrink: 0;
+  font-size: 17px !important;
+  color: var(--ink-text-2) !important;
+  margin-top: 1px;
+  transition: color 0.2s ease;
+}
+
+.ist-quick:hover .ist-quick-icon,
+.ist-quick.is-running .ist-quick-icon {
+  color: var(--ink-orange) !important;
+}
+
+.ist-quick-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.ist-quick-title {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--ink-text);
+  line-height: 1.25;
+}
+
+.ist-quick-desc {
+  font-size: 0.66rem;
+  line-height: 1.35;
+  color: var(--ink-text-3);
+}
+
+/* ── Suggestion card ────────────────────────────────────────────────── */
+
+.ist-suggestion {
+  margin-top: 0.9rem;
+  padding: 0.85rem 0.9rem 0.9rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 106, 0, 0.35);
+  background: linear-gradient(180deg, rgba(255, 106, 0, 0.055), rgba(25, 24, 22, 0.98) 55%);
+}
+
+.ist-suggestion-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.ist-suggestion-eyebrow {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-orange);
+}
+
+.ist-suggestion-close,
+.ist-enhance-dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink-text-3);
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.ist-suggestion-close:hover,
+.ist-enhance-dismiss:hover {
+  color: var(--ink-text);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.ist-suggestion-close svg {
+  font-size: 15px !important;
+}
+
+.ist-suggestion-title {
+  margin: 0.45rem 0 0;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--ink-text);
+}
+
+.ist-suggestion-diff {
+  margin-top: 0.6rem;
+  padding: 0.75rem;
+  border-radius: 11px;
+  border: 1px solid rgba(255, 106, 0, 0.16);
+  background: rgba(15, 14, 13, 0.45);
+}
+
+.ist-suggestion-label {
+  margin: 0 0 0.25rem;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-text-3);
+}
+
+.ist-suggestion-label--ai {
+  margin-top: 0.55rem;
+  color: var(--ink-orange);
+}
+
+.ist-suggestion-src {
+  margin: 0;
+  font-size: 0.76rem;
+  line-height: 1.6;
+  color: var(--ink-text-3);
+  text-decoration: line-through;
+  text-decoration-color: rgba(255, 255, 255, 0.25);
+  max-height: 7.5rem;
+  overflow: hidden;
+}
+
+.ist-suggestion-body {
+  margin: 0;
+  font-size: 0.79rem;
+  line-height: 1.65;
+  color: var(--ink-text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 15rem;
+  overflow-y: auto;
+}
+
+.ist-suggestion-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.85rem;
+}
+
+/* The studio's compact verb buttons — sentence case, 32px, none of the
+   editorial page's tracked uppercase (this column is dense UI). */
+.ist-suggest-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  height: 32px;
+  padding: 0 0.85rem;
+  border-radius: 10px;
+  border: 0;
+  background: var(--ink-orange);
+  font-family: var(--ink-font-body);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #17110c;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.ist-suggest-btn svg {
+  font-size: 13px !important;
+}
+
+.ist-suggest-btn:hover {
+  background: var(--ink-orange-2);
+  transform: translateY(-1px);
+}
+
+.ist-suggest-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  height: 32px;
+  padding: 0 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: none;
+  font-family: var(--ink-font-body);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--ink-text-2);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.ist-suggest-ghost svg {
+  font-size: 13px !important;
+}
+
+.ist-suggest-ghost:hover {
+  color: var(--ink-text);
+  border-color: var(--ink-border-warm);
+  background: var(--ink-orange-softer);
+}
+
+.ist-suggest-btn:disabled,
+.ist-suggest-ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Insights meters ────────────────────────────────────────────────── */
+
+.ist-insights {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.85rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid var(--ink-border-soft);
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.ist-insights-working {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-text-2);
+}
+
+.ist-insights-empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.ist-insights-empty p {
+  margin: 0;
+  font-size: 0.74rem;
+  color: var(--ink-text-3);
+}
+
+.ist-insight-cta,
+.ist-insight-again {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 30px;
+  padding: 0 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 106, 0, 0.3);
+  background: var(--ink-orange-softer);
+  font-family: var(--ink-font-body);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--ink-orange);
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.ist-insight-cta svg,
+.ist-insight-again svg {
+  font-size: 13px !important;
+}
+
+.ist-insight-cta:hover,
+.ist-insight-again:hover {
+  background: var(--ink-orange-soft);
+  border-color: rgba(255, 106, 0, 0.55);
+}
+
+.ist-insight {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr) 30px;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.ist-insight-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink-text-2);
+}
+
+.ist-insight-value {
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--ink-text-2);
+}
+
+/* Squeeze the shared meter into this column: 5px rail, orange fill. The
+   global meter keeps its own rules untouched. */
+.ist-insight .ink-meter {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 0;
+  overflow: hidden;
+}
+
+.ist-insight .ink-meter-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--ink-orange-2), var(--ink-orange));
+  transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── Suggested enhancements ─────────────────────────────────────────── */
+
+.ist-enhance {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ist-enhance-empty {
+  margin: 0.2rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.55;
+  color: var(--ink-text-3);
+}
+
+.ist-enhance-item {
+  padding: 0.7rem 0.8rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: #191816;
+}
+
+.ist-enhance-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+.ist-enhance-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.14rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 106, 0, 0.25);
+  background: var(--ink-orange-softer);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-orange);
+}
+
+.ist-enhance-badge--note {
+  border-color: var(--ink-border-soft);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink-text-3);
+}
+
+.ist-enhance-note {
+  margin: 0 0 0.55rem;
+  font-size: 0.74rem;
+  line-height: 1.6;
+  color: var(--ink-text-2);
+}
+
+.ist-enhance-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   Details / SEO / Publish tab shared bits
+   ═════════════════════════════════════════════════════════════════════ */
+
+.ist-seo-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.ist-seo-icon {
+  color: var(--ink-orange) !important;
+  font-size: 18px !important;
+  margin-top: 2px;
+}
+
+.ist-seo-title {
+  margin: 0;
+  font-family: var(--ink-font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--ink-text);
+}
+
+.ist-side-note {
+  margin: 0.3rem 0 0;
+  font-size: 0.7rem;
+  line-height: 1.5;
+  color: var(--ink-text-3);
+}
+
+.ist-seo-list {
+  display: flex;
+  flex-direction: column;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ist-seo-item {
+  display: flex;
+  gap: 0.65rem;
+  padding: 0.75rem 0.1rem;
+}
+
+.ist-seo-item + .ist-seo-item {
+  border-top: 1px solid var(--ink-border-soft);
+}
+
+.ist-seo-state-dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--ink-text-3-decor);
+}
+
+.is-good .ist-seo-state-dot {
+  /* Success reads as a calm sage, not a neon green. */
+  background: #7a9e76;
+  box-shadow: 0 0 0 3px rgba(122, 158, 118, 0.12);
+}
+
+.is-warn .ist-seo-state-dot {
+  background: var(--ink-orange);
+  box-shadow: 0 0 0 3px rgba(255, 106, 0, 0.12);
+}
+
+.ist-seo-body {
+  min-width: 0;
+}
+
+.ist-seo-item-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink-text);
+}
+
+.ist-seo-state-word {
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-text-3);
+  margin-left: auto;
+}
+
+.is-good .ist-seo-state-word {
+  color: #7a9e76;
+}
+
+.is-warn .ist-seo-state-word {
+  color: var(--ink-orange);
+}
+
+.ist-seo-item-value {
+  margin: 0.25rem 0 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-text-2);
+}
+
+.ist-seo-item-note {
+  margin: 0.3rem 0 0;
+  font-size: 0.68rem;
+  line-height: 1.5;
+  color: var(--ink-text-3);
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   Sidebar panels (Details/Cover/Schedule/Checklist reuse) — carried over
+   unchanged: one column of hairline-separated collapsible sections.
+   ═════════════════════════════════════════════════════════════════════ */
+
+/* (Panel classes .ink-panel* are defined in the retained block below.) */
+
+/* ═════════════════════════════════════════════════════════════════════
+   Retained panels: categories, cover, schedule, checklist, error, sr
+   ═════════════════════════════════════════════════════════════════════ */
+
+.ink-panel {
+  border-bottom: 1px solid var(--ink-border-soft);
+  padding-bottom: 1.15rem;
+}
+
+.ink-panel:last-child {
+  border-bottom: 0;
+}
+
+/* The panel title is a real <h2> for document structure; the heading box
+   itself carries no styling of its own. */
+.ink-panel-heading {
+  margin: 0;
+  font: inherit;
+}
+
+.ink-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  padding: 0.55rem 0.15rem;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  color: var(--ink-text);
+  cursor: pointer;
+}
+
+.ink-panel-head-icon {
+  display: inline-flex;
+  color: var(--ink-text-3);
+  flex-shrink: 0;
+}
+
+.ink-panel-head-icon svg {
+  font-size: 16px !important;
+}
+
+.ink-panel.is-open .ink-panel-head-icon {
+  color: var(--ink-orange);
+}
+
+.ink-panel-title {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.ink-panel-meta {
+  margin-left: auto;
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-text-3);
+  white-space: nowrap;
+}
+
+.ink-panel-meta.is-accent {
+  color: var(--ink-orange);
+}
+
+.ink-panel-chevron {
+  display: inline-flex;
+  margin-left: 0.15rem;
+  color: var(--ink-text-3);
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ink-panel.is-open .ink-panel-chevron {
+  transform: rotate(180deg);
+}
+
+.ink-panel-chevron svg {
+  font-size: 16px !important;
+}
+
+.ink-panel-body {
+  padding: 0.35rem 0.15rem 0;
+}
+
+.ink-panel-label {
+  display: block;
+  margin-bottom: 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-text-2);
+}
+
+.ink-panel-hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.74rem;
+  line-height: 1.55;
+  color: var(--ink-text-3);
+}
+
+/* A hint that LEADS a panel (Schedule) sits flush to the top instead of
+   leaving a gap under the heading. */
+.ink-panel-body > .ink-panel-hint:first-child {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.ink-panel-error {
+  margin: 0.6rem 0 0;
+  font-size: 0.76rem;
+  color: #f87171;
+}
+
+/* ── Details tab: the article-metadata workspace ────────────────────── */
+/* Studio-local (ist-*) names throughout, so nothing here can reach the
+   Explore page's filter row, which owns a top-level `.ink-pill` of its own
+   in Explore.css. That name collision is half of why the category buttons
+   were rendering as UA-default: the studio's buttons asked for `.ink-pill`,
+   CreateBlog.css declared only a `.ink-pill:hover`, and a bare <button> with
+   no base rule paints the UA's white buttonface and black outset border.
+
+   The other half is the reset. Every control below sets `appearance: none`
+   and `font: inherit` explicitly — `font: inherit` FIRST, because the
+   shorthand would otherwise wipe the size and weight declared after it. */
+
+.ist-det {
+  display: flex;
+  flex-direction: column;
+  /* The breath the section header asks for before the first block. */
+  padding-top: 20px;
+}
+
+/* The section rhythm: header · 20 · Category · 18 · Tags · 20 · metadata ·
+   20 · goal. Each block carries its own step so the exceptions are visible
+   at the rule rather than hidden in a shared gap. */
+.ist-det-block {
+  margin-top: 18px;
+}
+
+.ist-det-block:first-child {
+  margin-top: 0;
+}
+
+.ist-det-label {
+  display: block;
+  margin-bottom: 11px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-text-3-decor);
+}
+
+.ist-det-error {
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: #f87171;
+}
+
+/* ── Category pills ─────────────────────────────────────────────────── */
+.ist-cat-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.ist-cat-pill {
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: var(--ink-text-2);
+  font-family: var(--ink-font-body);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease,
+    color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.ist-cat-pill:not(.is-on):hover {
+  background: rgba(255, 106, 0, 0.07);
+  border-color: rgba(255, 106, 0, 0.25);
+  color: var(--ink-text);
+  transform: translateY(-1px);
+}
+
+.ist-cat-pill:focus-visible {
+  outline: 2px solid var(--ink-orange);
+  outline-offset: 2px;
+}
+
+/* Selected is a TINTED pill, never a solid orange fill — the category is
+   data the writer picked, not a primary action. */
+.ist-cat-pill.is-on {
+  background: rgba(255, 106, 0, 0.12);
+  border-color: rgba(255, 106, 0, 0.35);
+  color: var(--ink-orange);
+  box-shadow: 0 0 18px rgba(255, 106, 0, 0.06);
+}
+
+/* ── Tag field ──────────────────────────────────────────────────────── */
+.ist-tag-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 48px;
+  /* 7px block padding around the 32px control (+2px of border) is what makes
+     one line of tags land on exactly 48px; wrapped rows grow past it. */
+  padding: 7px 10px 7px 14px;
+  border-radius: 12px;
+  background: var(--ink-bg-alt);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  cursor: text;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.ist-tag-box:focus-within {
+  border-color: rgba(255, 106, 0, 0.45);
+  box-shadow: 0 0 0 3px rgba(255, 106, 0, 0.07);
+}
+
+.ist-tag-input {
+  flex: 1 1 96px;
+  min-width: 96px;
+  /* 7px + 7px of block padding and the 1px borders land the one-line box on
+     exactly 48px. */
+  height: 32px;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  color: var(--ink-text);
+  font-family: var(--ink-font-body);
+  font-size: 12.5px;
+}
+
+.ist-tag-input::placeholder {
+  color: var(--ink-text-3-decor);
+}
+
+.ist-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(255, 106, 0, 0.08);
+  border: 1px solid rgba(255, 106, 0, 0.2);
+  color: var(--ink-text);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.ist-tag-chip > span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ist-tag-x {
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-orange);
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.ist-tag-x:hover {
+  background: rgba(255, 106, 0, 0.18);
+}
+
+.ist-tag-x svg {
+  font-size: 12px !important;
+}
+
+.ist-tag-hint {
+  margin: 7px 0 0;
+  font-size: 10px;
+  /* --ink-text-3, not the decorative token the section labels use: this is a
+     sentence the writer has to read, and #77716a only reaches 3.8:1 on the
+     field's #151311. The lifted token is 5.3:1. */
+  color: var(--ink-text-3);
+}
+
+/* ── Article metadata ───────────────────────────────────────────────── */
+.ist-det-meta {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ink-border-soft);
+}
+
+.ist-det-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+}
+
+/* Label left, value right — two columns, one line per fact. Small on
+   purpose: this is a readout, not a dashboard. */
+.ist-det-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.ist-det-row dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: 11px;
+  /* Same reasoning as the tag hint — these name the value beside them, so
+     they are content rather than decoration. */
+  color: var(--ink-text-3);
+}
+
+.ist-det-row dt svg {
+  font-size: 13px !important;
+  color: var(--ink-orange);
+  opacity: 0.85;
+}
+
+.ist-det-row dd {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-text);
+  text-align: right;
+}
+
+.ist-det-row dd.is-empty {
+  font-weight: 500;
+  color: var(--ink-text-3);
+}
+
+/* ── Writing goal ───────────────────────────────────────────────────── */
+/* 20px, matching the metadata step rather than the 18px default: the two
+   readout sections are peers, and the extra 2px keeps them from reading as
+   one long block. */
+.ist-det-goal {
+  margin-top: 20px;
+}
+
+.ist-det-goal-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ist-det-goal-head .ist-det-label {
+  margin-bottom: 0;
+}
+
+.ist-det-goal-count {
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-text-2);
+}
+
+.ist-goal-bar {
+  height: 5px;
+  margin-top: 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.ist-goal-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255, 106, 0, 0.7), var(--ink-orange));
+  transition: width 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ist-goal-presets {
+  display: flex;
+  gap: 6px;
+  margin-top: 11px;
+}
+
+.ist-goal-preset {
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  flex: 1;
+  padding: 5px 0;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--ink-text-3-decor);
+  font-family: var(--ink-font-body);
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease,
+    color 150ms ease;
+}
+
+.ist-goal-preset:hover {
+  color: var(--ink-text);
+  border-color: rgba(255, 106, 0, 0.22);
+}
+
+.ist-goal-preset.is-on {
+  background: rgba(255, 106, 0, 0.1);
+  border-color: rgba(255, 106, 0, 0.32);
+  color: var(--ink-orange);
+}
+
+.ist-goal-done {
+  margin: 9px 0 0;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ink-orange);
+}
+
+/* ── Cover image (publish tab + quick strip share it) ───────────────── */
+.ink-cover-modes {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+}
+
+.ink-cover-mode {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  flex: 1;
+  padding: 0.45rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid var(--ink-border);
+  background: transparent;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--ink-text-3);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.ink-cover-mode:hover {
+  color: var(--ink-text);
+  border-color: var(--ink-border-warm);
+}
+
+.ink-cover-mode[aria-pressed="true"] {
+  color: var(--ink-orange);
+  background: var(--ink-orange-soft);
+  border-color: var(--ink-border-warm);
+}
+
+.ink-cover-mode svg {
+  font-size: 15px !important;
+}
+
+.ink-cover-drop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  padding: clamp(1.4rem, 4vw, 2rem) 1rem;
+  border: 1.5px dashed var(--ink-border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.015);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.22s ease, background-color 0.22s ease;
+}
+
+/* A transparent file input stretched over the whole zone. It — not the
+   <label> — is the click and keyboard target, because a label is not
+   focusable; the zone then gets native picker behaviour, and the ink focus
+   ring lands on the zone itself. */
+.ink-cover-drop input[type="file"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.ink-cover-drop:hover,
+.ink-cover-drop:focus-within {
+  border-color: var(--ink-border-warm);
+  background: var(--ink-orange-softer);
+}
+
+.ink-cover-drop-icon {
+  color: var(--ink-orange);
+}
+
+.ink-cover-drop-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--ink-text);
+}
+
+.ink-cover-drop-hint {
+  font-size: 0.72rem;
+  color: var(--ink-text-3);
+}
+
+.ist-cover-drop--compact {
+  padding: 1rem;
+  border-radius: 12px;
+}
+
+.ink-cover-file {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.74rem;
+  color: var(--ink-text-2);
+}
+
+.ink-cover-preview {
+  position: relative;
+  margin-top: 0.9rem;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--ink-border);
+}
+
+.ink-cover-preview img {
+  display: block;
+  width: 100%;
+  max-height: 190px;
+  object-fit: cover;
+}
+
+.ink-cover-remove {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--ink-border);
+  background: rgba(15, 14, 13, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-text-2);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.ink-cover-remove:hover {
+  color: var(--ink-text);
+  border-color: var(--ink-border-warm);
+  background: rgba(15, 14, 13, 0.95);
+}
+
+/* ── Schedule ───────────────────────────────────────────────────────── */
+.ink-sched-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+/* `color-scheme: dark` is what makes the native date/time picker render a
+   light glyph and a dark popup — an invert filter would also flip the text. */
+.ink-write input[type="date"],
+.ink-write input[type="time"] {
+  color-scheme: dark;
+}
+
+.ink-sched-row .ink-field-control {
+  min-height: 46px;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+/* ── Publishing checklist ───────────────────────────────────────────── */
+.ink-check-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ink-check {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.84rem;
+  color: var(--ink-text-3);
+  transition: color 0.25s ease;
+}
+
+.ink-check.is-done {
+  color: var(--ink-text-2);
+}
+
+.ink-check-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  border: 1.5px solid var(--ink-border);
+  color: transparent;
+  transition: background-color 0.25s ease, border-color 0.25s ease,
+    color 0.25s ease;
+}
+
+.ink-check-box svg {
+  transform: scale(0.4);
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ink-check.is-done .ink-check-box {
+  /* Calm sage again — the checklist's success tone, never neon. */
+  background: #7a9e76;
+  border-color: #7a9e76;
+  color: #10130f;
+}
+
+.ink-check.is-done .ink-check-box svg {
+  transform: scale(1);
+}
+
+/* ── Publish tab verb buttons inherit the studio's compact styles; the
+   panels also draw on .ink-btn (ghost) which the column narrows:
+   the InkGhostButton inside SchedulePanel is the "Schedule" verb. ────── */
+.ist-panel-slot .ink-btn-ghost {
+  min-height: 40px;
+  border-radius: 12px;
+  border-width: 1px;
+  font-size: 0.76rem;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   Templates popover
+   ═════════════════════════════════════════════════════════════════════ */
+
+.ist-templates {
+  position: fixed;
+  left: 84px;
+  top: 132px;
+  z-index: 70;
+  width: 316px;
+  max-width: calc(100vw - 2rem);
+  padding: 0.95rem 1rem 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--ink-border);
+  background: #161513;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.55);
+  animation: istPopIn 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes istPopIn {
+  from { opacity: 0; transform: translateY(6px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+.ist-templates-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.ist-templates-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-family: var(--ink-font-display);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--ink-text);
+}
+
+.ist-templates-icon {
+  color: var(--ink-orange) !important;
+  font-size: 17px !important;
+}
+
+.ist-templates-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ist-template {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: 100%;
+  padding: 0.6rem 0.65rem;
+  border: 0;
+  border-radius: 11px;
+  background: none;
+  font-family: var(--ink-font-body);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.16s ease;
+}
+
+.ist-template:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.ist-template-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink-text);
+}
+
+.ist-template-hint {
+  font-size: 0.68rem;
+  color: var(--ink-text-3);
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   Draft preview overlay
+   ═════════════════════════════════════════════════════════════════════ */
+
+.ist-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(10, 9, 8, 0.97);
+  animation: istFade 0.22s ease;
+}
+
+@keyframes istFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.ist-preview-scroll {
+  height: 100%;
+  overflow-y: auto;
+  padding: clamp(3.5rem, 8vh, 5rem) 1.25rem 5rem;
+}
+
+.ist-preview-article {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.ist-preview-close {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--ink-border);
+  background: rgba(21, 19, 17, 0.9);
+  font-family: var(--ink-font-body);
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--ink-text-2);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.ist-preview-close svg {
+  font-size: 15px !important;
+}
+
+.ist-preview-close:hover {
+  color: var(--ink-text);
+  border-color: var(--ink-border-warm);
+}
+
+.ist-preview-cover {
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--ink-border-soft);
+  margin-bottom: 1.75rem;
+}
+
+.ist-preview-cover img {
+  display: block;
+  width: 100%;
+  max-height: 360px;
+  object-fit: cover;
+}
+
+.ist-preview-category {
+  display: inline-flex;
+  padding: 0.28rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 106, 0, 0.3);
+  background: var(--ink-orange-softer);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-orange);
+}
+
+.ist-preview-title {
+  margin: 0.9rem 0 0;
+  font-family: var(--ink-font-display);
+  font-size: clamp(1.9rem, 4.4vw, 2.9rem);
+  font-weight: 800;
+  letter-spacing: -0.028em;
+  line-height: 1.1;
+  color: var(--ink-text);
+}
+
+.ist-preview-byline {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 1.1rem;
+  font-size: 0.78rem;
+  color: var(--ink-text-3);
+}
+
+.ist-preview-name {
+  font-weight: 700;
+  color: var(--ink-text-2);
+}
+
+.ist-preview-divider {
+  width: 42px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--ink-orange);
+  margin: 1.6rem 0;
+  opacity: 0.85;
+}
+
+/* The rendered draft body — the same editorial content styles the canvas
+   uses, at reader measure. */
+.ist-preview-body {
+  font-family: var(--ink-font-body);
+  font-size: 1.02rem;
+  line-height: 1.85;
+  color: var(--ink-text-2);
+}
+
+.ist-preview-body h1,
+.ist-preview-body h2,
+.ist-preview-body h3 {
+  font-family: var(--ink-font-display);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--ink-text);
+  margin: 1.6em 0 0.5em;
+}
+
+.ist-preview-body h1 { font-size: 1.8rem; }
+.ist-preview-body h2 { font-size: 1.45rem; }
+.ist-preview-body h3 { font-size: 1.2rem; }
+
+.ist-preview-body p {
+  margin: 0 0 1.1em;
+}
+
+.ist-preview-body blockquote {
+  margin: 1.2rem 0;
+  padding: 0.5rem 0 0.5rem 1.1rem;
+  border-left: 3px solid var(--ink-orange);
+  background: var(--ink-orange-softer);
+  color: var(--ink-text-2);
+}
+
+.ist-preview-body ul,
+.ist-preview-body ol {
+  margin: 0 0 1.1em;
+  padding-left: 1.4rem;
+}
+
+.ist-preview-body pre,
+.ist-preview-body code {
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ink-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88em;
+}
+
+.ist-preview-body pre {
+  padding: 0.85rem 1rem;
+  overflow-x: auto;
+}
+
+.ist-preview-body img {
+  max-width: 100%;
+  border-radius: 12px;
+}
+
+.ist-preview-body a {
+  color: var(--ink-orange);
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   Responsive
+   ═════════════════════════════════════════════════════════════════════ */
+
+/* Between 1024 and ~1250: a 420px panel eats too much of the editor —
+   narrow it instead of shrinking the measure. */
+@media (min-width: 1024px) and (max-width: 1249.95px) {
+  .ink-write {
+    --ist-aside: 356px;
+  }
+}
+
+/* ≥1024: immersive hides its two bystander columns. */
+[data-immersive="true"] {
+  --ist-aside: 0px;
+}
+
+/* On desktop the pill is only the doorknob to an already-open AI tab. */
+[data-ai-panel="true"] .ist-ai-pill {
+  display: none;
+}
+
+[data-immersive="true"] .ist-rail {
+  display: none;
+}
+
+[data-immersive="true"] .ist-side {
+  display: none;
+}
+
+[data-immersive="true"] .ist-row {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* On immersive the pill floats free of the vanished column. */
+[data-immersive="true"] .ist-ai-pill {
+  right: 26px;
+}
+
+/* ≤1023: the panel leaves the grid and becomes a bottom drawer; the rail
+   steps aside (its tools live in the drawer's grabber bar). */
+@media (max-width: 1023.95px) {
+  .ink-write {
+    --ist-aside: 0px;
+  }
+
+  .ist-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ist-rail {
+    display: none;
+  }
+
+  .ist-main {
+    padding-bottom: clamp(6rem, 14vh, 9rem);
+  }
+
+  .ist-ai-pill {
+    right: 20px;
+  }
+
+  .ink-voice {
+    left: 14px !important;
+  }
+}
+
+@media (max-width: 1023.95px) {
+  .ist-side {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    width: 100%;
+    height: min(84dvh, 760px);
+    margin: 0;
+    z-index: 60;
+    border: 0;
+    border-top: 1px solid var(--ink-border);
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -34px 70px rgba(0, 0, 0, 0.55);
+    transform: translateY(104%);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  [data-panel-open="true"] .ist-side {
+    transform: translateY(0);
+  }
+
+  .ist-drawer-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-left: auto;
+    padding: 0.8rem 0.9rem 0.55rem 1rem;
+  }
+
+  .ist-drawer-bar .ist-drawer-grab {
+    order: -1;
+    margin-right: auto;
+  }
+
+  .ist-drawer-quick {
+    display: inline-flex;
+  }
+
+  .ist-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: block;
+    border: 0;
+    padding: 0;
+    background: rgba(8, 7, 6, 0.55);
+    cursor: pointer;
+    animation: istFade 0.2s ease;
+  }
+
+  /* The floating voice dock would sit behind the drawer's chrome. */
+  [data-panel-open="true"] .ink-voice {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+/* ≤639: compact the chrome; never squeeze three columns in. */
+@media (max-width: 639.95px) {
+  .ist-topbar {
+    height: 58px;
+    padding: 0 0.7rem;
+    gap: 0.5rem;
+  }
+
+  /* A phone can't carry the wordmark AND the save chip AND three verbs.
+     The back arrow goes home, the chip carries the live status, and
+     Preview + Save Draft collapse to icons (their full names live on
+     aria-label). The wordmark returns ≥480. */
+  .ist-topbar-brand,
+  .ist-topbar-divider,
+  .ist-topbar-context,
+  .ist-topbar-stats,
+  .ist-topbar-ai-fab {
+    display: none;
+  }
+
+  .ist-topbar-center {
+    /* Center overlaps the right cluster on a phone; the chip docks left
+       after the back arrow, where it still reads as instrument status.
+       It yields (ellipsis) before the verbs ever clip. */
+    position: static;
+    transform: none;
+    min-width: 0;
+    flex: 0 1 auto;
+    margin-right: auto;
+  }
+
+  .ist-save-chip {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ist-topbar-actions .ink-btn {
+    min-height: 36px;
+    padding: 0 0.7rem;
+  }
+
+  /* Only Publish keeps its word; the two ghost verbs collapse to their
+     icons at this width (names on aria-label). The pill is the AI entry. */
+  .ist-topbar-actions .ink-btn-ghost .ist-btn-label {
+    display: none;
+  }
+
+  .ist-main {
+    padding-left: 0.9rem;
+    padding-right: 0.9rem;
+    padding-top: 1.2rem;
+  }
+
+  .ist-canvas {
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+  }
+
+  .ist-canvas-toprow {
+    padding-top: 0.9rem;
+  }
+
+  /* The wrapped toolbar costs a lot of vertical space on a phone (5 rows at
+     375px, 7 at 320px). Buttons settle at 28px — still above Quill's own 24px
+     stock, so targets stay comfortably tappable — and the saving comes from
+     the gaps, the picker text and the toolbar's own padding. Sticky stops
+     stealing viewport height while the wrap does its work. */
+  .ink-write .ql-toolbar.ql-snow {
+    position: relative;
+    top: 0;
+    margin: 0.65rem 0.9rem 0;
+    padding: 0.5rem clamp(0.6rem, 2vw, 0.9rem);
+  }
+
+  .ink-write .ql-snow .ql-formats {
+    margin-right: 0.1rem;
+    margin-bottom: 0.1rem;
+  }
+
+  .ink-write .ql-snow.ql-toolbar button {
+    width: 28px;
+    height: 28px;
+    padding: 4px;
+  }
+
+  .ink-write .ql-snow .ql-picker {
+    font-size: 0.78rem;
+  }
+
+  .ink-write .ql-snow .ql-picker-label {
+    padding-left: 3px;
+    padding-right: 2px;
+  }
+
+  .ist-title {
+    font-size: clamp(1.9rem, 8.4vw, 2.6rem);
+  }
+
+  .ist-cover-pill {
+    height: 32px;
+    font-size: 0.72rem;
+    padding: 0 0.8rem;
+  }
+
+  /* The dock compresses to its mic (plus the live timer when dictating),
+     so the dictation control and the AI pill share the bottom edge side
+     by side instead of stacking on top of each other. */
+  .ink-voice {
+    left: 12px !important;
+    right: auto;
+    max-width: none;
+    padding: 0.5rem;
+    border-radius: 999px;
+  }
+
+  .ink-voice-text,
+  .ink-voice-wave {
+    display: none;
+  }
+
+  .ist-ai-pill {
+    right: 12px;
+    bottom: 18px;
+  }
+}
+
+@media (max-width: 479.95px) {
+  .ink-sched-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ink-voice-wave {
+    display: none;
+  }
+
+  .ist-quick-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ── Reduced motion: keep the state changes, drop the movement ──────── */
+/* The shared block in inkwell.css covers the ink-* animations it declares;
+   these are page-local, so they opt out here. `.ink-check-box svg`'s scale
+   is a transition, so it is zeroed rather than removed — a completed item
+   must still be visibly ticked. */
+@media (prefers-reduced-motion: reduce) {
+  .ist-save-chip.is-saving .ist-save-icon,
+  .ist-thinking-dot,
+  .ink-voice.is-live .ink-voice-btn,
+  .ink-voice-bar {
+    animation: none !important;
+  }
+
+  .ink-voice-bar {
+    height: 14px;
+  }
+
+  .ist-cat-pill:hover,
+  .ist-suggest-btn:hover,
+  .ist-chat-send:hover,
+  .ist-ai-pill:hover,
+  .ist-quick:hover {
+    transform: none;
+  }
+
+  .ist-suggestion,
+  .ist-chat-msg,
+  .ist-enhance-item {
+    transition: none;
+  }
+
+  .ist-side,
+  .ist-drawer-backdrop,
+  .ist-preview,
+  .ist-templates {
+    animation: none;
+    transition: none;
+  }
+
+  .ink-panel.is-open .ink-panel-chevron,
+  .ist-goal-fill,
+  .ist-tag-box,
+  .ist-cat-pill,
+  .ist-goal-preset,
+  .ink-check-box svg {
+    transition: none;
+  }
+}

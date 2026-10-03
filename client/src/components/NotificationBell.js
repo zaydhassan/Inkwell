@@ -36,13 +36,18 @@ const TYPE_ICON = {
   system: NotificationsIcon,
 };
 
+// This bell renders only inside the Navbar (see Navbar.js), so both the
+// trigger and its popover are navbar chrome: they read from the shared
+// InkWell tokens rather than the app's light MUI theme, so the popover
+// doesn't drop out of the dark pill as a light panel. Engagement types take
+// the brand orange; neutral/system types stay in the secondary ink tone.
 const TYPE_COLOR = {
-  like: "var(--accent)",
-  comment: "var(--text-secondary)",
-  reply: "var(--text-disabled)",
-  levelUp: "var(--accent)",
-  badge: "var(--accent)",
-  system: "var(--text-secondary)",
+  like: "var(--ink-orange)",
+  comment: "var(--ink-text-2)",
+  reply: "var(--ink-text-3)",
+  levelUp: "var(--ink-orange)",
+  badge: "var(--ink-orange)",
+  system: "var(--ink-text-2)",
 };
 
 // "2m", "3h", "5d" — lightweight relative time without pulling moment/date libs.
@@ -112,7 +117,11 @@ const NotificationBell = () => {
         onClick={handleOpen}
         color="inherit"
         aria-label={`Notifications${unreadCount ? ` (${unreadCount} unread)` : ""}`}
-        sx={{ borderRadius: 999, "&:hover": { backgroundColor: "action.hover" } }}
+        sx={{
+          borderRadius: 999,
+          color: "var(--ink-text-2)",
+          "&:hover": { color: "var(--ink-orange)", backgroundColor: "var(--ink-orange-softer)" },
+        }}
       >
         <Badge badgeContent={unreadCount} color="error" overlap="circular">
           <NotificationsIcon />
@@ -126,21 +135,24 @@ const NotificationBell = () => {
         transformOrigin={{ vertical: "top", horizontal: "right" }}
         slotProps={{
           paper: {
+            className: "ink-nav",
             sx: {
               width: 360,
               maxWidth: "92vw",
               mt: 1.5,
               borderRadius: 3,
-              boxShadow: (t) => t.customShadows?.card,
-              border: (t) => `1px solid ${t.palette.divider}`,
-              bgcolor: "background.glass",
+              boxShadow: "0 18px 44px rgba(0,0,0,0.5)",
+              border: "1px solid var(--ink-border)",
+              bgcolor: "var(--ink-bg-alt)",
+              backgroundImage: "none",
+              color: "var(--ink-text)",
               backdropFilter: "blur(14px)",
             },
           },
         }}
       >
         <Box sx={{ p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Typography variant="subtitle1" fontWeight={700}>
+          <Typography variant="subtitle1" fontWeight={700} sx={{ color: "var(--ink-text)" }}>
             Notifications
           </Typography>
           <Button
@@ -149,25 +161,30 @@ const NotificationBell = () => {
               await dispatch(markAllNotificationsRead());
               setRecent((prev) => prev.map((n) => ({ ...n, read: true })));
             }}
-            sx={{ textTransform: "none", color: "primary.main", fontWeight: 700 }}
+            sx={{
+              textTransform: "none",
+              color: "var(--ink-orange)",
+              fontWeight: 700,
+              "&:hover": { backgroundColor: "var(--ink-orange-softer)" },
+            }}
           >
             Mark all read
           </Button>
         </Box>
-        <Divider />
+        <Divider sx={{ borderColor: "var(--ink-border)" }} />
         <Box sx={{ maxHeight: 380, overflowY: "auto" }}>
           {loading ? (
             <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
               <CircularProgress size={28} />
             </Box>
           ) : recent.length === 0 ? (
-            <Typography variant="body2" color="text.secondary" sx={{ p: 3, textAlign: "center" }}>
+            <Typography variant="body2" sx={{ p: 3, textAlign: "center", color: "var(--ink-text-2)" }}>
               You&apos;re all caught up 🎉
             </Typography>
           ) : (
             recent.map((n) => {
               const Icon = TYPE_ICON[n.type] || NotificationsIcon;
-              const color = TYPE_COLOR[n.type] || "var(--accent)";
+              const color = TYPE_COLOR[n.type] || "var(--ink-orange)";
               return (
                 <Box
                   key={n._id}
@@ -181,9 +198,9 @@ const NotificationBell = () => {
                     gap: 1.5,
                     alignItems: "flex-start",
                     cursor: "pointer",
-                    borderBottom: (t) => `1px solid ${t.palette.divider}`,
-                    bgcolor: n.read ? "transparent" : "brandSoft",
-                    "&:hover": { bgcolor: "action.hover" },
+                    borderBottom: "1px solid var(--ink-border-soft)",
+                    bgcolor: n.read ? "transparent" : "var(--ink-orange-softer)",
+                    "&:hover": { bgcolor: "var(--ink-border-soft)" },
                   }}
                 >
                   <Box sx={{ mt: 0.25, color }}>
@@ -201,28 +218,33 @@ const NotificationBell = () => {
                           sx={{ width: 20, height: 20 }}
                         />
                       )}
-                      <Box sx={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                      <Box sx={{ overflow: "hidden", textOverflow: "ellipsis", color: "var(--ink-text)" }}>
                         {n.text || "New notification"}
                       </Box>
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" sx={{ color: "var(--ink-text-3)" }}>
                       {relativeTime(n.created_at)}
                     </Typography>
                   </Stack>
                   {!n.read && (
-                    <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "primary.main", mt: 0.75 }} />
+                    <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "var(--ink-orange)", mt: 0.75 }} />
                   )}
                 </Box>
               );
             })
           )}
         </Box>
-        <Divider />
+        <Divider sx={{ borderColor: "var(--ink-border)" }} />
         <Box sx={{ p: 1.25, textAlign: "center" }}>
           <Button
             fullWidth
             onClick={() => { handleClose(); navigate("/notifications"); }}
-            sx={{ textTransform: "none", fontWeight: 700, color: "primary.main" }}
+            sx={{
+              textTransform: "none",
+              fontWeight: 700,
+              color: "var(--ink-orange)",
+              "&:hover": { backgroundColor: "var(--ink-orange-softer)" },
+            }}
           >
             View all notifications
           </Button>

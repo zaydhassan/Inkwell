@@ -388,7 +388,7 @@ const BlogDetails = () => {
         </Typography>
         <Stack direction="row" spacing={2} justifyContent="center">
           <GradientButton onClick={() => window.location.reload()}>Retry</GradientButton>
-          <Button variant="outlined" onClick={() => navigate("/blogs")}>Browse all stories</Button>
+          <Button variant="outlined" onClick={() => navigate("/explore")}>Browse all stories</Button>
         </Stack>
       </Container>
     );

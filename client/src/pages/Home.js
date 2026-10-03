@@ -1,292 +1,194 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Container, TextField, Typography, Stack, Button, Chip } from '@mui/material';
-import { motion, useReducedMotion } from 'framer-motion';
+import { Box, Typography } from '@mui/material';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import EditNoteIcon from '@mui/icons-material/EditNote';
-import ForumIcon from '@mui/icons-material/Forum';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import StarRateIcon from '@mui/icons-material/StarRate';
+import toast from 'react-hot-toast';
+import ArrowForwardRounded from '@mui/icons-material/ArrowForwardRounded';
+import EditNoteOutlined from '@mui/icons-material/EditNoteOutlined';
+import ForumOutlined from '@mui/icons-material/ForumOutlined';
+import TrendingUpOutlined from '@mui/icons-material/TrendingUpOutlined';
+import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
 import { validateEmail } from '../utils/validate';
-import GlassCard from '../components/GlassCard';
-import GradientButton from '../components/GradientButton';
-import SectionHeading from '../components/SectionHeading';
+import { toastBookmarked } from '../utils/toasts';
 import CommunitySection from '../components/CommunitySection';
-import GradientText from '../components/GradientText';
-import MetricsBand from '../components/MetricsBand';
-import BlurImage from '../components/BlurImage';
-import UserAvatar from '../components/UserAvatar';
+import {
+  INK,
+  staggerContainer,
+  riseIn,
+  Reveal,
+  InkBackdrop,
+  InkEyebrow,
+  InkHeading,
+  InkHighlight,
+  InkSectionHead,
+  InkPrimaryButton,
+  InkGhostButton,
+  InkFloatingCard,
+  InkStatusDot,
+  InkAvatarGroup,
+  InkStatsBand,
+  InkFeather,
+} from '../components/ink';
+import './Home.css';
+
+/* ─────────────────────────────────────────────────────────────────────
+   InkWell — Home.
+
+   The product landing / discovery page: cinematic hero, the community's
+   freshest stories, the platform's social proof, and a newsletter CTA.
+   Four sections, exactly as the brief specifies — the cards are reserved
+   for the story grid and the two CTA surfaces, so no two sections read
+   the same.
+
+   Everything visual comes from the shared InkWell system (styles/
+   inkwell.css + components/ink), so this page and About are visibly the
+   same product. The page is always dark regardless of the app's
+   light/dark theme, which is why it is wrapped in `ink`.
+   ───────────────────────────────────────────────────────────────────── */
 
 // How many recent posts to surface on the landing page.
 const HOME_BLOG_LIMIT = 6;
 
-// Shared entrance easing — a gentle "settle" used across the hero.
-const EASE = [0.22, 1, 0.36, 1];
-const staggerContainer = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.09, delayChildren: 0.05 } },
-};
-const riseIn = {
-  hidden: { opacity: 0, y: 22 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } },
-};
+// The three compact capabilities under the hero buttons. Deliberately a
+// light inline row rather than three cards — see the brief's "do not make
+// every section a card" rule.
+const CAPABILITIES = [
+  { icon: <EditNoteOutlined />, label: 'Create & Publish' },
+  { icon: <ForumOutlined />, label: 'Engage Community' },
+  { icon: <TrendingUpOutlined />, label: 'Grow Your Reach' },
+];
 
-// Inline SVG noise → data URI (same treatment as the community section).
-const NOISE_URI =
-  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
+// Invented persona for the hero's identity card, and initials-only avatars
+// for the community card. No real person is depicted and no face image is
+// fetched — the discs render initials, exactly like the About page.
+const HERO_AUTHOR = { name: 'Maya Chen', initials: 'MC' };
+const COMMUNITY = [
+  { initials: 'AR', bg: '#7C2D12' },
+  { initials: 'MK', bg: '#B45309' },
+  { initials: 'JD', bg: '#4A423A' },
+  { initials: 'SO', bg: '#9A3412' },
+];
 
-// Atmospheric hero backdrop: only a hairline grid and a faint film grain —
-// no colored washes or blobs, so the canvas stays premium white. All
-// decorative and pointer-transparent.
-const HeroBackdrop = () => (
-  <Box aria-hidden sx={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-    <Box
-      sx={{
-        position: 'absolute',
-        inset: 0,
-        backgroundImage: (t) =>
-          `linear-gradient(${t.palette.divider} 1px, transparent 1px), linear-gradient(90deg, ${t.palette.divider} 1px, transparent 1px)`,
-        backgroundSize: '52px 52px',
-        opacity: 0.35,
-        maskImage: 'radial-gradient(circle at 50% 30%, #000 0%, transparent 72%)',
-        WebkitMaskImage: 'radial-gradient(circle at 50% 30%, #000 0%, transparent 72%)',
-      }}
-    />
-    <Box sx={{ position: 'absolute', inset: 0, backgroundImage: NOISE_URI, opacity: 0.03, mixBlendMode: 'overlay' }} />
-  </Box>
-);
+// Rising bars behind the "reads this week" figure. Purely illustrative.
+const SPARK = [35, 55, 42, 78, 100];
 
-// Gentle perpetual float for the collage's glass cards. Disabled entirely
-// when the user prefers reduced motion.
-const FloatCard = ({ children, duration = 6, delay = 0, sx, ...props }) => {
-  const prefersReducedMotion = useReducedMotion();
-  return (
-    <motion.div
-      animate={prefersReducedMotion ? {} : { y: [0, -9, 0] }}
-      transition={{ duration, repeat: Infinity, ease: 'easeInOut', delay }}
-      style={{ position: 'absolute', ...sx }}
-      {...props}
-    >
-      {children}
-    </motion.div>
-  );
-};
+const HeroVisual = () => (
+  <Box className="ink-hero-visual">
+    <Box className="ink-hero-halo" aria-hidden="true" />
 
-// The right-hand editorial collage: the hero photo framed as a card, with
-// three floating glass artifacts (an editor's-pick badge, a reads metric,
-// and an author identity chip) layered around it for depth.
-const HeroCollage = () => (
-  <Box
-    sx={{
-      position: 'relative',
-      height: { xs: 340, sm: 420, md: 480 },
-      maxWidth: 560,
-      width: '100%',
-      mx: 'auto',
-    }}
-  >
-    {/* Soft gradient halo behind the composition */}
-    {/* Soft neutral halo behind the composition — white depth, no tint. */}
-    <Box
-      aria-hidden
-      sx={{
-        position: 'absolute',
-        inset: { xs: '-8%', md: '-6%' },
-        background: 'radial-gradient(circle at 55% 45%, rgba(17,17,17,0.05), transparent 62%)',
-        filter: 'blur(30px)',
-      }}
-    />
-
-    {/* Main image card */}
+    {/* The frame. Same `.ink-stage` primitive the About hero uses, so both
+        pages share one container: same radius, border, warm spill, glow. */}
     <motion.div
       initial={{ opacity: 0, scale: 0.96, y: 16 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ duration: 0.7, ease: EASE, delay: 0.15 }}
-      style={{
-        position: 'absolute',
-        left: '4%',
-        right: '8%',
-        top: '12%',
-        bottom: '10%',
-      }}
+      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
     >
-      <BlurImage
-        src="/hero.jpg"
-        alt="A writer's desk bathed in morning light — stories taking flight"
-        zoomOnHover={false}
-        sx={{
-          height: '100%',
-          borderRadius: '24px',
-          border: (t) => `1px solid ${t.palette.divider}`,
-          boxShadow: (t) => t.customShadows?.cardHover,
-        }}
-      />
+      <Box className="ink-stage ink-hero-stage">
+        <Box
+          component="img"
+          className="ink-stage-media"
+          src="/inkwell-workspace.png"
+          alt="A warm, lamplit writing desk — a laptop mid-draft, an open notebook, stacked books and a cup of coffee, with pages rising into the air"
+        />
+      </Box>
     </motion.div>
 
-    {/* Editor's pick — upper-left overlap */}
-    <FloatCard duration={6.5} sx={{ top: { xs: '2%', md: '4%' }, left: { xs: 0, md: '-4%' }, zIndex: 2 }}>
-      <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: EASE, delay: 0.45 }}>
-        <GlassCard sx={{ p: 1.75, pr: 2.5, display: 'flex', alignItems: 'center', gap: 1.25, maxWidth: 230 }}>
-          <Box
-            sx={{
-              width: 34,
-              height: 34,
-              borderRadius: '10px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: 'rgba(17,17,17,0.06)',
-              color: 'primary.main',
-              flexShrink: 0,
-            }}
-          >
-            <StarRateIcon sx={{ fontSize: 19 }} />
-          </Box>
-          <Box>
-            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.primary', display: 'block', lineHeight: 1.3 }}>
-              Editor's Pick
-            </Typography>
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.68rem', display: 'block' }}>
-              Featured this week
-            </Typography>
-          </Box>
-        </GlassCard>
-      </motion.div>
-    </FloatCard>
-
-    {/* Reads metric — right edge, upper third */}
-    <FloatCard duration={7.5} delay={0.6} sx={{ top: '30%', right: { xs: 0, md: '-5%' }, zIndex: 2 }}>
-      <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: EASE, delay: 0.6 }}>
-        <GlassCard sx={{ p: 1.75, minWidth: 150 }}>
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-            <VisibilityIcon sx={{ fontSize: 17, color: 'primary.main' }} />
-            <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.primary', fontSize: '0.85rem' }}>
-              2.4k
-            </Typography>
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.68rem' }}>
-              reads this week
-            </Typography>
-          </Stack>
-          {/* Mini sparkline */}
-          <Stack direction="row" spacing={0.5} alignItems="flex-end" sx={{ height: 26 }}>
-            {[35, 55, 42, 78, 100].map((h, i) => (
-              <Box
-                key={i}
-                sx={{
-                  width: 7,
-                  height: `${h}%`,
-                  borderRadius: '3px 3px 0 0',
-                  background: (t) =>
-                    i === 4
-                      ? `linear-gradient(180deg, ${t.palette.primary.light}, ${t.palette.primary.main})`
-                      : t.palette.divider,
-                }}
-              />
-            ))}
-          </Stack>
-        </GlassCard>
-      </motion.div>
-    </FloatCard>
-
-    {/* Author identity chip — bottom-left */}
-    <FloatCard duration={6} delay={1.1} sx={{ bottom: { xs: '4%', md: '6%' }, left: { xs: '2%', md: '0%' }, zIndex: 2 }}>
-      <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: EASE, delay: 0.75 }}>
-        <GlassCard sx={{ p: 1.25, pr: 2, display: 'flex', alignItems: 'center', gap: 1.25 }}>
-          <UserAvatar src="/default-avatar.png" name="Maya Chen" sx={{ width: 34, height: 34 }} />
-          <Box>
-            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.primary', display: 'block', lineHeight: 1.3 }}>
-              Maya Chen
-            </Typography>
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.68rem', display: 'block' }}>
-              published a new story
-            </Typography>
-          </Box>
-          <Box
-            sx={{
-              ml: 0.5,
-              width: 7,
-              height: 7,
-              borderRadius: '50%',
-              bgcolor: 'success.main',
-              boxShadow: '0 0 0 3px rgba(22,163,74,0.18)',
-            }}
-          />
-        </GlassCard>
-      </motion.div>
-    </FloatCard>
-  </Box>
-);
-
-// Three capability blocks under the hero.
-const FEATURES = [
-  {
-    icon: <EditNoteIcon />,
-    title: 'Create & Publish',
-    copy: 'A distraction-free editor with drafts, revisions, and one-click publishing — writing stays the hard part, not the tooling.',
-  },
-  {
-    icon: <ForumIcon />,
-    title: 'Engage Community',
-    copy: 'Comments, bookmarks, and real-time notifications keep every story a conversation, not a broadcast.',
-  },
-  {
-    icon: <TrendingUpIcon />,
-    title: 'Grow Your Reach',
-    copy: 'Analytics, writing streaks, badges, and a leaderboard that reward consistency and quality in equal measure.',
-  },
-];
-
-const FeatureStrip = () => (
-  <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
-    <Box
-      component="motion.div"
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, amount: 0.3 }}
-      variants={staggerContainer}
-      sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: { xs: 2.5, md: 3 } }}
+    {/* Identity card — upper left. */}
+    <InkFloatingCard
+      float="ink-float-a"
+      sx={{ top: 0, left: { xs: 0, md: '-2%' }, maxWidth: 232 }}
     >
-      {FEATURES.map((f) => (
-        <motion.div key={f.title} variants={riseIn} style={{ height: '100%' }}>
-          <GlassCard
-            glowOnHover
-            sx={{ height: '100%', p: { xs: 3, md: 3.5 } }}
+      <Box sx={{ p: 1.25, pr: 1.75, display: 'flex', alignItems: 'center', gap: 1.15 }}>
+        <Box
+          aria-hidden="true"
+          sx={{
+            width: 34,
+            height: 34,
+            borderRadius: '50%',
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'linear-gradient(135deg,#7C2D12,#B45309)',
+            color: '#F5F1EA',
+            fontSize: 12,
+            fontWeight: 700,
+            border: `1px solid ${INK.border}`,
+          }}
+        >
+          {HERO_AUTHOR.initials}
+        </Box>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography
+            sx={{ fontSize: '0.76rem', fontWeight: 700, color: INK.text, lineHeight: 1.35 }}
           >
+            {HERO_AUTHOR.name}
+          </Typography>
+          <Typography sx={{ fontSize: '0.68rem', color: INK.text3, lineHeight: 1.35 }}>
+            published a new story
+          </Typography>
+        </Box>
+        <InkStatusDot tone="live" sx={{ ml: 0.5 }} />
+      </Box>
+    </InkFloatingCard>
+
+    {/* Reads metric — right edge. */}
+    <InkFloatingCard
+      float="ink-float-b"
+      sx={{ top: '38%', right: { xs: 0, md: '-3%' }, minWidth: 156 }}
+    >
+      <Box sx={{ p: 1.4 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+          <VisibilityOutlined sx={{ fontSize: 16, color: INK.orange }} />
+          <Typography sx={{ fontSize: '0.9rem', fontWeight: 800, color: INK.text }}>
+            2.4K
+          </Typography>
+          <Typography sx={{ fontSize: '0.68rem', color: INK.text3 }}>
+            reads this week
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 0.5, height: 26 }}>
+          {SPARK.map((h, i) => (
             <Box
+              key={i}
               sx={{
-                width: 46,
-                height: 46,
-                borderRadius: '14px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                bgcolor: 'primary.bgSofter',
-                color: 'primary.main',
-                border: (t) => `1px solid ${t.palette.divider}`,
-                mb: 2,
+                width: 7,
+                height: `${h}%`,
+                borderRadius: '3px 3px 0 0',
+                background:
+                  i === SPARK.length - 1
+                    ? `linear-gradient(180deg, ${INK.orange2}, ${INK.orange})`
+                    : 'rgba(255,255,255,0.13)',
               }}
-            >
-              {f.icon}
-            </Box>
-            <Typography variant="h6" sx={{ fontWeight: 800, fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif', letterSpacing: '-0.01em' }}>
-              {f.title}
-            </Typography>
-            <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary', lineHeight: 1.65 }}>
-              {f.copy}
-            </Typography>
-          </GlassCard>
-        </motion.div>
-      ))}
-    </Box>
-  </Container>
+            />
+          ))}
+        </Box>
+      </Box>
+    </InkFloatingCard>
+
+    {/* Community card — lower left, mirroring the About hero's card. */}
+    <InkFloatingCard
+      float="ink-float-c"
+      sx={{ bottom: 0, left: { xs: '4%', md: '2%' } }}
+    >
+      <Box sx={{ p: 1.25, pr: 1.75, display: 'flex', alignItems: 'center', gap: 1.25 }}>
+        <InkAvatarGroup members={COMMUNITY} size={28} />
+        <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: INK.text, whiteSpace: 'nowrap' }}>
+          Writers publishing today
+        </Typography>
+        <InkStatusDot tone="accent" sx={{ ml: 0.25 }} />
+      </Box>
+    </InkFloatingCard>
+  </Box>
 );
 
 const Home = () => {
   const navigate = useNavigate();
-  const isLogin = useSelector(state => state.auth.isLogin);
+  const isLogin = useSelector((state) => state.auth.isLogin);
+  const user = useSelector((state) => state.auth.user);
+
   const [email, setEmail] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -297,9 +199,10 @@ const Home = () => {
   const [loadingBlogs, setLoadingBlogs] = useState(true);
   const [blogsError, setBlogsError] = useState(false);
 
-  // Fetch real, published posts for the landing grid instead of hardcoding
-  // dummy cards. A loading skeleton fills the grid while the request is in
-  // flight; a failure shows a retry control rather than an empty grid.
+  // Saved-post ids, fetched ONCE per page load rather than per card, so the
+  // grid's bookmark icons reflect real state without N requests.
+  const [bookmarkedIds, setBookmarkedIds] = useState([]);
+
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
@@ -316,8 +219,29 @@ const Home = () => {
     fetchBlogs();
   }, []);
 
-  // Re-run the landing feed fetch (used by the community section's retry
-  // control when the initial request fails).
+  // Seed the grid's bookmark state. Anonymous visitors are skipped so the
+  // authed endpoint is never called without a session.
+  useEffect(() => {
+    let cancelled = false;
+    const currentUser = user || JSON.parse(localStorage.getItem('user') || '{}');
+    if (!isLogin || !currentUser?._id) {
+      setBookmarkedIds([]);
+      return undefined;
+    }
+    axios
+      .get('/api/v1/bookmarks/ids')
+      .then(({ data }) => {
+        if (!cancelled && data.success) setBookmarkedIds(data.ids || []);
+      })
+      .catch(() => {
+        // Non-critical — the grid simply renders as un-bookmarked.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isLogin, user]);
+
+  // Re-run the landing feed fetch (used by the grid's retry control).
   const refetchBlogs = () => {
     setLoadingBlogs(true);
     setBlogsError(false);
@@ -326,6 +250,37 @@ const Home = () => {
       .then(({ data }) => setBlogs(data.success ? data.blogs || [] : []))
       .catch(() => setBlogsError(true))
       .finally(() => setLoadingBlogs(false));
+  };
+
+  // Real bookmark toggle, mirroring the BlogDetails pattern: optimistic
+  // flip, revert on failure. Anonymous users are sent to sign in.
+  const handleToggleBookmark = async (blogId) => {
+    const currentUser = user || JSON.parse(localStorage.getItem('user') || '{}');
+    if (!isLogin || !currentUser?._id) {
+      toast('Log in to save articles.', { icon: '🔒' });
+      navigate(`/login?redirect=${encodeURIComponent('/')}`);
+      return;
+    }
+    setBookmarkedIds((prev) =>
+      prev.includes(blogId) ? prev.filter((id) => id !== blogId) : [...prev, blogId]
+    );
+    try {
+      const { data } = await axios.post('/api/v1/bookmarks/toggle', { blog: blogId });
+      if (data.success) {
+        setBookmarkedIds((prev) =>
+          data.bookmarked
+            ? prev.includes(blogId) ? prev : [...prev, blogId]
+            : prev.filter((id) => id !== blogId)
+        );
+        toastBookmarked(data.bookmarked);
+      }
+    } catch {
+      // Revert the optimistic flip.
+      setBookmarkedIds((prev) =>
+        prev.includes(blogId) ? prev.filter((id) => id !== blogId) : [...prev, blogId]
+      );
+      toast.error("Couldn't update bookmark.");
+    }
   };
 
   const handleSubscribe = async () => {
@@ -357,195 +312,166 @@ const Home = () => {
   const startWriting = () => navigate(isLogin ? '/create-blog' : '/register');
 
   return (
-    <Box>
+    <Box className="ink ink-home" component="main">
+      <InkBackdrop hero drift />
+
       {/* ── Hero ─────────────────────────────────────────────────────── */}
-      <Box sx={{ position: 'relative', overflow: 'hidden', pt: { xs: 5, md: 7 }, pb: { xs: 8, md: 10 } }}>
-        <HeroBackdrop />
-        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', md: '1.05fr 1fr' },
-              gap: { xs: 6, md: 4 },
-              alignItems: 'center',
-            }}
+      <Box component="section" className="ink-hero" aria-label="Introducing InkWell">
+        <div className="ink-hero-grid">
+          <motion.div
+            className="ink-hero-copy"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
           >
-            {/* LEFT — copy */}
-            <motion.div variants={staggerContainer} initial="hidden" animate="visible">
-              <motion.div variants={riseIn}>
-                <Chip
-                  label="WRITE • SHARE • INSPIRE"
-                  sx={{
-                    bgcolor: 'primary.bgSofter',
-                    color: 'primary.main',
-                    border: (t) => `1px solid ${t.palette.divider}`,
-                    fontWeight: 700,
-                    letterSpacing: '0.16em',
-                    fontSize: '0.68rem',
-                    height: 30,
-                    mb: 3,
-                  }}
-                />
-              </motion.div>
-
-              <motion.div variants={riseIn}>
-                <Typography
-                  variant="h1"
-                  component="h1"
-                  sx={{
-                    fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif',
-                    fontWeight: 800,
-                    fontSize: { xs: '2.7rem', sm: '3.4rem', md: 'clamp(3rem, 4.6vw, 4.3rem)' },
-                    lineHeight: 1.06,
-                    letterSpacing: '-0.03em',
-                    color: 'text.primary',
-                    maxWidth: 620,
-                  }}
-                >
-                  A home for{' '}
-                  <GradientText sx={{ display: 'inline-block' }}>
-                    curious minds.
-                  </GradientText>
-                </Typography>
-              </motion.div>
-
-              <motion.div variants={riseIn}>
-                <Typography
-                  variant="subtitle1"
-                  sx={{ color: 'text.secondary', maxWidth: 540, mt: 2.5, lineHeight: 1.75, fontSize: { xs: '1rem', md: '1.1rem' } }}
-                >
-                  Inkwell is a modern blogging platform where ideas find their audience.
-                  Write freely, explore diverse perspectives, and connect with a global
-                  community of creators and readers.
-                </Typography>
-              </motion.div>
-
-              <motion.div variants={riseIn}>
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 4 }} alignItems={{ sm: 'center' }}>
-                  <GradientButton size="large" endIcon={<ArrowForwardIcon />} onClick={startWriting}>
-                    Start Writing
-                  </GradientButton>
-                  <Button
-                    size="large"
-                    onClick={() => navigate('/blogs')}
-                    sx={{
-                      borderRadius: 4,
-                      textTransform: 'none',
-                      fontWeight: 700,
-                      color: 'text.primary',
-                      border: (t) => `1px solid ${t.palette.divider}`,
-                      bgcolor: 'background.paper',
-                      px: 3,
-                      '&:hover': {
-                        bgcolor: 'primary.bgSofter',
-                        borderColor: 'primary.main',
-                        color: 'primary.main',
-                        transform: 'translateY(-1px)',
-                      },
-                      transition: 'all .2s ease',
-                    }}
-                  >
-                    Explore Blogs
-                  </Button>
-                </Stack>
-              </motion.div>
-
-              {/* Three small benefits with minimal charcoal line icons. */}
-              <motion.div variants={riseIn}>
-                <Stack direction="row" spacing={2.5} sx={{ mt: 3.5, flexWrap: 'wrap', rowGap: 1 }}>
-                  {[
-                    { label: 'Create & Publish', Icon: EditNoteIcon },
-                    { label: 'Engage Community', Icon: ForumIcon },
-                    { label: 'Grow Your Reach', Icon: TrendingUpIcon },
-                  ].map(({ label, Icon }) => (
-                    <Stack key={label} direction="row" spacing={0.75} alignItems="center">
-                      <Icon sx={{ fontSize: 17, color: 'primary.main' }} />
-                      <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                        {label}
-                      </Typography>
-                    </Stack>
-                  ))}
-                </Stack>
-              </motion.div>
+            <motion.div variants={riseIn}>
+              <InkEyebrow>Write • Share • Inspire</InkEyebrow>
             </motion.div>
 
-            {/* RIGHT — editorial collage */}
-            <HeroCollage />
-          </Box>
-        </Container>
+            <motion.div variants={riseIn}>
+              <InkHeading component="h1" size="hero" sx={{ mt: 2.5 }}>
+                A home for
+                <br />
+                <InkHighlight>curious minds.</InkHighlight>
+              </InkHeading>
+            </motion.div>
+
+            <motion.div variants={riseIn}>
+              <p className="ink-hero-lede">
+                InkWell is a modern blogging platform where ideas find their audience. Write
+                freely, explore diverse perspectives, and connect with a global community of
+                creators and readers.
+              </p>
+            </motion.div>
+
+            <motion.div variants={riseIn} className="ink-hero-actions">
+              <InkPrimaryButton
+                size="large"
+                onClick={startWriting}
+                endIcon={<ArrowForwardRounded sx={{ fontSize: 19 }} />}
+              >
+                Start writing
+              </InkPrimaryButton>
+              <InkGhostButton size="large" onClick={() => navigate("/explore")}>
+                Explore blogs
+              </InkGhostButton>
+            </motion.div>
+
+            <motion.div variants={riseIn}>
+              <div className="ink-hero-caps">
+                {CAPABILITIES.map(({ icon, label }) => (
+                  <Box
+                    key={label}
+                    component="span"
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 0.75,
+                      '& svg': { fontSize: 17, color: INK.orange },
+                    }}
+                  >
+                    {icon}
+                    <Typography
+                      component="span"
+                      sx={{
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                        color: INK.text2,
+                      }}
+                    >
+                      {label}
+                    </Typography>
+                  </Box>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+
+          <HeroVisual />
+        </div>
       </Box>
 
-      {/* ── Feature strip ────────────────────────────────────────────── */}
-      <Box sx={{ pb: { xs: 6, md: 8 } }}>
-        <FeatureStrip />
-      </Box>
-
-      {/* ── Featured stories (real feed, placeholder fallback) ───────── */}
+      {/* ── Featured stories (real feed, demo fallback) ───────────────── */}
       <CommunitySection
         blogs={blogs}
         loading={loadingBlogs}
         error={blogsError}
         onRetry={refetchBlogs}
-        onStartWriting={startWriting}
+        bookmarkedIds={bookmarkedIds}
+        onToggleBookmark={handleToggleBookmark}
       />
 
-      {/* ── Social proof ─────────────────────────────────────────────── */}
-      <MetricsBand />
+      {/* ── Social proof — the SHARED stats band, also used on About ─── */}
+      <Box component="section" className="ink-home-stats" aria-label="InkWell by the numbers">
+        <div className="ink-home-section ink-home-section--tight">
+          <InkStatsBand />
+        </div>
+      </Box>
 
-      {/* ── Newsletter ───────────────────────────────────────────────── */}
-      <Container maxWidth="lg" sx={{ pb: { xs: 8, md: 10 } }}>
-        <GlassCard sx={{ p: { xs: 3, md: 5 }, textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-          <Box
-            aria-hidden
-            sx={{
-              position: 'absolute',
-              top: '-40%',
-              left: '50%',
-              width: '60%',
-              height: '160%',
-              transform: 'translateX(-50%)',
-              background: 'radial-gradient(circle, rgba(17,17,17,0.04), transparent 70%)',
-              filter: 'blur(50px)',
-              pointerEvents: 'none',
-            }}
-          />
-          <Box sx={{ position: 'relative', zIndex: 1 }}>
-            <SectionHeading
-              eyebrow="Stay in the loop"
-              title="Get the best of Inkwell, weekly"
-              subtitle="Fresh stories, writer spotlights, and platform updates — no spam, unsubscribe anytime."
-              align="center"
-              sx={{ mb: 3 }}
-            />
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              spacing={1.5}
-              justifyContent="center"
-              alignItems="center"
-            >
-              <TextField
-                placeholder="you@example.com"
-                aria-label="Email address"
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); setEmailError(''); }}
-                onBlur={() => setEmailError(validateEmail(email))}
-                error={Boolean(emailError)}
-                helperText={emailError}
-                sx={{ width: '100%', maxWidth: 400 }}
-              />
-              <GradientButton onClick={handleSubscribe} disabled={isSubscribing} sx={{ whiteSpace: 'nowrap' }}>
-                {isSubscribing ? 'Subscribing…' : 'Subscribe'}
-              </GradientButton>
-            </Stack>
-            {successMessage && (
-              <Typography variant="body2" sx={{ mt: 2, color: 'success.main' }}>{successMessage}</Typography>
-            )}
-            {errorMessage && (
-              <Typography variant="body2" sx={{ mt: 2, color: 'error.main' }}>{errorMessage}</Typography>
-            )}
-          </Box>
-        </GlassCard>
-      </Container>
+      {/* ── Newsletter CTA ───────────────────────────────────────────── */}
+      <Box component="section" className="ink-newsletter" aria-label="Newsletter">
+        <div className="ink-home-section">
+          <Reveal y={30} amount={0.2}>
+            <div className="ink-newsletter-panel">
+              <div className="ink-newsletter-motif">
+                <InkFeather size={64} />
+              </div>
+
+              <div className="ink-newsletter-body">
+                <InkSectionHead
+                  eyebrow="Stay in the loop"
+                  title="Get the best of InkWell, weekly"
+                  subtitle="Fresh stories, writer spotlights, and platform updates — no spam, unsubscribe anytime."
+                />
+
+                <div className="ink-newsletter-form">
+                  <input
+                    className="ink-input"
+                    type="email"
+                    placeholder="you@example.com"
+                    aria-label="Email address"
+                    aria-invalid={Boolean(emailError)}
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setEmailError('');
+                    }}
+                    onBlur={() => setEmailError(validateEmail(email))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSubscribe();
+                    }}
+                  />
+                  <InkPrimaryButton
+                    onClick={handleSubscribe}
+                    disabled={isSubscribing}
+                    endIcon={<ArrowForwardRounded sx={{ fontSize: 19 }} />}
+                  >
+                    {isSubscribing ? 'Subscribing…' : 'Subscribe'}
+                  </InkPrimaryButton>
+                </div>
+
+                {emailError && (
+                  <p className="ink-newsletter-msg ink-newsletter-msg--err" role="alert">
+                    {emailError}
+                  </p>
+                )}
+                {successMessage && (
+                  <p className="ink-newsletter-msg ink-newsletter-msg--ok" role="status">
+                    {successMessage}
+                  </p>
+                )}
+                {errorMessage && (
+                  <p className="ink-newsletter-msg ink-newsletter-msg--err" role="alert">
+                    {errorMessage}
+                  </p>
+                )}
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </Box>
     </Box>
   );
 };

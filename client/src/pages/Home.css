@@ -1,0 +1,307 @@
+/* ─────────────────────────────────────────────────────────────────────
+   InkWell — Home page.
+
+   Layout only. Every colour, surface, card, button and animation comes
+   from the shared system in styles/inkwell.css and components/ink/*, so
+   Home and About are the same product rather than two lookalikes.
+   Nothing here is scoped outside `.ink-home`.
+   ───────────────────────────────────────────────────────────────────── */
+
+/* ── Page rhythm ────────────────────────────────────────────────────── */
+.ink-home-section {
+  position: relative;
+  z-index: 1;
+  padding-inline: var(--ink-gutter);
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.ink-home-section--tight {
+  max-width: 1120px;
+}
+
+/* ── Hero ───────────────────────────────────────────────────────────── */
+.ink-hero {
+  position: relative;
+  padding-block: clamp(2.5rem, 6vw, 4.5rem) clamp(3.5rem, 8vw, 6rem);
+}
+
+.ink-hero-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: center;
+  padding-inline: var(--ink-gutter);
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.ink-hero-copy {
+  max-width: 620px;
+}
+
+.ink-hero-lede {
+  margin-top: 1.5rem;
+  font-size: clamp(1rem, 1.1vw, 1.08rem);
+  line-height: 1.78;
+  color: var(--ink-text-2);
+  max-width: 540px;
+}
+
+.ink-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  margin-top: 2.25rem;
+}
+
+/* The three compact capabilities under the hero buttons. Deliberately NOT
+   cards — the brief reserves cards for a few structured sections only. */
+.ink-hero-caps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--ink-border-soft);
+}
+
+/* ── Hero visual ────────────────────────────────────────────────────── */
+/* A positioning context with a little breathing room so the floating
+   cards can overhang the stage without being clipped by its border. */
+.ink-hero-visual {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  margin-inline: auto;
+  padding: 1.25rem 1rem 1.75rem;
+}
+
+.ink-hero-stage {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--ink-radius-lg);
+}
+
+.ink-hero-stage img {
+  position: absolute;
+  inset: 0;
+}
+
+/* Warm ambient halo behind the whole composition. */
+.ink-hero-halo {
+  position: absolute;
+  inset: -6%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 55% 45%, rgba(255, 106, 0, 0.2), transparent 62%);
+  filter: blur(40px);
+  pointer-events: none;
+}
+
+/* ── Featured stories ───────────────────────────────────────────────── */
+.ink-stories {
+  position: relative;
+  padding-block: var(--ink-section-y);
+}
+
+.ink-stories-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin-bottom: clamp(2rem, 4vw, 3rem);
+}
+
+.ink-stories-viewall {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink-orange);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: gap 0.22s ease;
+}
+
+.ink-stories-viewall:hover {
+  gap: 0.7rem;
+}
+
+/* 3 → 2 → 1. Auto-fit with a min track keeps the rows even at every width
+   in the brief's list, and the explicit breakpoints below pin the exact
+   column counts the brief asks for. */
+.ink-stories-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.25rem, 2.5vw, 1.75rem);
+}
+
+@media (max-width: 1023.95px) {
+  .ink-stories-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 639.95px) {
+  .ink-stories-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The empty / error / loading states share one centred block. */
+.ink-stories-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding-block: 3.5rem;
+  color: var(--ink-text-2);
+}
+
+/* ── Stats ──────────────────────────────────────────────────────────── */
+.ink-home-stats {
+  padding-block: clamp(1rem, 3vw, 2rem) var(--ink-section-y);
+}
+
+/* ── Newsletter CTA ─────────────────────────────────────────────────── */
+.ink-newsletter {
+  padding-block: 0 clamp(4rem, 9vw, 7rem);
+}
+
+.ink-newsletter-panel {
+  position: relative;
+  border-radius: var(--ink-radius-lg);
+  overflow: hidden;
+  padding: clamp(2rem, 5vw, 3.5rem);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: center;
+  background:
+    radial-gradient(70% 120% at 8% 50%, rgba(255, 106, 0, 0.13), transparent 62%),
+    linear-gradient(140deg, #1c1916 0%, #171513 55%, #121110 100%);
+  border: 1px solid var(--ink-border);
+  box-shadow: var(--ink-shadow-card);
+}
+
+/* Slow dash drift on the flowing orange lines. */
+.ink-flow-line {
+  stroke-dasharray: 220 320;
+  animation: inkFlow 12s linear infinite;
+}
+
+@keyframes inkFlow {
+  from { stroke-dashoffset: 540; }
+  to { stroke-dashoffset: 0; }
+}
+
+/* Clipped to the panel's own bounds so the curves never bleed outside it. */
+.ink-flow-lines {
+  opacity: 0.7;
+}
+
+.ink-newsletter-motif {
+  position: relative;
+  align-self: stretch;
+  min-height: 190px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ink-newsletter-body {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+.ink-newsletter-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+  align-items: flex-start;
+}
+
+/* The email input primitive (.ink-input) moved to styles/inkwell.css now
+   that a second page consumes it — a page stylesheet is not a shared home. */
+
+.ink-newsletter-msg {
+  margin-top: 0.9rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.ink-newsletter-msg--ok { color: #4ade80; }
+.ink-newsletter-msg--err { color: #f87171; }
+
+/* ── Responsive ─────────────────────────────────────────────────────── */
+@media (max-width: 899.95px) {
+  .ink-hero-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(2.5rem, 7vw, 3.5rem);
+  }
+
+  .ink-hero-copy {
+    max-width: 100%;
+  }
+
+  .ink-hero-visual {
+    max-width: 480px;
+    /* Trim the overhang allowance — floating cards tuck in tighter on
+       small screens so nothing collides with the copy above. */
+    padding: 0.5rem 0.75rem 1rem;
+  }
+
+  .ink-newsletter-panel {
+    grid-template-columns: minmax(0, 1fr);
+    text-align: center;
+  }
+
+  .ink-newsletter-motif {
+    min-height: 0;
+  }
+
+  .ink-newsletter-form {
+    justify-content: center;
+  }
+
+  .ink-hero-caps {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 479.95px) {
+  .ink-hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ink-hero-actions .ink-btn {
+    width: 100%;
+  }
+
+  .ink-hero-caps {
+    gap: 0.65rem 1.1rem;
+  }
+
+  .ink-hero-visual {
+    padding-inline: 0.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ink-flow-line {
+    animation: none;
+    stroke-dasharray: none;
+  }
+
+  .ink-stories-viewall {
+    transition: none;
+  }
+}

@@ -15,7 +15,10 @@ import { Box, Typography, Stack } from "@mui/material";
 //   onClick    makes the whole mark a pointer
 //   ...rest    spread onto the root (aria-label, role, etc.)
 
-const Quill = ({ sx }) => (
+// Exported so the footer's oversized watermark can reuse the real brand glyph
+// rather than a redrawn lookalike. `sx` is spread last, so callers can override
+// the default 55% sizing and the hard-coded white fill.
+export const QuillGlyph = ({ sx }) => (
   <Box
     component="svg"
     viewBox="0 0 24 24"
@@ -32,6 +35,8 @@ const Quill = ({ sx }) => (
     <line x1="17.5" y1="15" x2="9" y2="15" />
   </Box>
 );
+
+const Quill = QuillGlyph;
 
 const BrandLogo = ({
   variant = "full",

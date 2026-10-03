@@ -10,7 +10,7 @@ import {
   Chip,
 } from "@mui/material";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import SearchIcon from "@mui/icons-material/Search";
@@ -46,9 +46,15 @@ const stripHtml = (html) => {
 
 const CommandPalette = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const go = useRequireAuth();
   const { theme, toggleTheme } = useTheme();
   const isLogin = useSelector((state) => state.auth.isLogin);
+  // The sign-in page is a fixed dark composition with no theme switch of
+  // its own, so the palette must not smuggle one back in through Cmd+K —
+  // a theme action taken there would repaint the pages behind it and
+  // leave the one on screen unchanged.
+  const onSignInPage = location.pathname === "/login";
 
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -60,9 +66,15 @@ const CommandPalette = () => {
   // Global hotkey: Cmd/Ctrl+K toggles, Esc closes. Also listen for a
   // decoupled 'open-command-palette' event so the navbar search button (or
   // anything else) can open it without shared state.
+  //
+  // Pages that claim ⌘K for themselves set data.ink-capture-k on <body>
+  // (the writing studio maps it to its copilot). The palette bows out there
+  // to avoid a double handler — the page's panel is the palette of that
+  // route anyway.
   useEffect(() => {
     const onKey = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      const paletteDisabled = document.body.dataset.inkCaptureK === "1";
+      if (!paletteDisabled && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setOpen((o) => !o);
       } else if (e.key === "Escape" && open) {
@@ -108,21 +120,23 @@ const CommandPalette = () => {
     const list = [
       { id: "act-home", group: "Actions", label: "Go home", icon: <HomeIcon />, run: () => navigate("/") },
       { id: "act-write", group: "Actions", label: "Start writing", icon: <EditNoteIcon />, run: () => go("/create-blog") },
-      { id: "act-blogs", group: "Actions", label: "Explore blogs", icon: <ArticleIcon />, run: () => go("/blogs") },
+      { id: "act-blogs", group: "Actions", label: "Explore blogs", icon: <ArticleIcon />, run: () => go("/explore") },
       { id: "act-leader", group: "Actions", label: "Leaderboard", icon: <LeaderboardIcon />, run: () => go("/leaderboard") },
       { id: "act-bookmarks", group: "Actions", label: "Bookmarks", icon: <BookmarkBorderIcon />, run: () => go("/bookmarks") },
       { id: "act-history", group: "Actions", label: "Reading history", icon: <HistoryIcon />, run: () => go("/reading-history") },
       { id: "act-profile", group: "Actions", label: "Profile", icon: <PersonIcon />, run: () => go("/profile") },
       { id: "act-analytics", group: "Actions", label: "Analytics", icon: <BarChartIcon />, run: () => go("/analytics") },
       { id: "act-rewards", group: "Actions", label: "Rewards", icon: <CardGiftcardIcon />, run: () => go("/rewards") },
-      {
+    ];
+    if (!onSignInPage) {
+      list.push({
         id: "act-theme",
         group: "Actions",
         label: theme === "dark" ? "Switch to light mode" : "Switch to dark mode",
         icon: theme === "dark" ? <LightModeIcon /> : <DarkModeIcon />,
         run: () => toggleTheme(),
-      },
-    ];
+      });
+    }
     if (!isLogin) {
       list.push(
         { id: "act-login", group: "Actions", label: "Sign in", icon: <LoginIcon />, run: () => navigate("/login") },
@@ -130,7 +144,7 @@ const CommandPalette = () => {
       );
     }
     return list;
-  }, [isLogin, theme, toggleTheme, navigate, go]);
+  }, [isLogin, onSignInPage, theme, toggleTheme, navigate, go]);
 
   // Derive post + topic items from the cached blog index.
   const { postItems, topicItems } = useMemo(() => {
