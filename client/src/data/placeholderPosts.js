@@ -1,16 +1,3 @@
-// ─────────────────────────────────────────────────────────────────────
-//  Placeholder content for the homepage "Latest from the community" grid.
-//
-//  These are purely front-end presentation cards shown when no real blogs
-//  exist yet, so the landing page never looks empty. They are NOT persisted
-//  to the database and never reach the backend. When real posts arrive,
-//  CommunitySection swaps them out automatically.
-//
-//  Data is randomized once per mount so every page load feels dynamic.
-// ─────────────────────────────────────────────────────────────────────
-
-// Premium Unsplash photography, one per topic. Direct CDN URLs with
-// sizing params so they load fast and look crisp on retina screens.
 const COVER_IMAGES = {
   technology: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80",
   programming: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80",
@@ -24,9 +11,6 @@ const COVER_IMAGES = {
   ml: "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&w=800&q=80",
 };
 
-// The six editorial placeholder articles, exactly as specified. Titles and
-// descriptions are fixed so the grid always reads as a curated set; only the
-// metadata (date, engagement, author) is randomized per mount.
 const CONTENT = [
   {
     topic: "ai",
@@ -95,19 +79,15 @@ const AVATAR_GRADIENTS = [
   "linear-gradient(135deg, #A8A29E 0%, #E7E5E4 100%)",
 ];
 
-// Deterministic-ish helpers (Math.random is fine here — this runs in the
-// browser component tree, not in a constrained workflow sandbox).
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
-// Days ago → a believable past date string (e.g. "Mar 18").
 const daysAgoLabel = (days) => {
   const d = new Date();
   d.setDate(d.getDate() - days);
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 };
 
-// Fisher–Yates shuffle so topic order varies per load.
 const shuffle = (arr) => {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -117,7 +97,6 @@ const shuffle = (arr) => {
   return a;
 };
 
-// Build a single placeholder post from a fixed article + random metadata.
 const buildPost = (bucket, index) => {
   const author = pick(AUTHORS);
   return {
@@ -133,12 +112,10 @@ const buildPost = (bucket, index) => {
     readingTime: randInt(3, 12),
     likes: randInt(24, 480),
     comments: randInt(3, 64),
-    trending: Math.random() > 0.55, // ~45% of cards get a trending badge
+    trending: Math.random() > 0.55, 
   };
 };
 
-// Generate `count` randomized placeholder posts. Picks distinct buckets so
-// the grid shows a healthy mix of topics.
 const generatePlaceholderPosts = (count = 6) =>
   shuffle(CONTENT)
     .slice(0, count)

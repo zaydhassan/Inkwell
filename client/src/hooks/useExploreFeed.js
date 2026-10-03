@@ -2,30 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { toStoryCard } from "../utils/blogCard";
 
-/* ─────────────────────────────────────────────────────────────────────
-   The Explore feed.
-
-   Owns everything the Explore page needs from the backend: the paginated,
-   searchable, categorised story list plus the trending rail. The page keeps
-   only presentation state, so the loading/empty/error rules live in one place
-   instead of being re-derived at each render.
-
-   Two things it deliberately does NOT do:
-     • It never fetches the whole catalog. Search and category are both sent to
-       the server (`?q=`, `/category/:name`), and the grid pages in with
-       `?page=` — the old page pulled every blog up front and filtered in
-       memory, which stops working the moment the list is paginated.
-     • It never invents a figure. Cards are built by the shared `toStoryCard`
-       mapper, which only sets `likes`/`comments` when the endpoint actually
-       aggregated them.
-   ───────────────────────────────────────────────────────────────────── */
-
-// Cards per page. The grid is 2-up on desktop, so 6 fills three clean rows and
-// keeps "Load more" meaning a small, quick increment.
 export const PAGE_SIZE = 6;
 
-// Long enough that a normal typing burst produces one request, short enough
-// that the grid feels like it is following along.
 const DEBOUNCE_MS = 350;
 
 const listEndpoint = (category) =>
@@ -45,18 +23,14 @@ const useExploreFeed = ({ category = "" } = {}) => {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
-  // Bumped by "Try again" to re-run the first-page effect without touching the
-  // query or the category.
+ 
   const [reloadKey, setReloadKey] = useState(0);
 
   const [trending, setTrending] = useState([]);
   const [trendingLoading, setTrendingLoading] = useState(true);
 
-  // Monotonic id so a slow response from a superseded request (a stale query,
-  // or the previous category) can be dropped instead of overwriting the grid.
   const requestId = useRef(0);
 
-  /* Typing → one request. */
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQuery(query.trim()), DEBOUNCE_MS);
     return () => clearTimeout(t);
@@ -87,9 +61,7 @@ const useExploreFeed = ({ category = "" } = {}) => {
         setPage(pageToLoad);
         setError(false);
       } catch {
-        // The raw backend message is never surfaced — the page shows its own
-        // copy. A failed "load more" leaves the stories already on screen
-        // alone rather than blanking the grid.
+       
         if (id !== requestId.current) return;
         if (!append) {
           setBlogs([]);
@@ -106,15 +78,10 @@ const useExploreFeed = ({ category = "" } = {}) => {
     [category, debouncedQuery]
   );
 
-  /* New search or new category → back to page 1. */
   useEffect(() => {
     load(1, false);
   }, [load, reloadKey]);
 
-  /* Trending is independent of the filters — it is "what the community is
-     reading", not "what matches your search" — so it is fetched once per page
-     load and never re-run by the debounce. Failure is silent: the card simply
-     renders nothing rather than an error, since it is a secondary rail. */
   useEffect(() => {
     let alive = true;
     axios
@@ -140,9 +107,6 @@ const useExploreFeed = ({ category = "" } = {}) => {
 
   const retry = useCallback(() => setReloadKey((k) => k + 1), []);
 
-  // Filtering is active when either control is narrowing the list — the empty
-  // state phrases itself differently for "nothing here yet" vs "nothing
-  // matched", so the page needs to know.
   const isFiltered = Boolean(debouncedQuery) || Boolean(category);
 
   return {

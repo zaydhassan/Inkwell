@@ -20,22 +20,13 @@ export const AuthProvider = ({ children }) => {
     try {
       parsed = JSON.parse(storedUser);
     } catch {
-      // Corrupt localStorage entry — ignore.
+    
       return;
     }
-    // Optimistically show the cached profile so the shell renders instantly.
+  
     setUser(parsed);
     setIsLoggedIn(true);
 
-    // Sync the cached profile with the server. A role change made AFTER
-    // this user logged in (e.g. an Admin promoting Reader → Writer) is stored
-    // only in the DB; the localStorage copy keeps the stale role until a fresh
-    // login. That made CreateBlog's "Only Writers can create blogs" gate fire
-    // for a user who IS now a Writer — fixed only by logout + login. Calling
-    // /refresh here re-fetches publicUser (with the up-to-date role) + mints a
-    // fresh access token, using the httpOnly refresh cookie. We then update
-    // localStorage, this context, and the redux store so every consumer
-    // (Navbar, Profile, CreateBlog) sees the current role.
     axios
       .post("/api/v1/user/refresh")
       .then(({ data }) => {
@@ -51,11 +42,6 @@ export const AuthProvider = ({ children }) => {
         dispatch(authActions.login(fresh));
       })
       .catch((err) => {
-        // Only an explicit auth failure (401) means the session is really
-        // dead — clear the stale local user so protected UI never trusts a
-        // cached role/identity. A transient network or 5xx error must NOT log
-        // the user out; keep the cached profile and let a real 401 surface
-        // later via the axios interceptor.
         if (err?.response?.status !== 401) return;
         localStorage.removeItem("user");
         localStorage.removeItem("userId");
