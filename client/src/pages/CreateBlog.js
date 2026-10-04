@@ -18,6 +18,7 @@ import StudioRail from "../components/write/StudioRail";
 import StudioSide from "../components/write/StudioSide";
 import EditorCanvas from "../components/write/EditorCanvas";
 import AiCopilot from "../components/write/AiCopilot";
+import AiSelectionMenu from "../components/write/AiSelectionMenu";
 import SeoPanel from "../components/write/SeoPanel";
 import TemplatesPopover, { TEMPLATES } from "../components/write/TemplatesPopover";
 import PreviewOverlay from "../components/write/PreviewOverlay";
@@ -27,12 +28,14 @@ import SchedulePanel from "../components/write/SchedulePanel";
 import ChecklistPanel from "../components/write/ChecklistPanel";
 import { setGamification, fetchUnreadCount } from "../redux/store";
 import {
-  isAiConfigured,
+  fetchAiStatus,
   runAiAction,
   findAiAction,
   runChatTurn,
   runDraftAnalysis,
+  runResearch,
 } from "../services/aiService";
+import { getSavedSources, toggleSavedSource } from "../utils/savedSources";
 import {
   newDraftKey,
   loadDraft,
@@ -86,6 +89,9 @@ const TOOLBAR_PICKER_LABELS = {
 // Suggestion text is model output, i.e. untrusted-ish content — it is pasted
 // through Quill's clipboard parsing only as escaped paragraphs, never raw.
 const escapeHtml = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+// Source URLs land in an anchor's href, so quotes must be escaped too —
+// escapeHtml alone would let a quote break out of the attribute.
+const escapeAttr = (s) => escapeHtml(s).replace(/"/g, "&quot;");
 // Blocks split on blank lines; single newlines stay inside the block (<br/>).
 const suggestionToHtml = (text) =>
   String(text)
@@ -146,7 +152,10 @@ const CreateBlog = () => {
   const [lastSavedAt, setLastSavedAt] = useState(null);
 
   // ── AI copilot state (all of it page-owned; AiCopilot is props-only) ──
-  const [aiConfigured] = useState(() => isAiConfigured());
+  // null = the status probe hasn't answered yet, true/false = known. Only the
+  // server can say (the provider key lives there), and a failed probe counts
+  // as offline so the UI never claims capability it can't verify.
+  const [aiConfigured, setAiConfigured] = useState(null);
   const [chat, setChat] = useState({ messages: [], busy: false });
   const [runningAction, setRunningAction] = useState(null);
   const [suggestion, setSuggestion] = useState(null);
@@ -154,6 +163,75 @@ const CreateBlog = () => {
   const [analysisBusy, setAnalysisBusy] = useState(false);
   // null until the first analysis run — the UI's "not analyzed yet" state.
   const [enhancements, setEnhancements] = useState(null);
+  // What went wrong, and enough to replay it. Non-null renders the honest
+  // error card; clearing it is what "Try again" does first.
+  const [aiError, setAiError] = useState(null);
+  // A prefill for the chat input (from "Ask AI" on a selection). The nonce
+  // makes every seed a new object so a repeat seed still lands.
+  const [chatSeed, setChatSeed] = useState(null);
+
+  // ── Research Sources state ───────────────────────────────────────────
+  const [researchConfigured, setResearchConfigured] = useState(false);
+  const [researchBusy, setResearchBusy] = useState(false);
+  const [sources, setSources] = useState(null);
+  const [researchError, setResearchError] = useState(null);
+  // Saved sources are per-user localStorage; loaded in an effect below.
+  const [savedUrls, setSavedUrls] = useState({});
+
+  // ── Text-selection menu state ────────────────────────────────────────
+  // selMenu is the live anchor for the floating toolbar (null = hidden);
+  // selRangeRef remembers the range it was opened for, so the action still
+  // edits the highlighted text even after the live selection collapses.
+  const [selMenu, setSelMenu] = useState(null);
+  const selMenuRef = useRef(null);
+  const selRangeRef = useRef(null);
+  const seedNonce = useRef(0);
+
+  /* Recompute the floating menu's anchor from Quill's own selection. Called
+     on selection-change plus scroll/resize — never on every keystroke, and
+     it bails out without a setState when nothing about the anchor moved, so
+     caret movement can't cause a render storm. */
+  const syncSelectionMenu = () => {
+    const q = quillInstance.current;
+    const range = q ? q.getSelection() : null;
+
+    if (!range || range.length === 0) {
+      selRangeRef.current = null;
+      if (selMenuRef.current) {
+        selMenuRef.current = null;
+        setSelMenu(null);
+      }
+      return;
+    }
+
+    const bounds = q.getBounds(range.index, range.length) || {};
+    const rect = q.root.getBoundingClientRect();
+    const next = {
+      index: range.index,
+      length: range.length,
+      x: rect.left + (bounds.left || 0) + (bounds.width || 0) / 2,
+      y: rect.top + (bounds.top || 0),
+    };
+    selRangeRef.current = { index: range.index, length: range.length };
+
+    const prev = selMenuRef.current;
+    if (
+      prev &&
+      prev.index === next.index &&
+      prev.length === next.length &&
+      Math.abs(prev.x - next.x) < 1 &&
+      Math.abs(prev.y - next.y) < 1
+    ) {
+      return;
+    }
+    selMenuRef.current = next;
+    setSelMenu(next);
+  };
+
+  const closeSelectionMenu = () => {
+    selMenuRef.current = null;
+    setSelMenu(null);
+  };
 
   // ---- Draft auto-save + recovery (localStorage) ----
   // Keyed per user so a shared machine never cross-contaminates drafts.
@@ -209,13 +287,24 @@ const CreateBlog = () => {
     }
   }, [transcript, resetTranscript]);
 
+  // Bounce a non-writer out of the studio — at most once per mount. The
+  // effect re-runs under StrictMode's double-invoke and whenever `user`
+  // changes identity (e.g. after a profile refresh), either of which used to
+  // stack a second identical toast. The ref makes the notice one-shot, and
+  // the stable toast id makes a repeat update the live toast instead of
+  // adding another copy.
+  const bouncedNonWriter = useRef(false);
   useEffect(() => {
     // Wait for auth state to resolve before gating. Non-writers are bounced;
     // an unauthenticated user (user stays null) is left to the server, which
     // rejects the create call and the interceptor redirects to login.
     if (!user) return;
     if (userRole !== 'Writer') {
-      toast.error('Only Writers can create blogs');
+      if (bouncedNonWriter.current) return;
+      bouncedNonWriter.current = true;
+      toast.error('Only Writers can create blogs', {
+        id: 'create-blog-writer-guard',
+      });
       navigate('/');
     }
   }, [navigate, user, userRole]);
@@ -231,6 +320,35 @@ const CreateBlog = () => {
     }
   }, [userId]);
 
+  // Ask the server whether an AI provider (and a search provider) is
+  // configured. The browser can't know — the keys live server-side — and a
+  // probe that fails is reported as unavailable rather than assumed online.
+  useEffect(() => {
+    let cancelled = false;
+    fetchAiStatus().then((status) => {
+      if (cancelled) return;
+      setAiConfigured(status.ok ? status.configured : false);
+      setResearchConfigured(Boolean(status.research?.configured));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Which sources this writer has saved before (local half of the Source
+  // Locker). Re-read when the user changes; storage failures just mean none.
+  useEffect(() => {
+    if (!userId) {
+      setSavedUrls({});
+      return;
+    }
+    const map = {};
+    getSavedSources(userId).forEach((s) => {
+      map[s.url] = true;
+    });
+    setSavedUrls(map);
+  }, [userId]);
+
   // The two schedule inputs are one value. Deriving it here means the submit
   // path never learns that the panel changed shape.
   useEffect(() => {
@@ -238,6 +356,7 @@ const CreateBlog = () => {
   }, [scheduleDate, scheduleTime]);
 
   useEffect(() => {
+    let bound = false;
     if (!quillInstance.current && quillRef.current) {
       quillInstance.current = new Quill(quillRef.current, {
         theme: 'snow',
@@ -261,13 +380,31 @@ const CreateBlog = () => {
         },
       });
 
+      // Any edit invalidates an open selection menu — its stored offsets
+      // would be stale, and a menu acting on moved text is worse than no
+      // menu at all.
       quillInstance.current.on('text-change', () => {
         setInputs((prev) => ({
           ...prev,
           description: quillInstance.current.root.innerHTML,
         }));
+        closeSelectionMenu();
       });
+
+      // The AI menu follows the writer's highlight. It recomputes on
+      // selection-change plus scroll/resize (the anchor is viewport-relative)
+      // and no-ops when nothing moved. The guard above means this binds
+      // exactly once, even through StrictMode's double mount.
+      quillInstance.current.on('selection-change', syncSelectionMenu);
+      window.addEventListener('scroll', syncSelectionMenu, true);
+      window.addEventListener('resize', syncSelectionMenu);
+      bound = true;
     }
+    return () => {
+      if (!bound) return;
+      window.removeEventListener('scroll', syncSelectionMenu, true);
+      window.removeEventListener('resize', syncSelectionMenu);
+    };
   }, [])
 
   // Name the editor's controls for assistive tech. Runs once, after the init
@@ -571,26 +708,29 @@ const handleBlogAction = async (status, scheduleAt = null) => {
      AI wiring — context routing, honest failure, human-first application.
      ───────────────────────────────────────────────────────────────────── */
 
-  // The honest "not available" line the copilot speaks instead of pretending
-  // a run succeeded. Used by chat + quick actions + analysis alike.
+  // The honest "not available" line, spoken when there is no provider at all.
+  // A run that was actually attempted and failed gets the error card instead,
+  // which says what happened and offers a retry.
   const UNAVAILABLE =
     "AI is currently unavailable. Your draft is safe. Try again later.";
 
-  const pushUnavailable = () =>
-    setChat((c) => ({ ...c, messages: [...c.messages, { role: "ai", text: UNAVAILABLE }] }));
+  // Record a failure with enough detail to replay it from the error card.
+  const failAi = (descriptor) => setAiError({ ...descriptor, at: Date.now() });
 
   // Context slice for the quick actions. `want` is the action's target:
   //   selection → highlighted text, else the paragraph the caret sits in
   //   article   → the whole draft
-  // When the slice comes from the document, its coordinates come back too so
-  // a "Replace" can later verify the draft still matches before it fires.
-  const aiContext = (want = "article") => {
+  // `rangeOverride` lets the selection menu act on the range it captured when
+  // it opened, even if the live selection has since collapsed. When the slice
+  // comes from the document, its coordinates come back too so a "Replace" can
+  // later verify the draft still matches before it fires.
+  const aiContext = (want = "article", rangeOverride = null) => {
     const q = quillInstance.current;
     const articleText = q ? q.getText().trim() : "";
     if (want !== "selection" || !q) {
       return { title: inputs.title, category: inputs.category, tags: inputs.tags || "", articleText, slice: articleText, sliceIndex: null, sliceLength: 0 };
     }
-    const range = q.getSelection(true) || { index: 0, length: 0 }; // never throws
+    const range = rangeOverride || q.getSelection(true) || { index: 0, length: 0 }; // never throws
     if (range.length > 0) {
       const slice = q.getText(range.index, range.length);
       return {
@@ -627,8 +767,16 @@ const handleBlogAction = async (status, scheduleAt = null) => {
   };
   openAssistantRef.current = ensureAiTab;
 
+  // Reveal the copilot without stealing focus — what a quick action wants, so
+  // the writer's caret stays in the draft they were editing.
+  const revealAiTab = () => {
+    setActiveTab("ai");
+    setPanelOpen(true);
+  };
+
   const sendChat = async (text) => {
     setChat((c) => ({ ...c, messages: [...c.messages, { role: "user", text }], busy: true }));
+    setAiError(null);
     const transcript = [...chat.messages, { role: "user", text }];
     const draft = aiContext();
     const res = await runChatTurn(
@@ -640,12 +788,25 @@ const handleBlogAction = async (status, scheduleAt = null) => {
       busy: false,
       messages: [...c.messages, { role: "ai", text: res.ok ? res.text : UNAVAILABLE }],
     }));
+    // The question stays in the thread; the error card offers the replay.
+    if (!res.ok) failAi({ kind: "chat", text });
   };
 
-  const runQuickAction = async (actionId) => {
+  /* Run a registry action. `param` is the writer's pick for a parameterised
+     action (tone, simplify level, brainstorm lens); `rangeOverride` is the
+     selection menu's captured range. */
+  const runQuickAction = async (actionId, param, rangeOverride = null) => {
     const action = findAiAction(actionId);
     if (!action || runningAction) return;
-    const ctx = aiContext(action.target);
+
+    // Research runs a different pipeline entirely: a real web search on the
+    // server, never a completion pretending to know sources.
+    if (action.kind === "research") {
+      runResearchAction();
+      return;
+    }
+
+    const ctx = aiContext(action.target, rangeOverride);
     if ((action.target === "selection" && !ctx.slice) || (!ctx.articleText && !ctx.title)) {
       toast.error(
         action.target === "selection"
@@ -654,17 +815,18 @@ const handleBlogAction = async (status, scheduleAt = null) => {
       );
       return;
     }
-    setActiveTab("ai");
+    revealAiTab();
+    setAiError(null);
     setRunningAction(actionId);
-    const res = await runAiAction(actionId, { ...ctx, topic: ctx.title });
+    const res = await runAiAction(actionId, { ...ctx, topic: ctx.title }, param);
     setRunningAction(null);
     if (!res.ok) {
-      // Never fake it: surface the honest unavailable line in the thread.
-      pushUnavailable();
+      // Never fake it: the error card names the failure and replays it.
+      failAi({ kind: "action", actionId, param: param || null });
       return;
     }
     setSuggestion({
-      heading: action.title,
+      heading: param ? `${action.title} · ${param.label}` : action.title,
       mode: action.mode,
       resultText: res.text,
       // For replace-mode suggestions: remember where the slice came from so
@@ -681,6 +843,7 @@ const handleBlogAction = async (status, scheduleAt = null) => {
       toast.error("Write something first — analysis needs a draft.");
       return;
     }
+    setAiError(null);
     setAnalysisBusy(true);
     const res = await runDraftAnalysis(aiContext());
     setAnalysisBusy(false);
@@ -689,8 +852,101 @@ const handleBlogAction = async (status, scheduleAt = null) => {
       setEnhancements(res.enhancements.length ? res.enhancements : []);
     } else {
       setInsights(null);
-      pushUnavailable();
+      failAi({ kind: "analysis" });
     }
+  };
+
+  // "Try again" on the error card: replay exactly what failed.
+  const retryAi = () => {
+    const err = aiError;
+    if (!err) return;
+    setAiError(null);
+    if (err.kind === "chat") sendChat(err.text);
+    else if (err.kind === "action") runQuickAction(err.actionId, err.param);
+    else if (err.kind === "analysis") runAnalysis();
+  };
+
+  /* ── Research Sources ────────────────────────────────────────────────
+     Real results from a configured search provider, or an honest
+     unavailable state. There is no mock list anywhere in this path. */
+  const runResearchAction = async () => {
+    if (researchBusy) return;
+    const q = quillInstance.current;
+    const articleText = q ? q.getText().trim() : "";
+    const query = (inputs.title || "").trim() || articleText.slice(0, 200).trim();
+    if (!query) {
+      toast.error("Add a title or a line of text so there is something to research.");
+      return;
+    }
+    revealAiTab();
+    setAiError(null);
+    setResearchError(null);
+    setResearchBusy(true);
+    const res = await runResearch({ query, context: articleText.slice(0, 8000) });
+    setResearchBusy(false);
+    if (!res.ok) {
+      setSources(null);
+      setResearchError(res.reason || "error");
+      // The server just told us there is no search provider — remember it so
+      // the card stops promising results.
+      if (res.reason === "unconfigured") setResearchConfigured(false);
+      return;
+    }
+    setSources(res.sources);
+  };
+
+  // A citation is built locally from the URL the search provider returned and
+  // only ever lands in the draft on this click — the model never writes it.
+  const insertCitation = (source) => {
+    const q = quillInstance.current;
+    if (!q || !source?.url) return;
+    const label = source.title || source.publisher || source.url;
+    const meta = source.publisher && source.title ? ` — ${source.publisher}` : "";
+    const html =
+      `<p><a href="${escapeAttr(source.url)}" target="_blank" rel="noopener noreferrer">` +
+      `${escapeHtml(label)}</a>${escapeHtml(meta)}</p>`;
+    const range = q.getSelection(true);
+    const index = range?.index ?? q.getLength();
+    q.clipboard.dangerouslyPasteHTML(index, html, "user");
+    toast.success("Citation inserted at your cursor");
+  };
+
+  const toggleSourceSave = (source) => {
+    const list = toggleSavedSource(userId, source);
+    const map = {};
+    list.forEach((s) => {
+      map[s.url] = true;
+    });
+    setSavedUrls(map);
+    toast.success(map[source.url] ? "Saved to your sources" : "Removed from saved sources");
+  };
+
+  /* ── Text-selection menu ─────────────────────────────────────────────
+     The menu captured its range when it opened (selRangeRef), so the action
+     edits the text the writer actually highlighted even if the live
+     selection collapsed when they clicked. */
+  const askAiAboutSelection = (range) => {
+    const q = quillInstance.current;
+    let slice = "";
+    if (q && range) slice = q.getText(range.index, range.length).trim();
+    if (!slice && q) {
+      const sel = q.getSelection();
+      if (sel && sel.length) slice = q.getText(sel.index, sel.length).trim();
+    }
+    const text = slice ? `Help me with this passage:\n\n"${slice.slice(0, 400)}"\n\n` : "";
+    seedNonce.current += 1;
+    setChatSeed({ text, nonce: seedNonce.current });
+    ensureAiTab();
+  };
+
+  const onSelectionAction = (actionId, param) => {
+    const range = selRangeRef.current;
+    closeSelectionMenu();
+    if (actionId === "ask") {
+      askAiAboutSelection(range);
+      return;
+    }
+    runQuickAction(actionId, param, range);
   };
 
   const insertSuggestionHtml = (text) => {
@@ -780,6 +1036,25 @@ const handleBlogAction = async (status, scheduleAt = null) => {
 
   /* ── Slots for the right panel ─────────────────────────────────────── */
 
+  /* ── Text-selection menu entries ─────────────────────────────────────
+     "Ask AI" seeds the chat; the rest are ordinary registry actions whose
+     ids feed the same suggestion flow as the panel's grids. Actions with a
+     `param` open their picker inside the floating menu. */
+  const SELECTION_MENU_IDS = [
+    "improve",
+    "rewrite",
+    "shorter",
+    "longer",
+    "simplify",
+    "tone",
+    "grammar",
+    "explain",
+  ];
+  const selectionMenuActions = [
+    { id: "ask", title: "Ask InkWell AI" },
+    ...SELECTION_MENU_IDS.map((id) => findAiAction(id)).filter(Boolean),
+  ];
+
   const aiEl = (
     <AiCopilot
       chat={chat}
@@ -795,6 +1070,16 @@ const handleBlogAction = async (status, scheduleAt = null) => {
       onApplyEnhancement={applyEnhancement}
       onDismissEnhancement={dismissEnhancement}
       aiConfigured={aiConfigured}
+      aiError={aiError}
+      onRetryAi={retryAi}
+      chatSeed={chatSeed}
+      researchConfigured={researchConfigured}
+      researchBusy={researchBusy}
+      sources={sources}
+      researchError={researchError}
+      savedUrls={savedUrls}
+      onInsertCitation={insertCitation}
+      onToggleSaveSource={toggleSourceSave}
     />
   );
 
@@ -965,6 +1250,15 @@ const handleBlogAction = async (status, scheduleAt = null) => {
         descriptionHtml={inputs.description}
         wordCount={wordCount}
         readingTime={readingTime}
+      />
+
+      {/* The highlight toolbar. Portaled to <body> by the component itself, so
+          it never becomes Quill content — see AiSelectionMenu. */}
+      <AiSelectionMenu
+        anchor={selMenu}
+        actions={selectionMenuActions}
+        onAction={onSelectionAction}
+        onClose={closeSelectionMenu}
       />
 
       {panelOpen ? (

@@ -1,8 +1,3 @@
-/* Prose styling for the rendered blog body (Quill HTML output). Scoped to
-   `.blog-content` so it never leaks into the rest of the app. Colors read the
-   CSS-variable layer from index.css so the article flips correctly in dark
-   mode via the `data-theme` attribute. */
-
 .blog-content {
   color: var(--text);
   font-size: 1.05rem;

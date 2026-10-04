@@ -33,8 +33,6 @@ import "./BlogDetails.css";
 const BlogDetails = () => {
   const [blog, setBlog] = useState(null);
   const [loading, setLoading] = useState(true);
-  // Distinguishes "fetch failed" from a normal render so a network error
-  // never degrades into a blank article shell.
   const [fetchError, setFetchError] = useState(false);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
@@ -52,19 +50,12 @@ const BlogDetails = () => {
   const [replyText, setReplyText] = useState({});
   const [reportedComments, setReportedComments] = useState([]);
   const [commentCount, setCommentCount] = useState(0);
-  // Comments are paginated server-side (the endpoint accepts ?page=&limit=).
-  // We fetch one page at a time; "Load more" requests the next page and
-  // appends. commentCount is the server total so the badge is correct even
-  // before every page is loaded.
   const COMMENTS_PER_PAGE = 5;
   const [commentPage, setCommentPage] = useState(1);
   const [commentHasMore, setCommentHasMore] = useState(false);
-  // Ref to the article body element — shared by ReadingProgress (scroll %) and
-  // TableOfContents (heading anchors + active-heading observer).
   const contentRef = useRef(null);
   const [downloadAnchor, setDownloadAnchor] = useState(null);
-  // "Listen to this blog" — browser SpeechSynthesis, driven from the same
-  // article body ref the reading-progress bar uses. No API key / per-call cost.
+  
   const tts = useTextToSpeech({ contentRef });
 
   const fetchCommentsPage = async (page, append) => {
@@ -81,8 +72,6 @@ const BlogDetails = () => {
     }
   };
 
-  // Re-fetch every page the user has currently loaded so the local list stays
-  // in sync with the server (e.g. after posting a new comment).
   const reloadLoadedComments = async () => {
     const all = [];
     let meta = null;
@@ -99,10 +88,6 @@ const BlogDetails = () => {
 
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
-
-  // Sticky reading actions: a compact glass pill docks to the bottom of the
-  // viewport once the reader scrolls past the in-article action row. Hidden
-  // while the TTS player bar is mounted so the two never stack.
   const [showStickyBar, setShowStickyBar] = useState(false);
   useEffect(() => {
     const onScroll = () => {
@@ -144,19 +129,13 @@ const BlogDetails = () => {
       } catch (error) {
         setFetchError(true);
       } finally {
-        // Loading is tied to the actual fetch, not an artificial timer.
         setLoading(false);
       }
     };
-
-    // Comments are fetched in their own paginated request (page 1).
     fetchCommentsPage(1, false);
 
     const fetchRecommendations = async () => {
       try {
-        // Content-based related posts scored server-side by shared tags +
-        // category + title-keyword overlap (see getRelatedBlogs). This is
-        // genuinely "related to THIS article", not just "recent blogs".
         const { data } = await axios.get(`/api/v1/blog/related/${id}?limit=5`);
         if (data.success) {
           setRecommendations(data.related || []);
@@ -172,8 +151,6 @@ const BlogDetails = () => {
     fetchBlogDetails();
     fetchRecommendations();
 
-    // Seed the bookmark toggle's initial state from the user's saved ids so the
-    // icon reflects "already saved" without an extra per-blog request.
     const fetchBookmarkState = async () => {
       let currentUser = user || JSON.parse(localStorage.getItem("user") || "{}");
       if (!currentUser || !currentUser._id) return;
@@ -181,7 +158,7 @@ const BlogDetails = () => {
         const { data } = await axios.get("/api/v1/bookmarks/ids");
         if (data.success) setBookmarked((data.ids || []).includes(id));
       } catch {
-        // non-critical — defaults to un-bookmarked
+      
       }
     };
     fetchBookmarkState();
@@ -196,10 +173,8 @@ const BlogDetails = () => {
       if (data.success) {
         setLiked(data.liked);
         setLikeCount(data.likeCount);
-        // Points are awarded atomically server-side inside the toggle endpoint,
-        // so there is no separate (farmable) point call here.
         toast(data.liked ? "+5 Points! Liked the blog." : "-5 Points! Unliked the blog.", { icon: data.liked ? "👍" : "👎" });
-        // Sync gamification into the store + celebrate level-ups / new badges.
+        
         if (data.liked && data.points !== undefined) {
           dispatch(setGamification({ points: data.points, level: data.level, badges: data.badges }));
           celebrateAchievement({ leveledUp: data.leveledUp, newBadges: data.newBadges, level: data.level });
@@ -224,7 +199,7 @@ const BlogDetails = () => {
   const handleBookmark = async () => {
     let currentUser = user || JSON.parse(localStorage.getItem("user") || "{}");
     if (!currentUser || !currentUser._id) { toast.error("Log in to save articles."); return; }
-    // Optimistic toggle so the icon flips instantly.
+    
     setBookmarked((prev) => !prev);
     try {
       const { data } = await axios.post("/api/v1/bookmarks/toggle", { blog: id });
@@ -233,7 +208,7 @@ const BlogDetails = () => {
         toastBookmarked(data.bookmarked);
       }
     } catch {
-      // Revert on failure.
+     
       setBookmarked((prev) => !prev);
       toast.error("Couldn't update bookmark.");
     }
@@ -267,16 +242,11 @@ const BlogDetails = () => {
       if (response.status === 201) {
         toastComment();
         setNewComment("");
-        // The server returns the commenter's gamification delta — sync it and
-        // celebrate any level-up / new badge earned by commenting.
         if (response.data && response.data.points !== undefined) {
           dispatch(setGamification({ points: response.data.points, level: response.data.level, badges: response.data.badges }));
           celebrateAchievement({ leveledUp: response.data.leveledUp, newBadges: response.data.newBadges, level: response.data.level });
           if (response.data.leveledUp || (response.data.newBadges && response.data.newBadges.length)) dispatch(fetchUnreadCount());
         }
-        // Re-sync the loaded pages with the server. Under oldest-first ordering
-        // the new comment lives on a later page, so it appears once the user
-        // loads more — consistent with the existing threading.
         await reloadLoadedComments();
       }
     } catch (error) {
@@ -343,7 +313,6 @@ const BlogDetails = () => {
     }
   };
 
-  // Skeleton mirrors the real article layout (cover, meta, title, body).
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
@@ -374,7 +343,6 @@ const BlogDetails = () => {
     );
   }
 
-  // Fetch failed: a styled full-page error (never a blank article shell).
   if (fetchError || !blog) {
     return (
       <Container maxWidth="sm" sx={{ py: 12, textAlign: "center" }}>
@@ -436,7 +404,6 @@ const BlogDetails = () => {
 
         <Typography variant="h3" sx={{ mb: 3 }}>{blog?.title}</Typography>
 
-        {/* Actions */}
         <Stack direction="row" spacing={1} sx={{ mb: 3 }}>
           <IconButton onClick={handleLike} aria-label={liked ? "Unlike" : "Like"}>
             <Badge badgeContent={likeCount} color="primary">{liked ? <Favorite color="error" /> : <FavoriteBorder />}</Badge>

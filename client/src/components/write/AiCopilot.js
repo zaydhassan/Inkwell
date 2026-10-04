@@ -4,55 +4,45 @@ import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import SendIcon from "@mui/icons-material/Send";
 import CloseIcon from "@mui/icons-material/Close";
 import CloudOffIcon from "@mui/icons-material/CloudOff";
-import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
-import ReadMoreIcon from "@mui/icons-material/ReadMore";
-import RecordVoiceOverIcon from "@mui/icons-material/RecordVoiceOver";
-import ShortTextIcon from "@mui/icons-material/ShortText";
-import RateReviewIcon from "@mui/icons-material/RateReview";
-import FactCheckIcon from "@mui/icons-material/FactCheck";
-import SegmentIcon from "@mui/icons-material/Segment";
-import ManageSearchIcon from "@mui/icons-material/ManageSearch";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import QueryStatsIcon from "@mui/icons-material/QueryStats";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import CheckIcon from "@mui/icons-material/Check";
 import InkMeter from "../ink/InkMeter";
 import { AI_ACTIONS } from "../../services/aiService";
+import { aiActionIcon } from "./aiActionIcons";
+import ResearchSources from "./ResearchSources";
 import { EASE } from "../ink/tokens";
 
 /* ─────────────────────────────────────────────────────────────────────
    InkWell AI — the copilot column's first tab.
 
    Everything dynamic (chat thread, running action, suggestion card, the
-   analysis meters) is page state rendered through these props; nothing
-   here listens to Quill or keeps its own copy of the draft.
+   analysis meters, research results) is page state rendered through these
+   props; nothing here listens to Quill or keeps its own copy of the draft.
 
    Honesty contract, mirrored from the service:
-     - No provider configured → the offline notice renders and every run
-       surfaces the same "AI is currently unavailable" state. Nothing ever
-       fakes an output.
-     - A result NEVER touches the editor by itself: it opens a
-       suggestion card with Accept / Insert / Replace / Copy / Dismiss.
+     - aiConfigured is tri-state: null = the status probe hasn't answered
+       yet (render the online shell), false = the server has no provider
+       (offline notice, actions disabled), true = ready. A failed probe
+       reports false — never fake-online.
+     - A failed run opens an error card that says exactly what happened and
+       offers a retry. Nothing ever fakes an output.
+     - A result NEVER touches the editor by itself: it opens a suggestion
+       card with Accept / Insert / Replace / Copy / Dismiss.
      - Analysis meters read "Not analyzed yet" until a real run returns.
    ───────────────────────────────────────────────────────────────────── */
 
 const SNAP = { duration: 0.22, ease: EASE };
 
-/* Quick-action cards are metadata + an icon; `AI_ACTIONS` (the extensible
-   registry) carries the metadata, this map carries the glyphs. A new action
-   added to the service shows up here automatically — unknown ids get the
-   default sparkle. */
-const ACTION_ICONS = {
-  improve: AutoFixHighIcon,
-  continue: ReadMoreIcon,
-  tone: RecordVoiceOverIcon,
-  summarize: ShortTextIcon,
-  challenge: RateReviewIcon,
-  factcheck: FactCheckIcon,
-  outline: SegmentIcon,
-  research: ManageSearchIcon,
-};
-
 const MODE_LABEL = { replace: "Replace selection", insert: "Insert at cursor" };
+
+// The first grid: the eight actions that were already there. Everything
+// newer lives under "More AI actions" so the familiar surface stays put.
+const ASSIST_ACTIONS = AI_ACTIONS.filter((a) => (a.group || "assist") === "assist");
+const MORE_ACTIONS = AI_ACTIONS.filter(
+  (a) => (a.group || "assist") !== "assist" && !a.menuOnly
+);
 
 const AiCopilot = ({
   chat,
@@ -68,10 +58,24 @@ const AiCopilot = ({
   onApplyEnhancement,
   onDismissEnhancement,
   aiConfigured,
+  aiError,
+  onRetryAi,
+  chatSeed,
+  researchConfigured,
+  researchBusy,
+  sources,
+  researchError,
+  savedUrls,
+  onInsertCitation,
+  onToggleSaveSource,
 }) => {
   const [draft, setDraft] = useState("");
   const [howOpen, setHowOpen] = useState(false);
+  // An action with choices (Change Tone, Simplify, Brainstorm) opens a chip
+  // row instead of firing straight away.
+  const [pendingParam, setPendingParam] = useState(null);
   const threadRef = useRef(null);
+  const inputRef = useRef(null);
 
   // Keep the newest chat turn in view as the thread grows.
   useEffect(() => {
@@ -79,9 +83,33 @@ const AiCopilot = ({
     if (el) el.scrollTop = el.scrollHeight;
   }, [chat.messages.length, chat.busy]);
 
+  // The offline notice owns the failures it explains; once a run starts the
+  // chip row shouldn't linger over it.
+  useEffect(() => {
+    if (runningAction) setPendingParam(null);
+  }, [runningAction]);
+
+  // "Ask AI" from the text-selection menu seeds the input with the passage.
+  // The seed is a fresh object each time, so a repeat seed still lands.
+  useEffect(() => {
+    if (chatSeed?.text) {
+      setDraft(chatSeed.text);
+      inputRef.current?.focus();
+    }
+  }, [chatSeed]);
+
+  useEffect(() => {
+    if (!pendingParam) return undefined;
+    const onKey = (e) => {
+      if (e.key === "Escape") setPendingParam(null);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [pendingParam]);
+
   const submitChat = () => {
     const text = draft.trim();
-    if (!text || chat.busy) return;
+    if (!text || chat.busy || aiConfigured === false) return;
     setDraft("");
     onSendChat(text);
   };
@@ -93,7 +121,42 @@ const AiCopilot = ({
     }
   };
 
-  const running = chat.busy || Boolean(runningAction);
+  const running = chat.busy || Boolean(runningAction) || researchBusy;
+  const aiOff = aiConfigured === false;
+
+  const runQuick = (action, param) => {
+    setPendingParam(null);
+    onQuickAction(action.id, param);
+  };
+
+  const renderAction = (action) => {
+    const Icon = aiActionIcon(action.id);
+    const isRunning = runningAction === action.id;
+    // Research can still run without a language model (the server falls back
+    // to the provider's own snippet), so it isn't gated by aiOff.
+    const isResearch = action.kind === "research";
+    const disabled = isRunning
+      ? false
+      : Boolean(runningAction) || researchBusy || (aiOff && !isResearch);
+    return (
+      <button
+        key={action.id}
+        type="button"
+        className={`ist-quick${isRunning ? " is-running" : ""}`}
+        onClick={() => (action.param ? setPendingParam(action) : runQuick(action))}
+        disabled={disabled}
+        aria-label={`${action.title} — ${action.desc}`}
+      >
+        <Icon className="ist-quick-icon" />
+        <span className="ist-quick-text">
+          <span className="ist-quick-title">
+            {isRunning ? "Thinking…" : action.title}
+          </span>
+          <span className="ist-quick-desc">{action.desc}</span>
+        </span>
+      </button>
+    );
+  };
 
   return (
     <div className="ist-ai" role="region" aria-label="InkWell AI copilot">
@@ -136,7 +199,10 @@ const AiCopilot = ({
         ) : null}
       </AnimatePresence>
 
-      {!aiConfigured ? (
+      {/* aiConfigured === null means the probe hasn't answered yet — we show
+          the online shell rather than flashing an offline notice that may be
+          wrong. Only a definite "no provider" renders the notice. */}
+      {aiOff ? (
         <div className="ist-ai-offline" role="status">
           <CloudOffIcon className="ist-ai-offline-icon" />
           <div className="ist-ai-offline-text">
@@ -144,9 +210,8 @@ const AiCopilot = ({
             <span>Your draft is safe. Try again later.</span>
           </div>
           <p className="ist-ai-offline-hint">
-            No provider is connected on this build. Point VITE_AI_BASE_URL (a proxy you
-            own) or VITE_AI_PROVIDER + VITE_AI_API_KEY at a model to bring the copilot
-            online.
+            No AI provider is connected on this server. Set AI_PROVIDER and a provider key
+            server-side to bring the copilot online.
           </p>
         </div>
       ) : null}
@@ -184,6 +249,7 @@ const AiCopilot = ({
       {/* ── Chat input ──────────────────────────────────────────────────── */}
       <div className="ist-chat-input">
         <input
+          ref={inputRef}
           type="text"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -196,7 +262,7 @@ const AiCopilot = ({
           type="button"
           className="ist-chat-send"
           onClick={submitChat}
-          disabled={!draft.trim() || chat.busy}
+          disabled={!draft.trim() || chat.busy || aiOff}
           aria-label="Send to InkWell AI"
         >
           <SendIcon />
@@ -206,30 +272,81 @@ const AiCopilot = ({
       {/* ── Quick actions: the 2×4 assist grid ──────────────────────────── */}
       <p className="ist-ai-eyebrow">Quick actions</p>
       <div className="ist-quick-grid" role="group" aria-label="AI quick actions">
-        {AI_ACTIONS.map((action) => {
-          const Icon = ACTION_ICONS[action.id] || AutoAwesomeIcon;
-          const isRunning = runningAction === action.id;
-          const disabled = Boolean(runningAction) && !isRunning;
-          return (
-            <button
-              key={action.id}
-              type="button"
-              className={`ist-quick${isRunning ? " is-running" : ""}`}
-              onClick={() => onQuickAction(action.id)}
-              disabled={disabled}
-              aria-label={`${action.title} — ${action.desc}`}
-            >
-              <Icon className="ist-quick-icon" />
-              <span className="ist-quick-text">
-                <span className="ist-quick-title">
-                  {isRunning ? "Thinking…" : action.title}
-                </span>
-                <span className="ist-quick-desc">{action.desc}</span>
-              </span>
-            </button>
-          );
-        })}
+        {ASSIST_ACTIONS.map(renderAction)}
       </div>
+
+      {/* ── More AI actions: rewrite / edit / generate ──────────────────── */}
+      <p className="ist-ai-eyebrow">More AI actions</p>
+      <div className="ist-quick-grid" role="group" aria-label="More AI actions">
+        {MORE_ACTIONS.map(renderAction)}
+      </div>
+
+      {/* ── Parameter picker (tone, simplify level, brainstorm lens) ────── */}
+      <AnimatePresence initial={false}>
+        {pendingParam ? (
+          <motion.div
+            key={pendingParam.id}
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={SNAP}
+            className="ist-param"
+            role="radiogroup"
+            aria-label={pendingParam.param.label}
+          >
+            <p className="ist-param-label">{pendingParam.param.label}</p>
+            <div className="ist-param-chips">
+              {pendingParam.param.options.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className="ist-param-chip"
+                  onClick={() => runQuick(pendingParam, option)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <button type="button" className="ist-param-cancel" onClick={() => setPendingParam(null)}>
+              Cancel
+            </button>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      {/* ── Research sources: real results, or an honest unavailable state ─ */}
+      <ResearchSources
+        sources={sources}
+        busy={researchBusy}
+        error={researchError}
+        configured={researchConfigured}
+        savedUrls={savedUrls}
+        onRetry={() => onQuickAction("research")}
+        onInsertCitation={onInsertCitation}
+        onToggleSave={onToggleSaveSource}
+      />
+
+      {/* ── Failure card: exactly what happened, plus a way back ─────────── */}
+      <AnimatePresence initial={false}>
+        {aiError ? (
+          <motion.div
+            key="ai-error"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={SNAP}
+            className="ist-ai-error"
+            role="alert"
+          >
+            <p className="ist-ai-error-title">InkWell AI couldn't complete that request.</p>
+            <p className="ist-ai-error-note">Your draft is safe.</p>
+            <button type="button" className="ist-suggest-ghost" onClick={onRetryAi}>
+              <RefreshIcon />
+              Try again
+            </button>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
       {/* ── Suggestion card: the only door between a result and the draft ── */}
       <AnimatePresence initial={false}>
@@ -268,54 +385,78 @@ const AiCopilot = ({
               <p className="ist-suggestion-body">{suggestion.resultText}</p>
             )}
 
-            <div className="ist-suggestion-actions">
-              <button
-                type="button"
-                className="ist-suggest-btn"
-                onClick={() => onSuggestionAction("accept")}
-                disabled={running}
-              >
-                <CheckIcon />
-                Accept
-              </button>
-              {/* The extra application path matches the suggestion's own mode:
-                  a whole-slice edit offers Replace, a cursor addition offers
-                  Insert. Accept always means "use the natural application". */}
-              {suggestion.mode === "replace" ? (
+            {/* Copy-mode results (headlines, excerpts) are text to take away —
+                there is no correct place in the draft for them, so they get
+                Copy and Dismiss only. */}
+            {suggestion.mode === "copy" ? (
+              <div className="ist-suggestion-actions">
+                <button
+                  type="button"
+                  className="ist-suggest-btn"
+                  onClick={() => onSuggestionAction("copy")}
+                >
+                  <ContentCopyIcon />
+                  Copy
+                </button>
                 <button
                   type="button"
                   className="ist-suggest-ghost"
-                  onClick={() => onSuggestionAction("replace")}
+                  onClick={() => onSuggestionAction("dismiss")}
+                >
+                  Dismiss
+                </button>
+              </div>
+            ) : (
+              <div className="ist-suggestion-actions">
+                <button
+                  type="button"
+                  className="ist-suggest-btn"
+                  onClick={() => onSuggestionAction("accept")}
                   disabled={running}
                 >
-                  {MODE_LABEL.replace}
+                  <CheckIcon />
+                  Accept
                 </button>
-              ) : (
+                {/* The extra application path matches the suggestion's own
+                    mode: a whole-slice edit offers Replace, a cursor addition
+                    offers Insert. Accept always means "use the natural
+                    application". */}
+                {suggestion.mode === "replace" ? (
+                  <button
+                    type="button"
+                    className="ist-suggest-ghost"
+                    onClick={() => onSuggestionAction("replace")}
+                    disabled={running}
+                  >
+                    {MODE_LABEL.replace}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="ist-suggest-ghost"
+                    onClick={() => onSuggestionAction("insert")}
+                    disabled={running}
+                  >
+                    {MODE_LABEL.insert}
+                  </button>
+                )}
                 <button
                   type="button"
                   className="ist-suggest-ghost"
-                  onClick={() => onSuggestionAction("insert")}
-                  disabled={running}
+                  onClick={() => onSuggestionAction("copy")}
                 >
-                  {MODE_LABEL.insert}
+                  <ContentCopyIcon />
+                  Copy
                 </button>
-              )}
-              <button
-                type="button"
-                className="ist-suggest-ghost"
-                onClick={() => onSuggestionAction("copy")}
-              >
-                <ContentCopyIcon />
-                Copy
-              </button>
-              <button
-                type="button"
-                className="ist-suggest-ghost"
-                onClick={() => onSuggestionAction("dismiss")}
-              >
-                Dismiss
-              </button>
-            </div>
+                <button
+                  type="button"
+                  className="ist-suggest-ghost"
+                  onClick={() => onSuggestionAction("dismiss")}
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
           </motion.div>
         ) : null}
       </AnimatePresence>

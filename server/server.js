@@ -27,6 +27,7 @@ const analyticsRoutes = require('./routes/analyticsRoutes');
 const rewardRoutes = require('./routes/rewardsRoutes');
 const writingRoutes = require('./routes/writingRoutes');
 const followRoutes = require('./routes/followRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 const path = require('path');
 
 connectDB();
@@ -202,6 +203,9 @@ app.use("/api/v1/analytics", analyticsRoutes);
 app.use("/api/v1/rewards", rewardRoutes);
 app.use("/api/v1/writing", writingRoutes);
 app.use("/api/v1/follow", followRoutes);
+// InkWell AI proxy — holds the provider keys server-side. Mounted before the
+// static/SPA fallback so /api/v1/ai/* resolves to JSON, never index.html.
+app.use("/api/v1/ai", aiRoutes);
 app.use(express.static(path.join(__dirname, "../client/build")));
 
 // SPA fallback. API routes that didn't match above should return JSON 404,

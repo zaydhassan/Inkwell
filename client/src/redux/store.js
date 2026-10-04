@@ -17,8 +17,7 @@ export const updateUser = createAsyncThunk(
   "auth/updateUser",
   async (userData, { rejectWithValue }) => {
     try {
-      // Use the shared axios instance so the auth interceptor attaches the
-      // access token (the previous raw fetch() bypassed auth entirely).
+     
       const { data } = await axios.put(`/api/v1/user/${userData.id}`, userData);
       if (!data.success) {
         throw new Error(data.message || "Failed to update user.");
@@ -81,8 +80,7 @@ const authSlice = createSlice({
 });
 
 export const authActions = authSlice.actions;
-// Exported individually so pages can dispatch the gamification sync reducer
-// after a server award without reaching into the actions namespace object.
+
 export const { setGamification } = authSlice.actions;
 
 // ---- Notifications slice ----
@@ -146,7 +144,7 @@ const notificationsSlice = createSlice({
       state.total = 0;
       state.hasMore = false;
     },
-    // Decrement the badge locally when a notification is opened (optimistic).
+    
     decrementUnread(state) {
       if (state.unreadCount > 0) state.unreadCount -= 1;
     },
@@ -176,8 +174,7 @@ const notificationsSlice = createSlice({
 });
 
 export const notificationsActions = notificationsSlice.actions;
-// Exported individually so components can dispatch the optimistic reducer
-// without reaching into the actions namespace object.
+
 export const { clearNotifications, decrementUnread } = notificationsSlice.actions;
 
 export const store = configureStore({

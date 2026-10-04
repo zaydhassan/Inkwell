@@ -115,6 +115,31 @@ const bookmarkSchema = z.object({
   blog: z.string().regex(objectIdRegex, "Invalid blog id"),
 });
 
+// ── InkWell AI ────────────────────────────────────────────────────────
+// The AI proxy spends a paid key, so the length caps here are cost guards:
+// they bound the most tokens a single request can bill. Note the house
+// gotcha — Zod strips unknown keys, so every field aiController reads must
+// be declared, or it vanishes before the controller sees it.
+const aiHistoryItemSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string().max(8000),
+});
+
+const aiCompleteSchema = z.object({
+  system: z.string().max(8000).optional().default(""),
+  prompt: z.string().trim().min(1, "prompt is required").max(20000),
+  history: z.array(aiHistoryItemSchema).max(30).optional().default([]),
+  action: z.string().max(60).optional(), // diagnostics only
+  maxTokens: z.number().int().min(64).max(4096).optional(),
+  temperature: z.number().min(0).max(2).optional(),
+});
+
+const aiResearchSchema = z.object({
+  query: z.string().trim().min(3, "query is required").max(500),
+  context: z.string().max(8000).optional().default(""),
+  count: z.number().int().min(1).max(8).optional().default(5),
+});
+
 module.exports = {
   registerSchema,
   loginSchema,
@@ -127,4 +152,6 @@ module.exports = {
   blogUpdateSchema,
   promoteUserSchema,
   bookmarkSchema,
+  aiCompleteSchema,
+  aiResearchSchema,
 };

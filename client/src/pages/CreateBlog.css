@@ -3236,3 +3236,350 @@
     transition: none;
   }
 }
+
+/* ═════════════════════════════════════════════════════════════════════
+   AI additions — parameter picker, failure card, research sources, and
+   the text-selection menu.
+
+   Every surface here speaks the copilot column's existing language: the
+   #191816 card, the 0.07 hairline, orange for the live affordance.
+
+   The selection menu is portaled to <body>, i.e. OUTSIDE the .ink scope
+   that defines the ink tokens — so these rules give every token a literal
+   fallback (`var(--ink-text-2, #b5aea5)`). Inside the panel the token wins;
+   on the portaled node the fallback keeps the same colours. That is why
+   the fallbacks are written out rather than left to inherit.
+   ═════════════════════════════════════════════════════════════════════ */
+
+/* ── Parameter picker (tone, simplify level, brainstorm lens) ────────── */
+
+.ist-param {
+  margin-top: 0.6rem;
+  padding: 0.7rem 0.75rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: #191816;
+}
+
+.ist-param-label {
+  margin: 0 0 0.5rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--ink-text-2, #b5aea5);
+}
+
+.ist-param-chips,
+.ist-sel-param-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ist-param-chip {
+  height: 28px;
+  padding: 0 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  font-family: var(--ink-font-body, "Inter", system-ui, sans-serif);
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--ink-text-2, #b5aea5);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+}
+
+.ist-param-chip:hover {
+  border-color: rgba(255, 106, 0, 0.5);
+  background: rgba(255, 106, 0, 0.08);
+  color: var(--ink-text, #f5f1ea);
+}
+
+.ist-param-cancel,
+.ist-sel-cancel {
+  margin-top: 0.55rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--ink-font-body, "Inter", system-ui, sans-serif);
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: var(--ink-text-3, #8e887f);
+  cursor: pointer;
+}
+
+.ist-param-cancel:hover,
+.ist-sel-cancel:hover {
+  color: var(--ink-text, #f5f1ea);
+}
+
+/* ── Failure card: what happened, and a way back ─────────────────────── */
+
+.ist-ai-error {
+  margin-top: 0.8rem;
+  padding: 0.8rem 0.85rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 106, 0, 0.28);
+  background: rgba(255, 106, 0, 0.05);
+}
+
+.ist-ai-error-title {
+  margin: 0;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--ink-text, #f5f1ea);
+}
+
+.ist-ai-error-note {
+  margin: 0.2rem 0 0.65rem;
+  font-size: 0.68rem;
+  color: var(--ink-text-3, #8e887f);
+}
+
+/* ── Research sources ────────────────────────────────────────────────── */
+
+.ist-sources-eyebrow-icon {
+  font-size: 13px !important;
+  margin-right: 0.3rem;
+  vertical-align: -2px;
+  color: var(--ink-orange, #ff6a00) !important;
+}
+
+.ist-sources-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+  font-size: 0.72rem;
+  color: var(--ink-text-2, #b5aea5);
+}
+
+.ist-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 0.6rem;
+}
+
+.ist-source {
+  padding: 0.7rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: #191816;
+}
+
+.ist-source-title {
+  margin: 0;
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--ink-text, #f5f1ea);
+}
+
+.ist-source-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.3rem 0 0;
+  font-size: 0.62rem;
+  color: var(--ink-text-3, #8e887f);
+}
+
+/* A middot between the publisher and the date, only when both exist. */
+.ist-source-meta span + span::before {
+  content: "·";
+  margin-right: 0.4rem;
+}
+
+.ist-source-snippet {
+  margin: 0.45rem 0 0;
+  font-size: 0.7rem;
+  line-height: 1.55;
+  color: var(--ink-text-2, #b5aea5);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ist-source-url {
+  margin: 0.4rem 0 0;
+  font-size: 0.62rem;
+  color: var(--ink-text-3, #8e887f);
+  overflow-wrap: anywhere;
+}
+
+.ist-source-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.6rem;
+}
+
+/* Compact ghosts inside a source card, and the anchor variant ("Open")
+   that reuses the same chrome. */
+.ist-source-actions .ist-suggest-ghost {
+  height: 28px;
+  padding: 0 0.6rem;
+  font-size: 0.63rem;
+  text-decoration: none;
+}
+
+.ist-sources-again {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.6rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--ink-font-body, "Inter", system-ui, sans-serif);
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--ink-orange, #ff6a00);
+  cursor: pointer;
+}
+
+.ist-sources-again svg {
+  font-size: 14px !important;
+}
+
+/* ── Text-selection menu (portaled to <body>) ────────────────────────── */
+
+.ist-sel-menu {
+  position: fixed;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: calc(100vw - 24px);
+  padding: 5px 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: #191816;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* The menu must not swallow the drag that created the selection. */
+  user-select: none;
+}
+
+.ist-sel-list {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ist-sel-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 30px;
+  padding: 0 0.65rem;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #b5aea5;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.16s ease, color 0.16s ease;
+}
+
+.ist-sel-item:hover,
+.ist-sel-item:focus-visible {
+  outline: none;
+  background: rgba(255, 106, 0, 0.12);
+  color: #f5f1ea;
+}
+
+.ist-sel-icon {
+  font-size: 15px !important;
+  color: #8e887f !important;
+  transition: color 0.16s ease;
+}
+
+.ist-sel-item:hover .ist-sel-icon,
+.ist-sel-item:focus-visible .ist-sel-icon {
+  color: #ff6a00 !important;
+}
+
+.ist-sel-brand {
+  padding: 0 0.35rem 0 0.2rem;
+  font-size: 0.72rem;
+  color: #ff6a00;
+}
+
+.ist-sel-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin-left: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: #8e887f;
+  cursor: pointer;
+  transition: color 0.16s ease, background-color 0.16s ease;
+}
+
+.ist-sel-close:hover {
+  color: #f5f1ea;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ist-sel-close svg {
+  font-size: 15px !important;
+}
+
+.ist-sel-params {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 2px 4px;
+  max-width: min(420px, calc(100vw - 60px));
+}
+
+.ist-sel-param-label {
+  margin: 0;
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: #b5aea5;
+}
+
+.ist-sel-cancel {
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+/* Touch: an anchored popover fights the native selection handles, so the
+   menu docks to the bottom as a scrollable chip bar instead. */
+.ist-sel-menu[data-coarse] {
+  top: auto;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  max-width: none;
+  padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+  border-width: 1px 0 0;
+  border-radius: 14px 14px 0 0;
+  box-shadow: 0 -14px 34px rgba(0, 0, 0, 0.5);
+}
+
+.ist-sel-menu[data-coarse] .ist-sel-list {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.ist-sel-menu[data-coarse] .ist-sel-list::-webkit-scrollbar {
+  display: none;
+}
+
+.ist-sel-menu[data-coarse] .ist-sel-item {
+  height: 34px;
+}

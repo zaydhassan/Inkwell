@@ -34,3 +34,16 @@ services:
         value: "true" # single-instance deploy — the sweep runs here
       - key: FIREBASE_SERVICE_ACCOUNT
         sync: false # optional; enables Google sign-in
+      # InkWell AI — server-side provider + search keys (never shipped to the
+      # browser). Leave unset to keep AI surfaces in their honest unavailable
+      # state. AI_PROVIDER picks one; the rest are fallbacks.
+      - key: AI_PROVIDER
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
