@@ -403,9 +403,11 @@
   flex-direction: column;
   gap: 15px;
   /* Sticks below the floating navbar, with the Featured section head. Never
-     independently scrollable — the rail is the shorter column by design. */
+     independently scrollable — the rail is the shorter column by design.
+     The 104px clears the redesigned capsule, whose pinned bottom edge sits at
+     88px (12px page inset + 76px shell) — retune with Navbar.js, not alone. */
   position: sticky;
-  top: 90px;
+  top: 104px;
   /* Own stacking context, so the ambient wash behind the rail (z-index -1
      below) never slips underneath the page canvas. */
   z-index: 0;

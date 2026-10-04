@@ -73,8 +73,9 @@ const TableOfContents = ({ contentRef, ready }) => {
     const target = contentRef?.current?.querySelector(`#${CSS.escape(id)}`);
     if (!target) return;
     target.scrollIntoView({ behavior: "smooth", block: "start" });
-    // Offset for the sticky navbar so the heading isn't hidden under it.
-    setTimeout(() => window.scrollBy({ top: -80, behavior: "smooth" }), 200);
+    // Offset for the floating navbar (88px pinned bottom edge) so the heading
+    // isn't hidden under it. Retune with Navbar.js if the shell height moves.
+    setTimeout(() => window.scrollBy({ top: -100, behavior: "smooth" }), 200);
     setAnchorEl(null);
   };
 

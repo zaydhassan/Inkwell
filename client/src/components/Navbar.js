@@ -1,10 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { AppBar, Toolbar, IconButton, Button, MenuItem, Menu, Drawer, Box, Stack, Container, ListItemIcon, ListItemText, Divider } from "@mui/material";
+import { AppBar, Toolbar, IconButton, Button, MenuItem, Menu, Drawer, Box, Stack, ListItemIcon, ListItemText, Divider } from "@mui/material";
 import { motion } from "framer-motion";
-import MenuIcon from "@mui/icons-material/Menu";
-import SearchIcon from "@mui/icons-material/Search";
+import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
+import ExploreRoundedIcon from "@mui/icons-material/ExploreRounded";
+import EditNoteRoundedIcon from "@mui/icons-material/EditNoteRounded";
+import LeaderboardRoundedIcon from "@mui/icons-material/LeaderboardRounded";
+import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
+import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
+import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
+import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
+import MailOutlineRoundedIcon from "@mui/icons-material/MailOutlineRounded";
 import NightsStayIcon from "@mui/icons-material/NightsStay";
 import Brightness5Icon from "@mui/icons-material/Brightness5";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
@@ -12,82 +21,115 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import HistoryIcon from "@mui/icons-material/History";
 import BarChartIcon from "@mui/icons-material/BarChart";
-import LeaderboardIcon from "@mui/icons-material/Leaderboard";
 import ArticleIcon from "@mui/icons-material/Article";
 import PostAddIcon from "@mui/icons-material/PostAdd";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { toastLogout } from "../utils/toasts";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
-import GradientButton from "./GradientButton";
 import UserAvatar from "./UserAvatar";
-import BrandLogo from "./BrandLogo";
+import BrandLogo, { QuillGlyph } from "./BrandLogo";
 import NotificationBell from "./NotificationBell";
 import { authActions, fetchUnreadCount } from "../redux/store";
 import useRequireAuth from "../hooks/useRequireAuth";
 
+// Primary navigation. `Icon` is a component reference rather than an element so
+// the same list can be rendered as a horizontal row (desktop) or as drawer rows
+// (mobile) — each context sizes its own glyph off `.MuiButton-startIcon`.
 const NAV_ITEMS = [
-  { label: "Home", path: "/", match: (p) => p === "/" },
+  { label: "Home", path: "/", Icon: HomeRoundedIcon, match: (p) => p === "/" },
   // `/blogs` is kept in the match: it is a second path onto the same Explore
   // page (see App.js), so an old link must still light this item up.
   {
     label: "Explore",
     path: "/explore",
+    Icon: ExploreRoundedIcon,
     match: (p) => p.startsWith("/explore") || p.startsWith("/blogs") || p.startsWith("/category"),
   },
-  { label: "Write", path: "/create-blog", match: (p) => p.startsWith("/create-blog") || p.startsWith("/edit-blog") },
-  { label: "Leaderboard", path: "/leaderboard", match: (p) => p.startsWith("/leaderboard") },
-  { label: "About", path: "/about", match: (p) => p === "/about" },
+  { label: "Write", path: "/create-blog", Icon: EditNoteRoundedIcon, match: (p) => p.startsWith("/create-blog") || p.startsWith("/edit-blog") },
+  { label: "Leaderboard", path: "/leaderboard", Icon: LeaderboardRoundedIcon, match: (p) => p.startsWith("/leaderboard") },
+  { label: "About", path: "/about", Icon: InfoRoundedIcon, match: (p) => p === "/about" },
 ];
 
-// The floating pill's surface: the InkWell design system's `--ink-bg-alt`
-// (#151311) at 72% alpha. The token itself is opaque, so the alpha lives here
-// — the pill has to stay translucent for the page to read through the blur.
-// Everything else in this file colours itself from `var(--ink-*)`; the pill is
-// the one surface that needs a translucency the CSS file doesn't ship.
-const PILL_BG = "rgba(21,19,17,0.72)";
+// The floating capsule's surface. The design system ships `--ink-bg` (#0F0E0D)
+// as an opaque token, but the capsule has to stay translucent for the page to
+// read through the blur, so the alpha lives here.
+const PILL_BG = "rgba(15,14,13,0.88)";
 
-// The shared active treatment for EVERY nav item. Now that the whole nav
-// speaks the InkWell orange, the old per-item `accent` special-case (which
-// existed only for About) is redundant and gone — every entry behaves the
-// same. Deliberately restrained, per the brief: orange type on a soft
-// orange-tinted pill, never a giant filled active pill. The 1px transparent
-// border is always present so gaining the state never shifts the layout.
-// Tint: --ink-orange-soft (rgba(255,106,0,.14)); hover uses the fainter
-// --ink-orange-softer, and an already-active item keeps its stronger tint.
+// The keyboard-cap badge inside the search field. Styled as a tiny physical key
+// — that reads as "premium product" far more than a plain text hint.
+const KBD_SX = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  px: 0.75,
+  height: 22,
+  minWidth: 30,
+  borderRadius: "7px",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025))",
+  color: "var(--ink-text-3)",
+  fontFamily: "inherit",
+  fontSize: "0.62rem",
+  fontWeight: 700,
+  letterSpacing: "0.04em",
+  lineHeight: 1,
+  whiteSpace: "nowrap",
+  flexShrink: 0,
+};
+
+// The horizontal nav caps. Only the ACTIVE route earns the orange treatment —
+// every other item stays neutral and hovers on a plain white veil, so the
+// accent never becomes wallpaper. The 1px border is always present (transparent
+// when idle) so gaining the active state never nudges the row's height.
 const navBtnSx = (active) => ({
-  color: active ? "var(--ink-orange)" : "var(--ink-text-2)",
-  fontWeight: active ? 700 : 600,
   textTransform: "none",
   borderRadius: 999,
-  px: { xs: 1.5, md: 1.75 },
-  py: 0.6,
+  px: { lg: 1.25, xl: 2 },
+  py: 1.375,
   minWidth: "auto",
-  border: "1px solid transparent",
+  fontWeight: 600,
+  fontSize: "0.875rem",
+  whiteSpace: "nowrap",
+  border: "1px solid",
+  borderColor: active ? "rgba(255,106,0,0.10)" : "transparent",
   backgroundColor: active ? "var(--ink-orange-soft)" : "transparent",
-  transition: "color .2s ease, background-color .2s ease, border-color .2s ease",
+  color: active ? "var(--ink-orange)" : "var(--ink-text-2)",
+  transition: "background-color .17s ease, color .17s ease, border-color .17s ease, transform .17s ease",
+  "& .MuiButton-startIcon": {
+    color: "inherit",
+    mr: 0.75,
+    "& > *:nth-of-type(1)": { fontSize: 18 },
+  },
   "&:hover": {
-    color: "var(--ink-orange)",
-    backgroundColor: active ? "var(--ink-orange-soft)" : "var(--ink-orange-softer)",
+    backgroundColor: active ? "var(--ink-orange-soft)" : "rgba(255,255,255,0.045)",
+    borderColor: active ? "rgba(255,106,0,0.10)" : "transparent",
+    color: active ? "var(--ink-orange)" : "var(--ink-text)",
+    transform: "translateY(-1px)",
   },
 });
 
-// The same language for the drawer's vertical rows. One helper covers the nav
-// links, the four session-gated shortcuts and Contact, so the drawer has a
-// single row style instead of five near-identical blocks.
+// The same language, laid out as full-width drawer rows instead of a row.
 const drawerBtnSx = (active) => ({
   justifyContent: "flex-start",
   textTransform: "none",
   fontWeight: active ? 700 : 600,
-  borderRadius: 2,
-  px: 2,
-  py: 1.25,
-  minHeight: 0,
+  fontSize: "0.92rem",
+  borderRadius: 2.5,
+  px: 1.75,
+  minHeight: 50,
   color: active ? "var(--ink-orange)" : "var(--ink-text-2)",
   backgroundColor: active ? "var(--ink-orange-soft)" : "transparent",
+  border: "1px solid",
+  borderColor: active ? "rgba(255,106,0,0.10)" : "transparent",
+  "& .MuiButton-startIcon": {
+    color: "inherit",
+    mr: 1.5,
+    "& > *:nth-of-type(1)": { fontSize: 19 },
+  },
   "&:hover": {
-    color: "var(--ink-orange)",
-    backgroundColor: active ? "var(--ink-orange-soft)" : "var(--ink-orange-softer)",
+    color: active ? "var(--ink-orange)" : "var(--ink-text)",
+    backgroundColor: active ? "var(--ink-orange-soft)" : "rgba(255,255,255,0.045)",
   },
 });
 
@@ -98,6 +140,18 @@ const menuItemSx = {
   py: 1.25,
   color: "var(--ink-text)",
   "&:hover": { backgroundColor: "var(--ink-border-soft)" },
+};
+
+// The dropdown / drawer surfaces: the ink panel tokens with the border and
+// lift the capsule uses, so every floating layer in the nav reads as one shell.
+const POPOVER_SX = {
+  borderRadius: "18px",
+  overflow: "hidden",
+  bgcolor: "var(--ink-bg-alt)",
+  backgroundImage: "none",
+  color: "var(--ink-text)",
+  border: "1px solid var(--ink-border)",
+  boxShadow: "0 18px 50px rgba(0,0,0,0.5)",
 };
 
 const Navbar = () => {
@@ -112,8 +166,15 @@ const Navbar = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Scroll-aware elevation: the floating pill gains a soft card shadow and a
-  // stronger blur once the page is scrolled, so it reads as lifted over content.
+  // Which key prints on the search cap. Resolved once — it cannot change
+  // during a session.
+  const [isMac] = useState(
+    () => typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent)
+  );
+
+  // Scroll-aware depth: the capsule blurs harder and lifts further once the
+  // page moves under it. Geometry stays fixed (see the offset notes on the
+  // Toolbar below), so dependent sticky offsets never shift mid-scroll.
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -142,6 +203,11 @@ const Navbar = () => {
   const handleMenu = (event) => { event.stopPropagation(); setAnchorEl(event.currentTarget); };
   const handleClose = () => setAnchorEl(null);
 
+  // The one search entry point in the chrome. The palette already owns the
+  // global Cmd/Ctrl+K hotkey and the result list, so the navbar only fires its
+  // existing open event rather than growing a second copy of that logic.
+  const openSearch = () => window.dispatchEvent(new CustomEvent("open-command-palette"));
+
   const handleLogout = async () => {
     // Unified logout: clears the refresh cookie (server), Firebase session,
     // and local auth state, then syncs the Redux store.
@@ -155,27 +221,37 @@ const Navbar = () => {
   // writer/admin-only. Logout is rendered separately below a divider.
   // All entries route through `go` (useRequireAuth) so an anonymous click
   // is bounced to /login with a redirect-back param, matching the footer.
+  // The theme switch lives here (not in the bar) so the capsule's right side
+  // stays Search · Sign In · avatar — it is also still reachable from the
+  // palette's own theme action.
   const menuItems = [
     { icon: <AccountCircleIcon fontSize="small" />, label: "Profile", onClick: () => go("/profile") },
     { icon: <NotificationsIcon fontSize="small" />, label: "Notifications", onClick: () => go("/notifications") },
     { icon: <BookmarkBorderIcon fontSize="small" />, label: "Bookmarks", onClick: () => go("/bookmarks") },
     { icon: <HistoryIcon fontSize="small" />, label: "Reading History", onClick: () => go("/reading-history") },
     { icon: <BarChartIcon fontSize="small" />, label: "Analytics", onClick: () => go("/analytics"), show: user?.role === "Writer" || user?.role === "Admin" },
-    { icon: <LeaderboardIcon fontSize="small" />, label: "Leaderboard", onClick: () => go("/leaderboard") },
+    { icon: <LeaderboardRoundedIcon fontSize="small" />, label: "Leaderboard", onClick: () => go("/leaderboard") },
     { icon: <ArticleIcon fontSize="small" />, label: "My Blogs", onClick: () => go("/my-blogs") },
     { icon: <PostAddIcon fontSize="small" />, label: "Create Blog", onClick: () => go("/create-blog") },
+    {
+      icon: theme === "dark" ? <Brightness5Icon fontSize="small" /> : <NightsStayIcon fontSize="small" />,
+      label: theme === "dark" ? "Light mode" : "Dark mode",
+      onClick: toggleTheme,
+    },
   ];
 
-  // The drawer shortcuts that sit under the main nav. `auth` gates the four
-  // that need a session, Analytics additionally needs Writer/Admin, and
-  // Contact is always shown. Rendering them from one list keeps every row
-  // identical rather than five copy-pasted blocks.
+  // The drawer's session-gated shortcuts. `auth` gates the rows that need a
+  // session, Analytics additionally needs Writer/Admin, and Contact is always
+  // shown. Rendering them from one list keeps every row identical rather than
+  // seven copy-pasted blocks.
   const drawerLinks = [
-    { label: "Notifications", path: "/notifications", auth: true },
-    { label: "Bookmarks", path: "/bookmarks", auth: true },
-    { label: "Reading History", path: "/reading-history", auth: true },
-    { label: "Analytics", path: "/analytics", auth: true, show: user?.role === "Writer" || user?.role === "Admin" },
-    { label: "Contact", path: "/contact" },
+    { label: "Profile", path: "/profile", Icon: AccountCircleIcon, auth: true },
+    { label: "My Blogs", path: "/my-blogs", Icon: ArticleIcon, auth: true },
+    { label: "Notifications", path: "/notifications", Icon: NotificationsIcon, auth: true },
+    { label: "Bookmarks", path: "/bookmarks", Icon: BookmarkBorderIcon, auth: true },
+    { label: "Reading History", path: "/reading-history", Icon: HistoryIcon, auth: true },
+    { label: "Analytics", path: "/analytics", Icon: BarChartIcon, auth: true, show: user?.role === "Writer" || user?.role === "Admin" },
+    { label: "Contact", path: "/contact", Icon: MailOutlineRoundedIcon },
   ];
 
   // Home, About, Profile and Create Blog are locked to the dark editorial
@@ -184,8 +260,8 @@ const Navbar = () => {
   // that canvas — and since the bar is transparent, the app's body background
   // shows through it. With the app in its (default) light theme that paints a
   // white strip across the top of an otherwise dark page. Painting the band
-  // with the canvas colour on exactly these routes keeps the pill floating on
-  // the page it belongs to, and leaves every other page's chrome untouched.
+  // with the canvas colour on exactly these routes keeps the capsule floating
+  // on the page it belongs to, and leaves every other page's chrome untouched.
   //
   // Note this is a route list, not a "does the page use ink" test: Edit Blog
   // (`/edit-blog/:id`) is still on the light theme and must NOT be added here,
@@ -207,13 +283,17 @@ const Navbar = () => {
       position="sticky"
       elevation={0}
       // The bar itself opts into the shared tokens (`ink-nav`, exactly as the
-      // pill below it does). It has to carry the class in its own right: it is
-      // an ANCESTOR of the pill, so without it `var(--ink-bg)` below would be
-      // undefined here and the declaration would fall back to transparent.
+      // capsule below it does). It has to carry the class in its own right: it
+      // is an ANCESTOR of the capsule, so without it `var(--ink-bg)` below
+      // would be undefined here and the declaration would fall back to
+      // transparent.
       className="ink-nav"
-      // Neutralize the global glass-AppBar override so the floating pill below
-      // is the only glass surface (the bar itself is otherwise transparent).
+      // Neutralize the global glass-AppBar override so the floating capsule is
+      // the only glass surface (the bar itself is otherwise transparent). The
+      // default appBar z-index is left alone deliberately — lowering it to a
+      // hand-picked value would let sticky page rails paint over the chrome.
       sx={{
+        top: 0,
         bgcolor: onEditorialPage ? "var(--ink-bg) !important" : "transparent !important",
         backgroundImage: "none !important",
         boxShadow: "none !important",
@@ -222,200 +302,331 @@ const Navbar = () => {
         WebkitBackdropFilter: "none !important",
       }}
     >
-      <Container maxWidth="lg" disableGutters sx={{ px: { xs: 1, md: 2.5 } }}>
+      {/* Ambient wash behind the capsule. Two barely-there orange blooms, one
+          under the brand and one under the account end, so the chrome sits in
+          a pool of its own light instead of on a flat band. Decorative only. */}
+      <Box
+        aria-hidden="true"
+        sx={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          background:
+            // Sized in explicit px so the bloom finishes fading INSIDE the
+            // bar's own box — a percentage radius reaches for the far corner
+            // and gets clipped flat at the bar's edge, which reads as a stray
+            // orange band rather than a glow.
+            "radial-gradient(ellipse 420px 52px at 22% 50%, rgba(255,106,0,0.10), transparent 72%)," +
+            "radial-gradient(ellipse 360px 48px at 80% 50%, rgba(255,106,0,0.07), transparent 70%)",
+        }}
+      />
+
+      {/* max-width 1440, inset 24/16px, centred — the capsule never spans the
+          viewport, which is what separates this from a stock app bar. */}
+      <Box
+        sx={{
+          position: "relative",
+          zIndex: 1,
+          width: { xs: "calc(100% - 32px)", md: "calc(100% - 48px)" },
+          maxWidth: 1440,
+          mx: "auto",
+        }}
+      >
         <motion.div
           initial={{ y: -18, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
           {/* `ink-nav` pulls the InkWell token block (.ink-nav in
-              styles/inkwell.css) onto the pill, so every colour below — text,
-              border, orange accent — resolves from the design system rather
-              than the app's light MUI theme. */}
+              styles/inkwell.css) onto the capsule, so every colour below —
+              text, border, orange accent — resolves from the design system
+              rather than the app's light MUI theme.
+
+              GEOMETRY IS LOAD-BEARING: the capsule's outer height is fixed at
+              12 + 60 (xs) / 76 (md) px, so its bottom edge lands at 88px when
+              pinned. Explore's sticky rail (`.ink-explore-aside`) and the blog
+              ToC scroll offset are tuned against that number — retune them
+              together if this changes. */}
           <Toolbar
             disableGutters
             className="ink-nav"
             sx={{
-              // The pill compacts slightly once the page scrolls: less outer
-              // margin, tighter padding, a stronger blur and a deeper shadow.
-              my: scrolled ? { xs: 0.6, md: 0.85 } : { xs: 1.25, md: 1.75 },
-              px: { xs: 1, sm: 1.5, md: 2 },
-              py: scrolled ? 0.4 : 0.75,
+              position: "relative",
+              overflow: "hidden",
+              mt: 1.5,
+              mb: 1.5,
+              px: { xs: 1.25, sm: 1.75, md: 2 },
+              height: { xs: 60, md: 76 },
+              minHeight: 0,
               borderRadius: 999,
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              gap: { xs: 0.75, sm: 1.5 },
-              // A hard-dark translucent surface carrying its own light palette,
-              // so the pill reads as brand chrome over any page.
+              gap: { xs: 0.5, md: 1.5 },
               bgcolor: PILL_BG,
               color: "var(--ink-text)",
-              backdropFilter: scrolled ? "blur(18px)" : "blur(14px)",
-              WebkitBackdropFilter: scrolled ? "blur(18px)" : "blur(14px)",
-              border: "1px solid var(--ink-border)",
+              backdropFilter: scrolled ? "blur(20px)" : "blur(16px)",
+              WebkitBackdropFilter: scrolled ? "blur(20px)" : "blur(16px)",
+              border: "1px solid rgba(255,255,255,0.09)",
               boxShadow: scrolled
-                ? "0 16px 44px rgba(0,0,0,0.46)"
-                : "0 10px 34px rgba(0,0,0,0.34)",
-              transition:
-                "box-shadow .35s ease, margin .35s ease, padding .35s ease, backdrop-filter .35s ease, -webkit-backdrop-filter .35s ease",
+                ? "0 18px 50px rgba(0,0,0,0.34)"
+                : "0 14px 40px rgba(0,0,0,0.20)",
+              transition: "box-shadow .35s ease, backdrop-filter .35s ease, -webkit-backdrop-filter .35s ease",
+              // Hairline top highlight: lifts the capsule off the page without
+              // reaching for heavy glassmorphism. `& > *` keeps every real child
+              // above the sheen so it tints the surface, never the content.
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                inset: 0,
+                zIndex: 0,
+                borderRadius: "inherit",
+                background: "linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0) 42%)",
+                pointerEvents: "none",
+              },
+              "& > *": { position: "relative", zIndex: 1 },
             }}
           >
-            <IconButton
-              edge="start"
-              color="inherit"
-              aria-label="menu"
-              sx={{ display: { md: "none" }, p: { xs: 0.5, sm: 1 }, color: "var(--ink-text-2)", "&:hover": { color: "var(--ink-orange)", backgroundColor: "var(--ink-orange-softer)" } }}
-              onClick={handleDrawerToggle}
-            >
-              <MenuIcon />
-            </IconButton>
-
+            {/* ── Brand ────────────────────────────────────────────────── */}
             <Box
               onClick={() => navigate("/")}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate("/"); }
+              }}
               role="button"
-              aria-label="Inkwell home"
+              aria-label="InkWell — go to home"
               tabIndex={0}
               sx={{
                 display: "flex",
                 alignItems: "center",
+                gap: { xs: 1, md: 1.25 },
                 cursor: "pointer",
-                borderRadius: 2,
-                p: 0.5,
-                transition: "opacity .2s ease, transform .2s ease",
-                "&:hover": { opacity: 0.92, transform: "translateY(-1px)" },
+                flexShrink: 0,
+                borderRadius: 999,
+                transition: "opacity .2s ease",
+                "&:hover": { opacity: 0.9 },
               }}
             >
-              <BrandLogo
-                size={38}
-                // Dark panel: the wordmark goes white.
-                tone="light"
+              {/* Circular badge — the real brand glyph (QuillGlyph, the same
+                  path the logo component draws) in a lit well, rather than a
+                  second logo invented for the navbar. */}
+              <Box
+                aria-hidden="true"
                 sx={{
-                  // Below `sm` the wordmark is dropped so the badge alone carries
-                  // the brand: the mobile row (menu + mark + search + Sign In +
-                  // Get Started) otherwise needs ~470px and forces every page in
-                  // the app into horizontal scroll on a phone.
-                  "& > *:nth-of-type(2)": { display: { xs: "none", sm: "block" } },
-                  // BrandLogo paints the "well" half of the wordmark with the
-                  // light theme's --accent (charcoal), which disappears on this
-                  // dark pill — force it to the InkWell orange instead.
+                  position: "relative",
+                  width: { xs: 44, md: 52 },
+                  height: { xs: 44, md: 52 },
+                  borderRadius: "50%",
+                  display: "grid",
+                  placeItems: "center",
+                  flexShrink: 0,
+                  bgcolor: "rgba(255,255,255,0.035)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  boxShadow: "0 0 22px rgba(255,106,0,0.16), inset 0 1px 0 rgba(255,255,255,0.07)",
+                }}
+              >
+                <QuillGlyph sx={{ width: { xs: 21, md: 24 }, height: { xs: 21, md: 24 }, color: "#F5F1EA" }} />
+                <Box
+                  component="span"
+                  sx={{
+                    position: "absolute",
+                    right: { xs: 3, md: 5 },
+                    bottom: { xs: 3, md: 5 },
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    bgcolor: "var(--ink-orange)",
+                    boxShadow: "0 0 8px rgba(255,106,0,0.75)",
+                  }}
+                />
+              </Box>
+
+              {/* Wordmark + tagline come from the shared brand component so the
+                  "Ink/wel" split lives in one place. Two overrides are still
+                  needed here: this chrome is always dark, so the wordmark takes
+                  the canvas text token rather than the component's pure white,
+                  and the tagline takes the decorative grey rather than its
+                  72%-white. On phones the wordmark alone carries the brand and
+                  the tagline drops out to keep the row on one line. */}
+              <BrandLogo
+                variant="wordmark"
+                size={46}
+                tone="light"
+                showTagline
+                tagline="Write · Share · Inspire"
+                sx={{
+                  lineHeight: 1,
+                  minWidth: 0,
+                  "& p:first-of-type": { color: "var(--ink-text)", fontSize: "21px" },
+                  "& p:last-of-type": {
+                    display: { xs: "none", md: "block" },
+                    color: "var(--ink-text-3-decor)",
+                    fontSize: "9px",
+                    letterSpacing: "2px",
+                    mt: 0.5,
+                  },
                   "& span": { color: "var(--ink-orange) !important" },
                 }}
               />
             </Box>
 
-            <Stack direction="row" spacing={0.5} sx={{ flexGrow: 1, justifyContent: "center", display: { xs: "none", md: "flex" } }}>
+            {/* ── Primary navigation ───────────────────────────────────── */}
+            <Stack
+              direction="row"
+              spacing={0.5}
+              // flexShrink 0: the nav labels are the one thing that must never
+              // be clipped. At the lg breakpoint (1200px) the capsule is at its
+              // tightest, and the search field — not the nav — yields the few
+              // px of slack (see flexShrink on the actions group below).
+              sx={{ flexGrow: 1, flexShrink: 0, justifyContent: "center", display: { xs: "none", lg: "flex" } }}
+            >
               {NAV_ITEMS.map((item) => {
                 const active = item.match(location.pathname);
                 return (
-                  <Button key={item.label} sx={navBtnSx(active)} onClick={() => go(item.path)}>
+                  <Button
+                    key={item.label}
+                    startIcon={<item.Icon />}
+                    sx={navBtnSx(active)}
+                    aria-current={active ? "page" : undefined}
+                    onClick={() => go(item.path)}
+                  >
                     {item.label}
                   </Button>
                 );
               })}
             </Stack>
 
-            {/* Spacer keeps the actions right-aligned on mobile when the nav row is hidden. */}
-            <Box sx={{ flexGrow: 1, display: { xs: "block", md: "none" } }} />
-
-            <Drawer
-              anchor="left"
-              open={mobileOpen}
-              onClose={handleDrawerToggle}
-              // MUI 6.4's Drawer does NOT implement `slotProps` — it only accepts
-              // `PaperProps` (unlike Menu/Popover/Dialog, which do). Passing
-              // slotProps here is silently ignored, which drops the whole paper
-              // style: the drawer collapsed to its min-content width (~125px)
-              // and, worse, lost the `ink-nav` class that supplies the
-              // var(--ink-*) tokens to everything inside the portal.
-              PaperProps={{
-                className: "ink-nav",
-                sx: {
-                  width: 280,
-                  p: 2.5,
-                  bgcolor: "var(--ink-bg-alt)",
-                  backgroundImage: "none",
-                  color: "var(--ink-text)",
-                  borderRight: "1px solid var(--ink-border)",
-                },
-              }}
-            >
-              <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-                <Box sx={{ px: 1, py: 1, mb: 2 }}>
-                  <BrandLogo
-                    size={34}
-                    tone="light"
-                    sx={{ "& span": { color: "var(--ink-orange) !important" } }}
-                    onClick={() => { navigate("/"); setMobileOpen(false); }}
-                  />
-                </Box>
-                <Stack spacing={0.5} sx={{ flexGrow: 1 }}>
-                  {NAV_ITEMS.map((item) => {
-                    const active = item.match(location.pathname);
-                    return (
-                      <Button
-                        key={item.label}
-                        fullWidth
-                        sx={drawerBtnSx(active)}
-                        onClick={() => go(item.path)}
-                      >
-                        {item.label}
-                      </Button>
-                    );
-                  })}
-                  {drawerLinks
-                    .filter((link) => (!link.auth || isLogin) && link.show !== false)
-                    .map((link) => (
-                      <Button
-                        key={link.path}
-                        fullWidth
-                        sx={drawerBtnSx(location.pathname === link.path)}
-                        onClick={() => { go(link.path); setMobileOpen(false); }}
-                      >
-                        {link.label}
-                      </Button>
-                    ))}
-                </Stack>
-              </Box>
-            </Drawer>
-
-            <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.25, sm: 0.75 }, color: "var(--ink-text-2)" }}>
-              <IconButton
-                onClick={() => window.dispatchEvent(new CustomEvent("open-command-palette"))}
-                color="inherit"
-                aria-label="Search (⌘K)"
-                sx={{ borderRadius: 999, p: { xs: 0.75, sm: 1 }, color: "var(--ink-text-2)", "&:hover": { color: "var(--ink-orange)", backgroundColor: "var(--ink-orange-softer)" } }}
+            {/* ── Search · auth ─────────────────────────────────────────── */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, md: 1 }, flexShrink: 1, minWidth: 0 }}>
+              {/* Compact search shell. It opens the existing command palette
+                  rather than carrying its own index — the palette already owns
+                  the hotkey, the result list and the empty state. */}
+              <Box
+                component="button"
+                type="button"
+                onClick={openSearch}
+                aria-label="Search articles, topics and writers"
+                sx={{
+                  display: { xs: "none", md: "flex" },
+                  alignItems: "center",
+                  gap: 1,
+                  // Fluid rather than stepped: the capsule has to hold the
+                  // brand, five nav items and this field on one line from
+                  // 1200px up, and the field is the only part with slack.
+                  width: "clamp(250px, 23vw, 340px)",
+                  flexShrink: 1,
+                  minWidth: 180,
+                  height: 44,
+                  px: 1.75,
+                  borderRadius: 999,
+                  bgcolor: "rgba(255,255,255,0.025)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  font: "inherit",
+                  textAlign: "left",
+                  cursor: "pointer",
+                  color: "inherit",
+                  transition: "border-color .17s ease, background-color .17s ease",
+                  "&:hover": {
+                    borderColor: "var(--ink-border-warm)",
+                    backgroundColor: "rgba(255,255,255,0.045)",
+                  },
+                  "&:focus-visible": { outline: "2px solid var(--ink-orange)", outlineOffset: 2 },
+                }}
               >
-                <SearchIcon />
+                <SearchRoundedIcon sx={{ fontSize: 19, color: "var(--ink-text-2)", flexShrink: 0 }} />
+                <Box
+                  component="span"
+                  sx={{
+                    flexGrow: 1,
+                    minWidth: 0,
+                    fontSize: "0.8rem",
+                    color: "var(--ink-text-3-decor)",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  Search articles, topics, writers...
+                </Box>
+                <Box component="kbd" sx={KBD_SX}>{isMac ? "⌘" : "Ctrl"} K</Box>
+              </Box>
+
+              {/* Phones get the glyph only — the field cannot fit, and the
+                  palette is the same destination. */}
+              <IconButton
+                onClick={openSearch}
+                aria-label="Search"
+                sx={{
+                  display: { xs: "inline-flex", md: "none" },
+                  flexShrink: 0,
+                  borderRadius: 999,
+                  p: 0.75,
+                  color: "var(--ink-text-2)",
+                  "&:hover": { color: "var(--ink-orange)", backgroundColor: "var(--ink-orange-softer)" },
+                }}
+              >
+                <SearchRoundedIcon />
               </IconButton>
+
+              <Box
+                aria-hidden="true"
+                sx={{
+                  display: { xs: "none", md: "block" },
+                  flexShrink: 0,
+                  width: "1px",
+                  height: 24,
+                  bgcolor: "rgba(255,255,255,0.10)",
+                  mx: { md: 0.5 },
+                }}
+              />
+
               {isLogin && (
-                <>
+                <Box sx={{ display: { xs: "none", md: "block" }, flexShrink: 0 }}>
                   <NotificationBell />
-                  <IconButton
-                    onClick={() => go("/bookmarks")}
-                    color="inherit"
-                    aria-label="Bookmarks"
-                    sx={{ borderRadius: 999, color: "var(--ink-text-2)", "&:hover": { color: "var(--ink-orange)", backgroundColor: "var(--ink-orange-softer)" } }}
-                  >
-                    <BookmarkBorderIcon />
-                  </IconButton>
-                  <IconButton
-                    onClick={toggleTheme}
-                    color="inherit"
-                    aria-label="Toggle light/dark theme"
-                    sx={{ borderRadius: 999, color: "var(--ink-text-2)", "&:hover": { color: "var(--ink-orange)", backgroundColor: "var(--ink-orange-softer)" } }}
-                  >
-                    {theme === "light" ? <Brightness5Icon /> : <NightsStayIcon />}
-                  </IconButton>
+                </Box>
+              )}
+
+              {isLogin ? (
+                <>
                   <IconButton
                     onClick={handleMenu}
                     aria-label="Account menu"
-                    sx={{ p: 0, borderRadius: 999, "&:hover": { backgroundColor: "var(--ink-orange-softer)" } }}
+                    aria-haspopup="true"
+                    aria-expanded={anchorEl ? "true" : "false"}
+                    sx={{
+                      display: { xs: "none", md: "inline-flex" },
+                      flexShrink: 0,
+                      gap: 0.25,
+                      pl: 0.5,
+                      pr: 0.75,
+                      py: 0.5,
+                      borderRadius: 999,
+                      border: "1px solid transparent",
+                      transition: "background-color .17s ease, border-color .17s ease",
+                      "&:hover": {
+                        backgroundColor: "var(--ink-orange-softer)",
+                        borderColor: "var(--ink-border-warm)",
+                      },
+                    }}
                   >
                     <UserAvatar
                       src={user?.profile_image}
                       name={user?.username}
-                      alt="Profile"
-                      sx={{ width: 40, height: 40, border: "2px solid var(--ink-border-warm)" }}
+                      alt=""
+                      sx={{
+                        width: 42,
+                        height: 42,
+                        border: "1px solid rgba(255,255,255,0.15)",
+                        transition: "border-color .17s ease, box-shadow .17s ease",
+                      }}
+                    />
+                    <KeyboardArrowDownRoundedIcon
+                      sx={{
+                        fontSize: 18,
+                        color: "var(--ink-text-2)",
+                        transition: "transform .17s ease",
+                        transform: anchorEl ? "rotate(180deg)" : "none",
+                      }}
                     />
                   </IconButton>
                   <Menu
@@ -423,20 +634,7 @@ const Navbar = () => {
                     open={Boolean(anchorEl)}
                     onClose={handleClose}
                     slotProps={{
-                      paper: {
-                        className: "ink-nav",
-                        sx: {
-                          mt: 1.5,
-                          borderRadius: 3,
-                          overflow: "hidden",
-                          minWidth: 220,
-                          bgcolor: "var(--ink-bg-alt)",
-                          backgroundImage: "none",
-                          color: "var(--ink-text)",
-                          border: "1px solid var(--ink-border)",
-                          boxShadow: "0 18px 44px rgba(0,0,0,0.5)",
-                        },
-                      },
+                      paper: { className: "ink-nav", sx: { ...POPOVER_SX, mt: 1.5, minWidth: 220 } },
                     }}
                   >
                     {menuItems.filter((item) => item.show !== false).map((item) => (
@@ -457,59 +655,169 @@ const Navbar = () => {
                     </MenuItem>
                   </Menu>
                 </>
+              ) : (
+                <Button
+                  onClick={() => navigate("/login")}
+                  startIcon={<PersonOutlineRoundedIcon sx={{ fontSize: 19 }} />}
+                  sx={{
+                    display: { xs: "none", md: "inline-flex" },
+                    flexShrink: 0,
+                    borderRadius: 999,
+                    height: 44,
+                    px: 2.25,
+                    minWidth: "auto",
+                    textTransform: "none",
+                    fontWeight: 700,
+                    fontSize: "0.86rem",
+                    whiteSpace: "nowrap",
+                    color: "var(--ink-text)",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    backgroundColor: "transparent",
+                    transition: "color .17s ease, border-color .17s ease, background-color .17s ease",
+                    "& .MuiButton-startIcon": { color: "var(--ink-text-2)", mr: 0.75, transition: "color .17s ease" },
+                    "&:hover": {
+                      borderColor: "var(--ink-border-warm)",
+                      color: "var(--ink-orange)",
+                      backgroundColor: "var(--ink-orange-softer)",
+                      "& .MuiButton-startIcon": { color: "var(--ink-orange)" },
+                    },
+                  }}
+                >
+                  Sign In
+                </Button>
               )}
-              {!isLogin && (
-                <>
-                  <Button
-                    onClick={() => navigate("/login")}
-                    sx={{
-                      borderRadius: 999,
-                      px: { xs: 1, md: 2.25 },
-                      py: 0.9,
-                      minHeight: 0,
-                      textTransform: "none",
-                      fontWeight: 700,
-                      fontSize: { xs: "0.8rem", md: "0.85rem" },
-                      whiteSpace: "nowrap",
-                      color: "var(--ink-text-2)",
-                      "&:hover": { color: "var(--ink-orange)", backgroundColor: "var(--ink-orange-softer)" },
-                    }}
-                  >
-                    Sign In
-                  </Button>
-                  {/* Same GradientButton primitive, repainted to the InkWell
-                      orange CTA — the theme's gradient variant is a charcoal
-                      gradient that would read as a hole on the dark pill. */}
-                  <GradientButton
-                    onClick={() => navigate("/register")}
-                    sx={{
-                      borderRadius: 999,
-                      px: { xs: 1.25, md: 2.75 },
-                      py: 0.9,
-                      minHeight: 0,
-                      fontWeight: 700,
-                      fontSize: { xs: "0.8rem", md: "0.85rem" },
-                      letterSpacing: "0.01em",
-                      whiteSpace: "nowrap",
-                      background: "var(--ink-orange)",
-                      backgroundImage: "none",
-                      color: "#17110C",
-                      boxShadow: "0 10px 28px rgba(255,106,0,0.28)",
-                      "&:hover": {
-                        background: "var(--ink-orange-2)",
-                        backgroundImage: "none",
-                        boxShadow: "0 16px 38px rgba(255,106,0,0.4)",
-                      },
-                    }}
-                  >
-                    Get Started
-                  </GradientButton>
-                </>
-              )}
+
+              <IconButton
+                onClick={handleDrawerToggle}
+                aria-label="Open navigation menu"
+                aria-controls="ink-mobile-nav"
+                aria-expanded={mobileOpen ? "true" : "false"}
+                sx={{
+                  display: { xs: "inline-flex", md: "none" },
+                  flexShrink: 0,
+                  borderRadius: 999,
+                  p: 0.75,
+                  color: "var(--ink-text-2)",
+                  "&:hover": { color: "var(--ink-orange)", backgroundColor: "var(--ink-orange-softer)" },
+                }}
+              >
+                <MenuRoundedIcon />
+              </IconButton>
             </Box>
           </Toolbar>
         </motion.div>
-      </Container>
+      </Box>
+
+      <Drawer
+        id="ink-mobile-nav"
+        anchor="left"
+        open={mobileOpen}
+        onClose={handleDrawerToggle}
+        // MUI 6.4's Drawer does NOT implement `slotProps` — it only accepts
+        // `PaperProps` (unlike Menu/Popover/Dialog, which do). Passing
+        // slotProps here is silently ignored, which drops the whole paper
+        // style: the drawer collapsed to its min-content width (~125px) and,
+        // worse, lost the `ink-nav` class that supplies the var(--ink-*)
+        // tokens to everything inside the portal.
+        PaperProps={{
+          className: "ink-nav",
+          sx: {
+            width: 292,
+            p: 2,
+            bgcolor: "var(--ink-bg-alt)",
+            backgroundImage: "none",
+            color: "var(--ink-text)",
+            borderRight: "1px solid var(--ink-border)",
+            borderRadius: "0 18px 18px 0",
+          },
+        }}
+      >
+        <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+          <Box sx={{ px: 1, py: 1, mb: 1.5 }}>
+            <BrandLogo
+              size={34}
+              tone="light"
+              showTagline
+              tagline="Write · Share · Inspire"
+              sx={{
+                "& span": { color: "var(--ink-orange) !important" },
+                "& p:last-of-type": { color: "var(--ink-text-3-decor)" },
+              }}
+              onClick={() => { navigate("/"); setMobileOpen(false); }}
+            />
+          </Box>
+
+          <Stack spacing={0.5} sx={{ flexGrow: 1, overflowY: "auto" }}>
+            {NAV_ITEMS.map((item) => {
+              const active = item.match(location.pathname);
+              return (
+                <Button
+                  key={item.label}
+                  fullWidth
+                  startIcon={<item.Icon />}
+                  sx={drawerBtnSx(active)}
+                  aria-current={active ? "page" : undefined}
+                  onClick={() => { go(item.path); setMobileOpen(false); }}
+                >
+                  {item.label}
+                </Button>
+              );
+            })}
+
+            <Divider sx={{ my: 1, borderColor: "var(--ink-border-soft)" }} />
+
+            {drawerLinks
+              .filter((link) => (!link.auth || isLogin) && link.show !== false)
+              .map((link) => (
+                <Button
+                  key={link.path}
+                  fullWidth
+                  startIcon={<link.Icon />}
+                  sx={drawerBtnSx(location.pathname === link.path)}
+                  aria-current={location.pathname === link.path ? "page" : undefined}
+                  onClick={() => { go(link.path); setMobileOpen(false); }}
+                >
+                  {link.label}
+                </Button>
+              ))}
+
+            <Divider sx={{ my: 1, borderColor: "var(--ink-border-soft)" }} />
+
+            {/* The bar's theme switch is desktop-only, so the drawer carries the
+                one the phone can actually reach. */}
+            <Button
+              fullWidth
+              startIcon={theme === "dark" ? <Brightness5Icon /> : <NightsStayIcon />}
+              sx={drawerBtnSx(false)}
+              onClick={toggleTheme}
+            >
+              {theme === "dark" ? "Light mode" : "Dark mode"}
+            </Button>
+
+            {!isLogin && (
+              <Button
+                fullWidth
+                startIcon={<LoginRoundedIcon />}
+                sx={drawerBtnSx(false)}
+                onClick={() => { navigate("/login"); setMobileOpen(false); }}
+              >
+                Sign In
+              </Button>
+            )}
+          </Stack>
+
+          {isLogin && (
+            <Button
+              fullWidth
+              startIcon={<LogoutIcon />}
+              sx={{ ...drawerBtnSx(false), mt: 1, color: "error.main", "&:hover": { color: "error.main", backgroundColor: "rgba(239,68,68,0.10)" } }}
+              onClick={handleLogout}
+            >
+              Logout
+            </Button>
+          )}
+        </Box>
+      </Drawer>
     </AppBar>
   );
 };
