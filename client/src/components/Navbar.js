@@ -268,7 +268,10 @@ const Navbar = () => {
   // even though the nav's "Write" item matches both routes.
   //
   // Explore is on the list for the same reason as Home and About: it is an
-  // always-dark editorial page, and it is reachable by three paths.
+  // always-dark editorial page, and it is reachable by three paths. The
+  // Leaderboard joined it when it was rebuilt on the same canvas — it is the
+  // third page to opt into `.ink`, and without this entry the light app theme
+  // would paint a white band behind the capsule on top of it.
   const onEditorialPage =
     location.pathname === "/" ||
     location.pathname === "/about" ||
@@ -276,7 +279,8 @@ const Navbar = () => {
     location.pathname === "/create-blog" ||
     location.pathname.startsWith("/explore") ||
     location.pathname.startsWith("/blogs") ||
-    location.pathname.startsWith("/category");
+    location.pathname.startsWith("/category") ||
+    location.pathname.startsWith("/leaderboard");
 
   return (
     <AppBar

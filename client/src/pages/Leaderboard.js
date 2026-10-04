@@ -1,57 +1,48 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
-import { Box, Tabs, Tab, ToggleButtonGroup, ToggleButton, Typography, Stack, Button, Skeleton } from "@mui/material";
-import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
-import SectionHeading from "../components/SectionHeading";
-import LeaderboardCard from "../components/LeaderboardCard";
-import LeaderboardPodium from "../components/LeaderboardPodium";
+import { Box } from "@mui/material";
+import { InkBackdrop, Reveal } from "../components/ink";
+import {
+  BoardSkeleton,
+  LeaderboardEmpty,
+  LeaderboardError,
+  LeaderboardHero,
+  RailSkeleton,
+  RisingWriters,
+  TopTopics,
+  TopWritersBoard,
+} from "../components/leaderboard";
 import { useAuth } from "../context/AuthContext";
+import "./Leaderboard.css";
 
-const PERIODS = [
-  { key: "all", label: "All Time" },
-  { key: "month", label: "This Month" },
-  { key: "week", label: "This Week" },
-];
+/* ─────────────────────────────────────────────────────────────────────
+   InkWell — Leaderboard.
 
-// Loading skeleton: podium steps + list rows, mirroring the real layout.
-const LeaderboardSkeleton = () => (
-  <Box>
-    <Box sx={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: { xs: 1.5, sm: 3 }, mt: 2 }}>
-      {[2, 1, 3].map((rank) => (
-        <Stack key={rank} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
-          <Skeleton variant="circular" width={rank === 1 ? 76 : 58} height={rank === 1 ? 76 : 58} sx={{ mb: 1.5 }} />
-          <Skeleton variant="text" width={90} />
-          <Skeleton variant="text" width={54} />
-          <Skeleton
-            variant="rounded"
-            width={rank === 1 ? 150 : 126}
-            height={rank === 1 ? 132 : rank === 2 ? 104 : 88}
-            sx={{ borderRadius: "14px 14px 0 0", mt: 1 }}
-          />
-        </Stack>
-      ))}
-    </Box>
-    <Box sx={{ mt: 4 }}>
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Stack key={i} direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
-          <Skeleton variant="text" width={22} />
-          <Skeleton variant="circular" width={30} height={30} />
-          <Skeleton variant="text" width={160} sx={{ flex: 1 }} />
-          <Skeleton variant="text" width={54} />
-        </Stack>
-      ))}
-    </Box>
-  </Box>
-);
+   The page is a presentation of whatever the leaderboard endpoint already
+   ranks; it computes nothing itself. One request per time filter returns
+   both boards plus the rail's data, so switching Writers/Readers is purely
+   local and switching the window is a single refetch.
 
-// Standalone leaderboard with All-time / Monthly / Weekly period tabs and a
-// Writers / Readers toggle. The top three get a recognition podium (avatars,
-// rank medals, points, badges); ranks 4–10 render as the shared list card.
+   REAL DATA OR NO DATA is the rule this page is built on:
+     • Every figure on screen comes from the database — the boards' metrics,
+       the rising writers' seven-day point gains, and the topic counts.
+     • There is no fallback set of demo competitors. An empty board is an
+       empty state with a route into writing, not a fabricated top ten.
+     • The hero's podium shows the real top three, or abstract circles.
+
+   Layout: a two-column hero (copy · trophy stage), then the board table at
+   68% beside the rail at 32%. On tablet both stacks to one column, and on
+   phones the table sheds its low-priority metric columns rather than
+   squeezing them.
+   ───────────────────────────────────────────────────────────────────── */
+
+const EMPTY = { topWriters: [], topReaders: [], risingWriters: [], topTopics: [] };
+
 const Leaderboard = () => {
   const { user } = useAuth();
   const [period, setPeriod] = useState("all");
   const [group, setGroup] = useState("writers"); // writers | readers
-  const [data, setData] = useState({ topWriters: [], topReaders: [] });
+  const [data, setData] = useState(EMPTY);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -60,7 +51,12 @@ const Leaderboard = () => {
     try {
       const { data: res } = await axios.get(`/api/v1/user/leaderboard?period=${p}`);
       if (res.success) {
-        setData({ topWriters: res.topWriters || [], topReaders: res.topReaders || [] });
+        setData({
+          topWriters: res.topWriters || [],
+          topReaders: res.topReaders || [],
+          risingWriters: res.risingWriters || [],
+          topTopics: res.topTopics || [],
+        });
         setError(false);
       } else {
         setError(true);
@@ -77,74 +73,67 @@ const Leaderboard = () => {
   }, [period, fetchLeaderboard]);
 
   const rows = group === "writers" ? data.topWriters : data.topReaders;
+  const boardEmpty = rows.length === 0;
+  // The board can be empty while the rail still has real things to say (an
+  // active platform whose writers simply have not earned points yet). The
+  // full-page empty state is reserved for the case where there is genuinely
+  // nothing on the page at all.
+  const railEmpty = data.risingWriters.length === 0 && data.topTopics.length === 0;
 
   return (
-    <Box sx={{ minHeight: "100vh", p: { xs: 2, md: 4 } }}>
-      <SectionHeading
-        eyebrow="Community standouts"
-        title="Leaderboard"
-        subtitle="Celebrating the creators and readers who make InkWell thrive — all-time, or the last 30 / 7 days."
-        badge
-        align="center"
-        sx={{ mb: 3 }}
-      />
+    <Box className="ink ink-leaderboard" component="main">
+      {/* The 54px grid, the grain and the drifting warm glow — the same
+          backdrop the other editorial pages mount, with the tighter hero
+          grid this page's spec calls for. */}
+      <InkBackdrop hero drift />
 
-      <Box sx={{ maxWidth: 720, mx: "auto" }}>
-        {/* Period tabs */}
-        <Tabs
-          value={period}
-          onChange={(_, v) => setPeriod(v)}
-          variant="scrollable"
-          scrollButtons="auto"
-          sx={{ mb: 2 }}
-        >
-          {PERIODS.map((p) => (
-            <Tab key={p.key} value={p.key} label={p.label} />
-          ))}
-        </Tabs>
+      <div className="ink-lb-wrap">
+        <LeaderboardHero
+          period={period}
+          onPeriodChange={setPeriod}
+          group={group}
+          onGroupChange={setGroup}
+          rows={rows}
+          loading={loading}
+          failed={error}
+        />
 
-        {/* Writers / Readers toggle */}
-        <ToggleButtonGroup
-          value={group}
-          exclusive
-          onChange={(_, v) => v && setGroup(v)}
-          size="small"
-          sx={{ mb: 2, display: "flex", justifyContent: "center" }}
-        >
-          <ToggleButton value="writers" sx={{ textTransform: "none", fontWeight: 700 }}>Writers</ToggleButton>
-          <ToggleButton value="readers" sx={{ textTransform: "none", fontWeight: 700 }}>Readers</ToggleButton>
-        </ToggleButtonGroup>
-
-        {loading ? (
-          <LeaderboardSkeleton />
-        ) : error ? (
-          <Stack spacing={1.5} alignItems="center" sx={{ py: 6 }}>
-            <Typography color="text.secondary">Couldn't load the leaderboard. Please try again.</Typography>
-            <Button variant="outlined" onClick={() => fetchLeaderboard(period)}>Retry</Button>
-          </Stack>
-        ) : rows.length === 0 ? (
-          <Stack spacing={1} alignItems="center" sx={{ py: 5 }}>
-            <EmojiEventsIcon sx={{ fontSize: 44, color: "text.secondary" }} />
-            <Typography variant="h6">No {group} on the board yet</Typography>
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-              {period === "all"
-                ? "Start writing and engaging to claim a spot."
-                : "No activity in this window — keep going!"}
-            </Typography>
-          </Stack>
+        {error ? (
+          <div className="ink-lb-card">
+            <LeaderboardError onRetry={() => fetchLeaderboard(period)} />
+          </div>
+        ) : loading ? (
+          <div className="ink-lb-layout">
+            <BoardSkeleton />
+            <aside className="ink-lb-rail">
+              <RailSkeleton />
+            </aside>
+          </div>
+        ) : boardEmpty && railEmpty ? (
+          <div className="ink-lb-card">
+            <LeaderboardEmpty group={group} />
+          </div>
         ) : (
-          <>
-            <LeaderboardPodium rows={rows} />
-            {rows.length > 3 && (
-              <LeaderboardCard
-                title={`${group === "writers" ? "Top Writers" : "Top Readers"} · 4–${rows.length}`}
-                rows={rows.slice(3)}
-                currentUserId={user?._id}
-              />
+          <div className="ink-lb-layout">
+            {boardEmpty ? (
+              <div className="ink-lb-card">
+                <LeaderboardEmpty group={group} />
+              </div>
+            ) : (
+              <TopWritersBoard rows={rows} group={group} currentUserId={user?._id} />
             )}
-          </>
+
+            <aside className="ink-lb-rail" aria-label="Trends on InkWell">
+              <Reveal y={18}>
+                <RisingWriters rows={data.risingWriters} />
+              </Reveal>
+              <Reveal y={18} delay={0.08}>
+                <TopTopics topics={data.topTopics} period={period} />
+              </Reveal>
+            </aside>
+          </div>
         )}
-      </Box>
+      </div>
     </Box>
   );
 };

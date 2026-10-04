@@ -1,0 +1,786 @@
+/* ─────────────────────────────────────────────────────────────────────
+   InkWell — Leaderboard.
+
+   The one page in the app that reads as a *stage*: a warm-charcoal canvas,
+   a hero that pairs the copy with a trophy-and-podium composition, and then
+   two columns of boards. It rides on the shared editorial system (`.ink`
+   supplies every --ink-* token, `InkBackdrop` supplies the 54px grid, the
+   grain and the drifting glow) and only adds what is specific to a
+   leaderboard, kept as `--lb-*` tokens scoped to `.ink-leaderboard`.
+
+   Why local tokens at all: the spec for this page pins a slightly different
+   palette from the shared canvas (border 0.08 rather than 0.06/0.10, a gold
+   accent the rest of the app does not have). Aliasing them here means the
+   page matches its spec exactly without repainting Home, About or Explore.
+
+   Colour discipline: orange for structure and emphasis, gold/silver/bronze
+   for rank only. No purple, blue or cyan anywhere — rank is also always
+   spelled out as a number, so colour is never the only signal.
+   ───────────────────────────────────────────────────────────────────── */
+
+.ink-leaderboard {
+  --lb-card: rgba(24, 22, 20, 0.82);
+  --lb-elevated: #1d1a17;
+  --lb-line: rgba(255, 255, 255, 0.08);
+  --lb-line-soft: rgba(255, 255, 255, 0.05);
+  --lb-row: rgba(255, 255, 255, 0.025);
+  --lb-text-2: #b8b0a6;
+  --lb-gold: #f5a623;
+  --lb-silver: #9ea7b3;
+  --lb-bronze: #b0804f;
+  --lb-glow-orange: rgba(255, 106, 0, 0.14);
+  --lb-glow-gold: rgba(245, 166, 35, 0.12);
+  --lb-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ink-lb-wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 1360px;
+  margin-inline: auto;
+  padding-inline: var(--ink-gutter);
+  padding-block: clamp(1.75rem, 4vw, 3rem) clamp(4rem, 8vw, 6.5rem);
+}
+
+/* ── Hero ─────────────────────────────────────────────────────────────
+   Copy on the left, the trophy stage on the right. The ambient light is a
+   pair of very soft radial washes (orange top-right, gold under the copy)
+   painted behind the grid rather than a hard gradient band. */
+.ink-lb-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+  align-items: center;
+  gap: clamp(2rem, 4vw, 4rem);
+  padding-block: clamp(0.5rem, 2vw, 1.5rem) clamp(2.5rem, 5vw, 4rem);
+}
+
+.ink-lb-hero::before {
+  content: "";
+  position: absolute;
+  inset: -18% -12% -10% -14%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(46% 42% at 76% 18%, var(--lb-glow-orange), transparent 68%),
+    radial-gradient(40% 40% at 10% 68%, var(--lb-glow-gold), transparent 70%);
+}
+
+.ink-lb-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  background: var(--ink-orange-soft);
+  border: 1px solid rgba(255, 106, 0, 0.28);
+  color: var(--ink-orange);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ink-lb-title {
+  margin: 1.35rem 0 0;
+  font-family: var(--ink-font-display);
+  font-weight: 800;
+  font-size: clamp(2.5rem, 6.4vw, 4.875rem);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  color: var(--ink-text);
+  text-wrap: balance;
+}
+
+.ink-lb-title .ink-lb-hl {
+  color: var(--ink-orange);
+}
+
+.ink-lb-lede {
+  margin: 1.25rem 0 0;
+  max-width: 620px;
+  font-size: clamp(1rem, 1.15vw, 1.1rem);
+  line-height: 1.6;
+  color: var(--lb-text-2);
+}
+
+.ink-lb-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: clamp(1.75rem, 3vw, 2.4rem);
+}
+
+/* Segmented control: a translucent track holding pill buttons. The active
+   button carries its own orange border rather than the container, so the
+   pill itself reads as the selected segment. */
+.ink-lb-seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 44px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.ink-lb-seg-btn {
+  height: 34px;
+  padding: 0 1.05rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--lb-text-2);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.17s ease, border-color 0.17s ease, color 0.17s ease;
+}
+
+.ink-lb-seg-btn:hover {
+  color: var(--ink-text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.ink-lb-seg-btn[aria-pressed="true"],
+.ink-lb-seg-btn[aria-pressed="true"]:hover {
+  color: var(--ink-orange);
+  background: var(--ink-orange-soft);
+  border-color: rgba(255, 106, 0, 0.3);
+}
+
+.ink-lb-seg-btn:focus-visible {
+  outline: 2px solid var(--ink-orange);
+  outline-offset: 2px;
+}
+
+/* The Writers / Readers switch is the same control, visually secondary. */
+.ink-lb-seg--alt .ink-lb-seg-btn[aria-pressed="true"] {
+  color: var(--ink-text);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+/* ── Trophy stage ─────────────────────────────────────────────────────
+   A framed panel: ambient glow, two curved orange light trails, the gold
+   trophy, then the three podium plinths. Everything except the plinths is
+   decoration; the plinths carry real top-three users. */
+.ink-lb-stage {
+  position: relative;
+  border-radius: var(--ink-radius-lg);
+  padding: clamp(1.25rem, 2.6vw, 2rem) clamp(1rem, 2.4vw, 1.75rem) 0;
+  overflow: hidden;
+  background: linear-gradient(165deg, #1a1714 0%, #141210 52%, #100e0d 100%);
+  border: 1px solid var(--lb-line);
+  box-shadow: var(--ink-shadow-card), 0 0 70px rgba(255, 106, 0, 0.07);
+}
+
+.ink-lb-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(58% 48% at 50% 4%, rgba(245, 166, 35, 0.14), transparent 64%),
+    radial-gradient(70% 52% at 50% 104%, rgba(255, 106, 0, 0.1), transparent 68%);
+}
+
+.ink-lb-trails {
+  position: absolute;
+  inset: auto 0 0;
+  width: 100%;
+  height: 62%;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.ink-lb-trophy {
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin-bottom: clamp(0.5rem, 1.6vw, 1rem);
+  animation: inkFloat 9s ease-in-out infinite;
+}
+
+.ink-lb-trophy svg {
+  display: block;
+  width: clamp(7rem, 9vw, 9.5rem);
+  height: auto;
+  filter: drop-shadow(0 12px 26px rgba(245, 166, 35, 0.28));
+}
+
+/* Podium: 2 · 1 · 3, the winner's block taller and wider. */
+.ink-lb-podium {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: clamp(0.5rem, 1.4vw, 0.9rem);
+}
+
+.ink-lb-plinth {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+
+.ink-lb-plinth-avatar {
+  position: relative;
+  margin-bottom: 0.6rem;
+}
+
+.ink-lb-plinth-medal {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #17110c;
+  border: 2px solid #100e0d;
+}
+
+.ink-lb-plinth[data-rank="1"] .ink-lb-plinth-medal { background: var(--lb-gold); }
+.ink-lb-plinth[data-rank="2"] .ink-lb-plinth-medal { background: var(--lb-silver); }
+.ink-lb-plinth[data-rank="3"] .ink-lb-plinth-medal { background: var(--lb-bronze); }
+
+.ink-lb-plinth-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink-text);
+}
+
+.ink-lb-plinth-pts {
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-orange);
+}
+
+/* The plinths are dark blocks with a thin medal edge, not gold slabs. The
+   winner's block is the tallest and the warmest, and the medal colour is
+   carried by the edge, the label and the avatar ring rather than by a
+   metallic fill — a solid gold block was the brightest thing on a page
+   whose accent is orange, and on an empty board it shouted the loudest
+   about nothing. */
+.ink-lb-plinth-block {
+  position: relative;
+  width: 100%;
+  margin-top: 0.7rem;
+  border-radius: 14px 14px 0 0;
+  border: 1px solid var(--lb-line-soft);
+  border-bottom: none;
+  display: grid;
+  place-items: center;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lb-text-2);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
+  overflow: hidden;
+}
+
+/* The medal edge: the block's own colour, so each place is marked by the
+   medal it earned and not only by the number badge above it. */
+.ink-lb-plinth-block::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: currentColor;
+  opacity: 0.5;
+}
+
+.ink-lb-plinth[data-rank="1"] .ink-lb-plinth-block {
+  height: 104px;
+  color: var(--lb-gold);
+  border-color: rgba(245, 166, 35, 0.32);
+  background: linear-gradient(180deg, rgba(245, 166, 35, 0.15), rgba(245, 166, 35, 0.02));
+  box-shadow: 0 -16px 44px rgba(245, 166, 35, 0.13);
+}
+
+.ink-lb-plinth[data-rank="2"] .ink-lb-plinth-block {
+  height: 80px;
+  color: var(--lb-silver);
+}
+
+.ink-lb-plinth[data-rank="3"] .ink-lb-plinth-block {
+  height: 62px;
+  color: var(--lb-bronze);
+}
+
+/* Decorative circles stand in for the avatars when the board is empty —
+   abstract marks, never invented people. They are drawn as faint outlines
+   rather than filled spheres: an outline reads as a place waiting to be
+   filled, a shaded ball reads as a person we are not allowed to invent. */
+.ink-lb-deco-circle {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.035), transparent 70%);
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+}
+
+/* ── Boards ───────────────────────────────────────────────────────────
+   Left column 68%, rail 32%, 24px apart. */
+.ink-lb-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 68fr) minmax(0, 32fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.ink-lb-card {
+  position: relative;
+  border-radius: 22px;
+  padding: clamp(1.25rem, 2.2vw, 1.75rem);
+  background: var(--lb-card);
+  border: 1px solid var(--lb-line);
+  box-shadow: var(--ink-shadow-card);
+  overflow: hidden;
+}
+
+.ink-lb-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.ink-lb-card-title {
+  margin: 0;
+  font-family: var(--ink-font-display);
+  font-size: 1.12rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--ink-text);
+}
+
+.ink-lb-card-sub {
+  margin: 0.35rem 0 0;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--lb-text-2);
+}
+
+.ink-lb-card-count {
+  flex-shrink: 0;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--lb-line-soft);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lb-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── The table ────────────────────────────────────────────────────────
+   Header is plain type, rows are individual rounded surfaces. Both share
+   one grid template so the columns line up without a real <table>. */
+.ink-lb-table--writers {
+  --lb-col: 52px minmax(0, 1fr) 78px 78px 78px 92px 88px;
+}
+
+.ink-lb-table--readers {
+  --lb-col: 52px minmax(0, 1fr) 132px 104px 88px;
+}
+
+.ink-lb-thead,
+.ink-lb-trow {
+  display: grid;
+  grid-template-columns: var(--lb-col);
+  align-items: center;
+  gap: 0.5rem;
+  padding-inline: 16px;
+}
+
+.ink-lb-thead {
+  padding-block: 0 0.65rem;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--lb-muted);
+}
+
+/* Only the metric columns are right-aligned — the rank and the person stay
+   left, matching how their cells are laid out. */
+.ink-lb-thead > .ink-lb-col-num,
+.ink-lb-trow > .ink-lb-num {
+  text-align: right;
+}
+
+.ink-lb-trow {
+  position: relative;
+  margin-bottom: 8px;
+  padding-block: 14px;
+  border-radius: 14px;
+  background: var(--lb-row);
+  border: 1px solid var(--lb-line-soft);
+  transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+/* Colour and border only — the row's lift is animated by the motion library
+   that owns its inline transform (see TopWritersBoard), so a transform
+   declared here would never take effect. The rail's rows are plain
+   elements, and they carry their lift below. */
+.ink-lb-trow:hover {
+  border-color: var(--lb-line);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Rank 1 gets the warm lift — the only row with a glow. */
+.ink-lb-trow[data-rank="1"] {
+  background: linear-gradient(90deg, rgba(255, 106, 0, 0.1), var(--lb-row) 52%);
+  border-color: rgba(255, 106, 0, 0.24);
+  box-shadow: 0 10px 30px rgba(255, 106, 0, 0.08);
+}
+
+.ink-lb-trow.is-me {
+  border-color: rgba(255, 106, 0, 0.34);
+}
+
+.ink-lb-rank {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--lb-text-2);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--lb-line-soft);
+}
+
+.ink-lb-trow[data-rank="1"] .ink-lb-rank {
+  color: #17110c;
+  background: linear-gradient(135deg, #ffd08a, var(--lb-gold));
+  border-color: rgba(245, 166, 35, 0.5);
+}
+
+.ink-lb-trow[data-rank="2"] .ink-lb-rank {
+  color: #17110c;
+  background: linear-gradient(135deg, #e6ebf1, var(--lb-silver));
+  border-color: rgba(158, 167, 179, 0.5);
+}
+
+.ink-lb-trow[data-rank="3"] .ink-lb-rank {
+  color: #17110c;
+  background: linear-gradient(135deg, #e0bb8d, var(--lb-bronze));
+  border-color: rgba(176, 128, 79, 0.5);
+}
+
+.ink-lb-writer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.ink-lb-writer-name {
+  min-width: 0;
+}
+
+.ink-lb-writer-name > span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--ink-text);
+}
+
+.ink-lb-writer-meta {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--lb-text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ink-lb-you {
+  margin-left: 0.4rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: var(--ink-orange-soft);
+  border: 1px solid rgba(255, 106, 0, 0.3);
+  color: var(--ink-orange);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: 2px;
+}
+
+.ink-lb-num {
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--lb-text-2);
+}
+
+.ink-lb-num.is-points {
+  font-weight: 800;
+  color: var(--ink-orange);
+}
+
+/* ── Rail cards ─────────────────────────────────────────────────────── */
+.ink-lb-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.ink-lb-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0.7rem;
+  margin-bottom: 6px;
+  border-radius: 12px;
+  background: var(--lb-row);
+  border: 1px solid var(--lb-line-soft);
+  transition: transform 0.18s ease, border-color 0.18s ease;
+}
+
+.ink-lb-row:hover {
+  transform: translateY(-1px);
+  border-color: var(--lb-line);
+}
+
+.ink-lb-row-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--ink-text);
+}
+
+.ink-lb-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(245, 166, 35, 0.12);
+  border: 1px solid rgba(245, 166, 35, 0.28);
+  color: var(--lb-gold);
+  font-size: 0.7rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.ink-lb-topic {
+  margin-bottom: 0.85rem;
+}
+
+.ink-lb-topic:last-child {
+  margin-bottom: 0;
+}
+
+.ink-lb-topic-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.4rem;
+}
+
+.ink-lb-topic-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--ink-text);
+}
+
+.ink-lb-topic-count {
+  flex-shrink: 0;
+  font-size: 0.74rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--lb-text-2);
+}
+
+/* The bar is the topic's real share of the top topic's count — a ratio of
+   two real numbers, never a decorative width. */
+.ink-lb-topic-bar {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.ink-lb-topic-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--ink-orange-2), var(--ink-orange));
+  transition: width 0.7s var(--lb-ease);
+}
+
+/* ── Honest states (loading / error / empty) ────────────────────────── */
+.ink-lb-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1.25rem;
+  text-align: center;
+}
+
+.ink-lb-state-title {
+  margin: 0;
+  font-family: var(--ink-font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--ink-text);
+}
+
+.ink-lb-state-text {
+  margin: 0;
+  max-width: 42ch;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--lb-text-2);
+}
+
+.ink-lb-state-emoji {
+  font-size: 2.1rem;
+  line-height: 1;
+}
+
+.ink-lb-skel {
+  border-radius: 12px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.045));
+  background-size: 200% 100%;
+  animation: inkLbShimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes inkLbShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.ink-lb-skel-row {
+  display: grid;
+  grid-template-columns: var(--lb-col);
+  align-items: center;
+  gap: 0.5rem;
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  border-radius: 14px;
+  border: 1px solid var(--lb-line-soft);
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────── */
+
+/* Tablet: the hero and the two-column board layout both collapse to one
+   column. The trophy stage follows the copy, per the spec. */
+@media (max-width: 1023.95px) {
+  .ink-lb-hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.25rem;
+  }
+
+  .ink-lb-stage {
+    max-width: 520px;
+    margin-inline: auto;
+    width: 100%;
+  }
+
+  .ink-lb-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 699.95px) {
+  /* Phones keep rank, person and points. Four metric columns squeezed into
+     a 360px row would be unreadable, so they are dropped — not shrunk. */
+  .ink-lb-table--writers,
+  .ink-lb-table--readers {
+    --lb-col: 38px minmax(0, 1fr) auto;
+  }
+
+  .ink-lb-thead,
+  .ink-lb-trow,
+  .ink-lb-skel-row {
+    padding-inline: 12px;
+    gap: 0.4rem;
+  }
+
+  .ink-lb-col-stories,
+  .ink-lb-col-reads,
+  .ink-lb-col-likes,
+  .ink-lb-col-followers {
+    display: none;
+  }
+
+  .ink-lb-thead {
+    padding-bottom: 0.5rem;
+  }
+
+  .ink-lb-controls {
+    gap: 0.6rem;
+  }
+
+  .ink-lb-seg {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .ink-lb-seg-btn {
+    flex: 1;
+    padding: 0 0.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ink-lb-trophy {
+    animation: none;
+  }
+
+  /* The board rows drop their lift in the component (whileHover is off when
+     the preference is set); this covers the rail rows, which are plain
+     elements and have no motion layer to switch off. */
+  .ink-lb-row:hover {
+    transform: none;
+  }
+
+  .ink-lb-skel {
+    animation: none;
+  }
+
+  .ink-lb-topic-fill {
+    transition: none;
+  }
+}
