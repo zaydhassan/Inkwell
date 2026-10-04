@@ -1,6 +1,5 @@
 import React from "react";
-import { Box, Container, Typography, Stack } from "@mui/material";
-import { motion, useReducedMotion } from "framer-motion";
+import { Box, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowForwardRounded,
@@ -8,46 +7,71 @@ import {
   AutoStoriesOutlined,
   BoltOutlined,
   Diversity3Outlined,
-  EditNoteOutlined,
   EmojiEventsOutlined,
   GroupsOutlined,
   MenuBookOutlined,
   TrendingUpOutlined,
   VisibilityOutlined,
 } from "@mui/icons-material";
-import { WritingDeskScene, PhilosophyScene } from "../components/AboutIllustrations";
-import { INK, FONT_DISPLAY, EASE } from "../components/ink/tokens";
 import {
+  INK,
+  FONT_DISPLAY,
   Reveal,
   InkBackdrop,
+  InkSectionHead,
   InkEyebrow,
   InkHighlight,
-  InkSectionHead,
   InkSurface,
-  InkFloatingCard,
-  InkAvatarGroup,
+  InkValueCard,
+  InkStatsBand,
   InkPrimaryButton,
   InkGhostButton,
-  InkStatsBand,
-  InkValueCard,
+  InkFeather,
 } from "../components/ink";
+import {
+  ScrollProgress,
+  Section,
+  EcosystemFlow,
+  OrbitDiagram,
+  ProblemLedger,
+  SolutionWorkflow,
+  AiComparison,
+  AiFeatureGrid,
+  WritingDemo,
+  WriterJourney,
+  ReaderJourney,
+  CommunityDiagram,
+  ReadWriteEarn,
+  AuthorshipTimeline,
+  FutureVision,
+  ClosingCta,
+} from "../components/about";
 import "./About.css";
 
 /* ─────────────────────────────────────────────────────────────────────
    InkWell — About.
 
-   A cinematic, editorial About page in the app's dark + warm-orange
-   language. It no longer owns a token layer: the page root carries `.ink`
-   (and the Navbar `.ink-nav`), so it reads the shared design system in
-   `src/styles/inkwell.css` and the shared primitives in
-   `src/components/ink`, exactly like Home. About.css keeps only genuinely
-   About-specific layout.
+   The page as a product story: what InkWell is, what is wrong with the way
+   publishing usually works, what InkWell does about it, where the AI sits,
+   and who it is for. Fifteen compositions, each one deliberately a different
+   shape — a hero with a diagram, an orbit, three problem cards, a workflow,
+   a comparison, a grid, a live demo, a timeline, a path, a network, a
+   cinematic close — because a page this long that repeats one card grid
+   fifteen times is a page nobody finishes.
 
-   Content and routing are unchanged from the previous About page: the
-   same two CTAs (/explore and /register), the same six values, the same
-   read/write/earn loop, and the same closing CTA. The "Meet the maker"
-   section — and its personal portrait — is gone, replaced by an
-   "Our philosophy" section with an original vector composition.
+   It owns no token layer: the root carries `.ink`, so every colour and every
+   type step comes from `src/styles/inkwell.css` and `src/components/ink`.
+   About.css holds only the layout specific to these compositions.
+
+   Content is the existing page's content. The six values, the mission, the
+   read/write/earn loop, both illustrations, the closing CTA and both routes
+   (/explore, /register) are all preserved. The FACES initials discs are the
+   one thing dropped, on purpose: a row of abstract "members" on a page with
+   real members is social proof we cannot back with data.
+
+   Every claim on this page is about how the product works. There is not a
+   single figure on it — no user counts, no ratings, no growth percentages.
+   See the REAL DATA OR NO DATA rule this app follows.
    ───────────────────────────────────────────────────────────────────── */
 
 const VALUES = [
@@ -83,40 +107,13 @@ const VALUES = [
   },
 ];
 
-const STEPS = [
-  {
-    step: "01",
-    icon: <MenuBookOutlined />,
-    title: "READ",
-    body: "Discover stories.",
-  },
-  {
-    step: "02",
-    icon: <EditNoteOutlined />,
-    title: "WRITE",
-    body: "Create your story.",
-  },
-  {
-    step: "03",
-    icon: <EmojiEventsOutlined />,
-    title: "EARN",
-    body: "Get rewarded.",
-  },
-];
-
 const MISSION_POINTS = [
   { icon: <GroupsOutlined />, title: "Connect people", body: "Bridge ideas across communities and cultures." },
   { icon: <AutoAwesomeOutlined />, title: "Empower creators", body: "Give writers the tools and audience they deserve." },
   { icon: <TrendingUpOutlined />, title: "Create impact", body: "Spread knowledge that makes a real difference." },
 ];
 
-const PHILOSOPHY = [
-  "Thoughtful writing, over volume.",
-  "Meaningful discovery, not an endless feed.",
-  "Participation that rewards you back.",
-];
-
-/* What the old stats band showed instead of invented platform figures.
+/* What the stats band shows instead of invented platform figures.
    Qualitative on purpose — InkWell publishes no numbers it cannot back with
    real data. See the REAL DATA OR NO DATA note in InkStatsBand. */
 const HIGHLIGHTS = [
@@ -126,786 +123,306 @@ const HIGHLIGHTS = [
   { icon: <BoltOutlined />, title: "Creator-focused tools", sub: "Everything you need to publish well." },
 ];
 
-// Deterministic, image-free avatars for the community card — initials on
-// warm surfaces, so nothing is fetched and no real person is depicted.
-const FACES = [
-  { initials: "AR", bg: "#7C2D12" },
-  { initials: "MK", bg: "#B45309" },
-  { initials: "JD", bg: "#4A423A" },
-  { initials: "SO", bg: "#9A3412" },
-];
-
-/* ── How it works: the connector between two desktop stages ────────── */
-
-// Genuinely About-only: the orange rule + travelling pulse that joins the
-// three stages of the read/write/earn loop on desktop.
-const Rail = () => (
-  <Box
-    aria-hidden="true"
-    sx={{
-      display: { xs: "none", md: "flex" },
-      alignItems: "flex-start",
-      justifyContent: "center",
-      pt: "55px", // lines up with the vertical centre of the stage node
-      minWidth: 48,
-    }}
-  >
-    <Box sx={{ position: "relative", width: "100%", height: "1px", bgcolor: "rgba(255,106,0,0.28)" }}>
-      <Box
-        sx={{
-          position: "absolute",
-          right: -2,
-          top: -3,
-          width: 7,
-          height: 7,
-          borderRadius: "50%",
-          bgcolor: INK.orange,
-          boxShadow: `0 0 12px ${INK.orange}`,
-        }}
-      />
-      <Box
-        className="ink-pulse"
-        sx={{
-          position: "absolute",
-          left: "50%",
-          top: -2,
-          ml: "-2.5px",
-          width: 5,
-          height: 5,
-          borderRadius: "50%",
-          bgcolor: INK.orange2,
-        }}
-      />
-    </Box>
-  </Box>
-);
-
-/* ── Page ──────────────────────────────────────────────────────────── */
-
 const AboutPage = () => {
   const navigate = useNavigate();
-  const reduceMotion = useReducedMotion();
 
   return (
-    <Box className="ink ink-about" component="main" sx={{ minHeight: "100vh" }}>
-      {/* Ambient decoration — always behind the content, never interactive. */}
+    <Box className="ink ink-about" component="main">
       <InkBackdrop drift />
+      <ScrollProgress />
 
-      <Box sx={{ position: "relative", zIndex: 1 }}>
-        <Container maxWidth="lg" sx={{ pt: { xs: 5, md: 7 }, pb: { xs: 8, md: 12 } }}>
-          {/* ══ Hero ════════════════════════════════════════════════ */}
-          <Box
-            component="section"
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "1fr 1.05fr" },
-              gap: { xs: 7, md: 6, lg: 8 },
-              alignItems: "center",
-            }}
-          >
-            {/* Left — the story */}
-            <Box>
-              <Reveal>
+      <Box className="ink-ab-wrap">
+        {/* ── 01 · Story ─────────────────────────────────────────────── */}
+        <Section id="story" label="Story" className="ink-ab-hero-sec">
+          <Box className="ink-ab-hero">
+            <Box className="ink-ab-hero-copy">
+              <Reveal y={20}>
                 <InkEyebrow>Our story</InkEyebrow>
               </Reveal>
 
               <Reveal delay={0.06}>
-                <Typography
-                  component="h1"
-                  sx={{
-                    fontFamily: FONT_DISPLAY,
-                    fontWeight: 800,
-                    fontSize: { xs: "2.35rem", sm: "3rem", md: "3.15rem", lg: "3.8rem" },
-                    lineHeight: 1.04,
-                    letterSpacing: "-0.035em",
-                    color: INK.text,
-                    mt: 2.5,
-                  }}
-                >
-                  Writing that
-                  <br />
-                  earns your
-                  <br />
-                  <InkHighlight>
-                    <Box component="span" sx={{ position: "relative", display: "inline-block" }}>
-                      attention.
-                      {/* hand-drawn underline swash */}
-                      <Box
-                        component="svg"
-                        viewBox="0 0 220 12"
-                        preserveAspectRatio="none"
-                        aria-hidden="true"
-                        sx={{
-                          position: "absolute",
-                          left: 0,
-                          bottom: { xs: -6, md: -9 },
-                          width: "100%",
-                          height: { xs: 7, md: 10 },
-                          overflow: "visible",
-                        }}
-                      >
-                        <path
-                          d="M3 8.5 C 58 3, 148 2.5, 217 6.5"
-                          fill="none"
-                          stroke={INK.orange}
-                          strokeWidth="2.6"
-                          strokeLinecap="round"
-                          opacity="0.55"
-                        />
-                      </Box>
-                    </Box>
-                  </InkHighlight>
+                <Typography component="h1" className="ink-ab-hero-title">
+                  Writing that <InkHighlight>earns your attention</InkHighlight>.
                 </Typography>
               </Reveal>
 
               <Reveal delay={0.12}>
-                <Typography
-                  sx={{
-                    mt: { xs: 4, md: 5 },
-                    fontSize: { xs: "1.02rem", md: "1.12rem" },
-                    lineHeight: 1.65,
-                    color: INK.text,
-                    fontWeight: 500,
-                    maxWidth: 470,
-                  }}
-                >
-                  InkWell is a home for thoughtful writing — and the readers and writers who make it thrive.
+                <Typography component="p" className="ink-ab-hero-lede">
+                  InkWell is a place to write, read and think in public. It is built on one
+                  belief: that a piece of writing should be found because it is worth reading,
+                  not because it was published a minute ago.
                 </Typography>
               </Reveal>
 
               <Reveal delay={0.18}>
-                <Typography
-                  sx={{ mt: 2, fontSize: "0.95rem", lineHeight: 1.8, color: INK.text2, maxWidth: 505 }}
-                >
-                  Welcome to InkWell — your destination for insightful, engaging content across every topic that
-                  matters.
-                </Typography>
-              </Reveal>
-
-              <Reveal delay={0.24}>
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.75} sx={{ mt: { xs: 4.5, md: 5 } }}>
+                <Box className="ink-ab-hero-actions">
                   <InkPrimaryButton
                     size="large"
-                    endIcon={<ArrowForwardRounded />}
                     onClick={() => navigate("/explore")}
+                    endIcon={<ArrowForwardRounded />}
                   >
-                    Explore the blog
+                    Explore stories
                   </InkPrimaryButton>
                   <InkGhostButton size="large" onClick={() => navigate("/register")}>
                     Become a writer
                   </InkGhostButton>
-                </Stack>
+                </Box>
               </Reveal>
             </Box>
 
-            {/* Right — the cinematic workspace */}
-            <Reveal y={0} delay={0.1} amount={0.15}>
-              <Box sx={{ position: "relative" }}>
-                <motion.div
-                  initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.85, ease: EASE }}
-                >
-                  <Box className="ink-stage" sx={{ pt: 4, px: { xs: 1.5, sm: 2.5 }, pb: 0 }}>
-                    {/* faint perspective floor grid, for depth behind the desk */}
-                    <Box
-                      aria-hidden="true"
-                      sx={{
-                        position: "absolute",
-                        left: "-10%",
-                        right: "-10%",
-                        bottom: 0,
-                        height: "46%",
-                        backgroundImage: `linear-gradient(to right, ${INK.borderSoft} 1px, transparent 1px), linear-gradient(to bottom, ${INK.borderSoft} 1px, transparent 1px)`,
-                        backgroundSize: "44px 30px",
-                        transform: "perspective(420px) rotateX(58deg)",
-                        transformOrigin: "bottom center",
-                        opacity: 0.5,
-                        maskImage: "linear-gradient(180deg, transparent, #000 55%)",
-                        WebkitMaskImage: "linear-gradient(180deg, transparent, #000 55%)",
-                        pointerEvents: "none",
-                      }}
-                    />
-                    <Box sx={{ position: "relative" }}>
-                      <WritingDeskScene />
-                    </Box>
-                  </Box>
-                </motion.div>
-
-                {/* ── Floating information cards ── */}
-                <InkFloatingCard
-                  float="ink-float-a"
-                  sx={{
-                    left: { xs: 4, sm: -16, md: -30 },
-                    bottom: { xs: -24, sm: -22, md: -26 },
-                    p: { xs: 1.5, sm: 1.75 },
-                    width: { xs: 196, sm: 224 },
-                  }}
-                >
-                  <Stack spacing={1.25}>
-                    <InkAvatarGroup members={FACES} size={30} />
-                    <Typography sx={{ fontSize: "0.78rem", lineHeight: 1.5, color: INK.text2, fontWeight: 500 }}>
-                      A global community of{" "}
-                      <Box component="span" sx={{ color: INK.text, fontWeight: 700 }}>
-                        writers and readers.
-                      </Box>
-                    </Typography>
-                  </Stack>
-                </InkFloatingCard>
-
-                {/* Hidden on the smallest screens so the frame stays uncluttered. */}
-                <InkFloatingCard
-                  float="ink-float-b"
-                  sx={{ display: { xs: "none", sm: "block" }, right: { sm: -14, md: -26 }, top: { sm: 26, md: 38 }, p: 1.6 }}
-                >
-                  <Stack direction="row" spacing={1.25} alignItems="center">
-                    <Box
-                      sx={{
-                        width: 38,
-                        height: 38,
-                        borderRadius: "12px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        bgcolor: INK.orangeSoft,
-                        color: INK.orange,
-                        "& svg": { fontSize: 20 },
-                      }}
-                      aria-hidden="true"
-                    >
-                      <AutoStoriesOutlined />
-                    </Box>
-                    <Box>
-                      <Typography
-                        sx={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: "1.05rem", lineHeight: 1.2, color: INK.text }}
-                      >
-                        Publish with ease
-                      </Typography>
-                      <Typography sx={{ fontSize: "0.72rem", color: INK.text3 }}>Drafts, tags, one-click publish</Typography>
-                    </Box>
-                  </Stack>
-                </InkFloatingCard>
-
-                <InkFloatingCard
-                  float="ink-float-c"
-                  sx={{ display: { xs: "none", md: "block" }, right: { md: -22 }, bottom: { md: -24 }, p: 1.6 }}
-                >
-                  <Stack direction="row" spacing={1.25} alignItems="center">
-                    <Box
-                      sx={{
-                        width: 38,
-                        height: 38,
-                        borderRadius: "12px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        bgcolor: INK.orangeSoft,
-                        color: INK.orange,
-                        "& svg": { fontSize: 20 },
-                      }}
-                      aria-hidden="true"
-                    >
-                      <MenuBookOutlined />
-                    </Box>
-                    <Box>
-                      <Typography
-                        sx={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: "1.05rem", lineHeight: 1.2, color: INK.text }}
-                      >
-                        Reader-first
-                      </Typography>
-                      <Typography sx={{ fontSize: "0.72rem", color: INK.text3 }}>A calm, focused reading view</Typography>
-                    </Box>
-                  </Stack>
-                </InkFloatingCard>
+            <Reveal delay={0.14} className="ink-ab-hero-viz">
+              <Box className="ink-ab-hero-viz-inner">
+                <EcosystemFlow />
               </Box>
             </Reveal>
           </Box>
 
-          {/* ══ Highlights ══════════════════════════════════════════ */}
-          <InkStatsBand values={HIGHLIGHTS} sx={{ mt: { xs: 8, md: 12 } }} />
+          <Reveal delay={0.1}>
+            <InkStatsBand values={HIGHLIGHTS} />
+          </Reveal>
+        </Section>
 
-          <Box className="ink-rule" sx={{ mt: { xs: 9, md: 13 } }} />
+        {/* ── 02 · What it is ────────────────────────────────────────── */}
+        <Section label="What InkWell is" className="ink-ab-sec-split">
+          <InkSectionHead
+            eyebrow="More than a place to publish"
+            title={
+              <>
+                Everything a piece needs, <InkHighlight>orbiting the idea</InkHighlight>.
+              </>
+            }
+            subtitle="Six things InkWell does. All of them sit around the thing you came to say."
+            sx={{ maxWidth: 640 }}
+          />
+          <OrbitDiagram />
+        </Section>
 
-          {/* ══ Values ══════════════════════════════════════════════ */}
-          <Box component="section" sx={{ mt: { xs: 9, md: 13 } }}>
-            <Reveal>
-              <InkSectionHead
-                eyebrow="What we value"
-                title="What makes InkWell different"
-                subtitle="Six principles that shape every page, every post, and every interaction."
-                align="center"
-                sx={{ mb: { xs: 5, md: 6.5 } }}
-              />
-            </Reveal>
+        {/* ── 03 · Problem ───────────────────────────────────────────── */}
+        <Section id="problem" label="Problem">
+          <InkSectionHead
+            eyebrow="The problem"
+            title="Writing online shouldn't feel like shouting into the void."
+            subtitle="Three things make it feel that way. InkWell was built to answer all three."
+          />
+          <ProblemLedger />
+        </Section>
 
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" },
-                gap: { xs: 2.5, md: 3 },
-              }}
-            >
-              {VALUES.map((v, i) => (
-                <Reveal key={v.title} delay={(i % 3) * 0.08} amount={0.2} style={{ height: "100%" }}>
-                  <InkValueCard icon={v.icon} title={v.title} body={v.body} index={i + 1} />
-                </Reveal>
-              ))}
-            </Box>
-          </Box>
+        {/* ── 04 · Solution ──────────────────────────────────────────── */}
+        <Section id="solution" label="Solution">
+          <InkSectionHead
+            eyebrow="The answer"
+            title={
+              <>
+                One place for <InkHighlight>the entire journey</InkHighlight>.
+              </>
+            }
+            subtitle="From the first thought to the last reply. Pick a step to see what happens in it."
+          />
+          <SolutionWorkflow />
+        </Section>
 
-          {/* ══ How it works ════════════════════════════════════════ */}
-          <Box component="section" sx={{ mt: { xs: 10, md: 14 } }}>
-            <Reveal>
-              <InkSectionHead
-                eyebrow="How it works"
-                title="Read. Write. Earn."
-                subtitle="A simple loop that rewards curiosity and craft."
-                align="center"
-                sx={{ mb: { xs: 5, md: 6.5 } }}
-              />
-            </Reveal>
+        {/* ── 05 · The assistant ─────────────────────────────────────── */}
+        <Section id="ai" label="AI">
+          <InkSectionHead
+            eyebrow="The assistant"
+            title={
+              <>
+                AI that helps you think. <InkHighlight>Not AI that replaces you.</InkHighlight>
+              </>
+            }
+            subtitle="Most AI writing tools end at the publish button. Ours starts before the draft."
+          />
+          <AiComparison />
+        </Section>
 
-            <Box
-              className="ink-timeline"
-              sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: "1fr auto 1fr auto 1fr" },
-                gap: { xs: 2.5, md: 0 },
-                alignItems: "stretch",
-              }}
-            >
-              {STEPS.map((s, i) => (
-                <React.Fragment key={s.step}>
-                  <Reveal delay={i * 0.1} amount={0.2} style={{ height: "100%" }}>
-                    <InkSurface
-                      variant="hi"
-                      sx={{
-                        height: "100%",
-                        p: { xs: 3, md: 3.5 },
-                        pl: { xs: "84px", md: 3.5 },
-                      }}
-                    >
-                      {/* Stage marker: on a phone it rides the timeline spine;
-                          from md up it sits in flow at the top of the card. */}
-                      <Box
-                        aria-hidden="true"
-                        sx={{
-                          position: { xs: "absolute", md: "static" },
-                          left: { xs: 0, md: "auto" },
-                          top: { xs: 0, md: "auto" },
-                          width: 54,
-                          height: 54,
-                          borderRadius: "16px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          color: INK.orange,
-                          bgcolor: "#1A1512",
-                          border: "1px solid rgba(255,106,0,0.28)",
-                          boxShadow: `0 0 0 6px ${INK.cardHi}, 0 0 24px rgba(255,106,0,0.14)`,
-                          "& svg": { fontSize: 25 },
-                        }}
-                      >
-                        {s.icon}
-                      </Box>
+        <Section label="What the assistant does">
+          <InkSectionHead
+            eyebrow="Six capabilities"
+            title="What it actually does — and what it doesn't."
+            subtitle="None of these six writes the piece for you. That is the whole design."
+          />
+          <AiFeatureGrid />
+        </Section>
 
-                      <Typography
-                        sx={{
-                          fontFamily: FONT_DISPLAY,
-                          fontWeight: 800,
-                          fontSize: "0.78rem",
-                          letterSpacing: "0.18em",
-                          color: INK.orange,
-                          mt: { xs: 0, md: 2.5 },
-                        }}
-                      >
-                        {s.step}
-                      </Typography>
-                      <Typography
-                        sx={{
-                          fontFamily: FONT_DISPLAY,
-                          fontWeight: 700,
-                          fontSize: "1.3rem",
-                          color: INK.text,
-                          mt: 0.5,
-                          mb: 1,
-                        }}
-                      >
-                        {s.title}
-                      </Typography>
-                      <Typography sx={{ fontSize: "0.9rem", lineHeight: 1.72, color: INK.text2 }}>
-                        {s.body}
-                      </Typography>
-                    </InkSurface>
-                  </Reveal>
+        {/* ── 06 · Try it ────────────────────────────────────────────── */}
+        <Section label="Try it">
+          <InkSectionHead
+            eyebrow="A demonstration"
+            title="See how InkWell helps you write."
+            subtitle="Real suggestion, real buttons, running entirely in your browser. Nothing is sent anywhere."
+          />
+          <WritingDemo />
+        </Section>
 
-                  {i < STEPS.length - 1 && <Rail />}
-                </React.Fragment>
-              ))}
-            </Box>
-          </Box>
+        {/* ── 07 · Writers ───────────────────────────────────────────── */}
+        <Section id="writers" label="Writers">
+          <InkSectionHead
+            eyebrow="For writers"
+            title="Built for people who have something to say."
+            subtitle="Not for people who need to post. The difference shows in the tools."
+          />
+          <WriterJourney />
+        </Section>
 
-          {/* ══ Mission ═════════════════════════════════════════════ */}
-          <Box component="section" sx={{ mt: { xs: 10, md: 14 } }}>
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: "1.25fr 1fr" },
-                gap: { xs: 5, md: 6 },
-                alignItems: "center",
-              }}
-            >
-              <Reveal>
-                <InkSectionHead eyebrow="Our mission" title="A better internet for thoughtful ideas." />
-                <Typography sx={{ mt: 3, fontSize: "1rem", lineHeight: 1.85, color: INK.text, fontWeight: 500 }}>
-                  We started InkWell with a simple belief: great writing deserves a great home.
-                </Typography>
-                <Typography sx={{ mt: 2, fontSize: "0.95rem", lineHeight: 1.85, color: INK.text2 }}>
-                  Our mission is to give readers fresh perspectives and writers a platform to share knowledge,
-                  creativity, and ideas that create a positive impact.
-                </Typography>
+        {/* ── 08 · Readers ───────────────────────────────────────────── */}
+        <Section id="readers" label="Readers">
+          <InkSectionHead
+            eyebrow="For readers"
+            title={
+              <>
+                Built for people who love <InkHighlight>discovering ideas</InkHighlight>.
+              </>
+            }
+            subtitle="Reading here is meant to end somewhere — with something saved, or something argued with."
+          />
+          <ReaderJourney />
+        </Section>
 
-                {/* Three compact pillars under the mission copy. `role="list"`
-                    lives on the container and `role="listitem"` on the Reveal
-                    wrappers, since the motion div sits between the two. */}
-                <Box
-                  role="list"
-                  sx={{
-                    mt: 4,
-                    display: "grid",
-                    gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
-                    gap: 2,
-                  }}
-                >
-                  {MISSION_POINTS.map((m, i) => (
-                    <Reveal key={m.title} role="listitem" delay={i * 0.08} y={18} amount={0.3}>
-                      <Stack spacing={1.25}>
-                        <Box
-                          aria-hidden="true"
-                          sx={{
-                            width: 38,
-                            height: 38,
-                            borderRadius: "12px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            bgcolor: INK.orangeSofter,
-                            border: "1px solid rgba(255,106,0,0.20)",
-                            color: INK.orange,
-                            "& svg": { fontSize: 19 },
-                          }}
-                        >
-                          {m.icon}
-                        </Box>
-                        <Typography
-                          sx={{
-                            fontFamily: FONT_DISPLAY,
-                            fontWeight: 700,
-                            fontSize: "0.82rem",
-                            letterSpacing: "0.08em",
-                            textTransform: "uppercase",
-                            color: INK.text,
-                          }}
-                        >
-                          {m.title}
-                        </Typography>
-                        <Typography sx={{ fontSize: "0.85rem", lineHeight: 1.65, color: INK.text3 }}>{m.body}</Typography>
-                      </Stack>
-                    </Reveal>
-                  ))}
-                </Box>
+        {/* ── 09 · The difference ────────────────────────────────────── */}
+        <Section label="What makes InkWell different">
+          <InkSectionHead
+            eyebrow="The difference"
+            title="What makes InkWell different"
+            subtitle="Six commitments. Each one is a decision we made about how the product behaves."
+          />
+          <Box className="ink-ab-values">
+            {VALUES.map((value, i) => (
+              <Reveal key={value.title} delay={Math.min(i, 5) * 0.06}>
+                <InkValueCard
+                  icon={value.icon}
+                  title={value.title}
+                  body={value.body}
+                  index={i}
+                  sx={{ height: "100%" }}
+                />
               </Reveal>
-
-              {/* The quote card */}
-              <Reveal delay={0.12} y={34}>
-                <InkSurface
-                  variant="quiet"
-                  sx={{
-                    p: { xs: 4, md: 5 },
-                    borderColor: INK.borderWarm,
-                    boxShadow: "0 24px 60px rgba(0,0,0,0.5), 0 0 60px rgba(255,106,0,0.10)",
-                  }}
-                >
-                  {/* soft orange bloom + feather watermark, both behind the text */}
-                  <Box
-                    aria-hidden="true"
-                    sx={{
-                      position: "absolute",
-                      inset: 0,
-                      background: "radial-gradient(72% 60% at 88% 4%, rgba(255,106,0,0.20), transparent 62%)",
-                      pointerEvents: "none",
-                    }}
-                  />
-                  <Box
-                    component="svg"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                    sx={{
-                      position: "absolute",
-                      right: -14,
-                      bottom: -10,
-                      width: 168,
-                      height: 168,
-                      color: INK.orange,
-                      opacity: 0.09,
-                      pointerEvents: "none",
-                    }}
-                  >
-                    <g fill="none" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z" />
-                      <line x1="16" y1="8" x2="2" y2="22" />
-                      <line x1="17.5" y1="15" x2="9" y2="15" />
-                    </g>
-                  </Box>
-
-                  <Box sx={{ position: "relative" }}>
-                    <Typography
-                      aria-hidden="true"
-                      sx={{
-                        fontFamily: FONT_DISPLAY,
-                        fontSize: "5rem",
-                        lineHeight: 0.7,
-                        fontWeight: 800,
-                        color: INK.orange,
-                        opacity: 0.9,
-                      }}
-                    >
-                      &ldquo;
-                    </Typography>
-                    <Typography
-                      component="blockquote"
-                      sx={{
-                        mt: 1.5,
-                        fontFamily: FONT_DISPLAY,
-                        fontWeight: 800,
-                        fontSize: { xs: "1.7rem", md: "2rem" },
-                        lineHeight: 1.2,
-                        letterSpacing: "-0.03em",
-                        color: INK.text,
-                      }}
-                    >
-                      Ideas change people.
-                    </Typography>
-                    <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 3 }}>
-                      <Box sx={{ width: 28, height: 1, bgcolor: INK.orange }} />
-                      <Typography
-                        sx={{
-                          fontSize: "0.72rem",
-                          fontWeight: 700,
-                          letterSpacing: "0.2em",
-                          textTransform: "uppercase",
-                          color: INK.orange,
-                        }}
-                      >
-                        InkWell
-                      </Typography>
-                    </Stack>
-                  </Box>
-                </InkSurface>
-              </Reveal>
-            </Box>
+            ))}
           </Box>
+        </Section>
 
-          {/* ══ Our philosophy ══════════════════════════════════════ */}
-          <Box component="section" sx={{ mt: { xs: 10, md: 14 } }}>
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: "1fr 1.1fr" },
-                gap: { xs: 6, md: 7 },
-                alignItems: "center",
-              }}
-            >
-              <Reveal>
-                <InkSectionHead eyebrow="Our philosophy" title="Great writing deserves a great home." />
-                <Typography sx={{ mt: 3, fontSize: "0.95rem", lineHeight: 1.85, color: INK.text2 }}>
-                  InkWell is built around three ideas: thoughtful writing, meaningful discovery, and rewarding
-                  participation. Nothing here is designed to keep you scrolling — the page stays quiet, the writing
-                  stays central, and the work you put in comes back to you.
-                </Typography>
-
-                <Stack role="list" spacing={1.75} sx={{ mt: 4 }}>
-                  {PHILOSOPHY.map((p, i) => (
-                    <Reveal key={p} role="listitem" delay={i * 0.08} y={16} amount={0.4}>
-                      <Stack direction="row" spacing={1.75} alignItems="flex-start">
-                        <Box
-                          aria-hidden="true"
-                          sx={{
-                            mt: "7px",
-                            width: 7,
-                            height: 7,
-                            borderRadius: "50%",
-                            flexShrink: 0,
-                            bgcolor: INK.orange,
-                            boxShadow: "0 0 10px rgba(255,106,0,0.7)",
-                          }}
-                        />
-                        <Typography sx={{ fontSize: "0.95rem", lineHeight: 1.6, color: INK.text, fontWeight: 500 }}>
-                          {p}
-                        </Typography>
-                      </Stack>
-                    </Reveal>
-                  ))}
-                </Stack>
-              </Reveal>
-
-              {/* Second, deliberately different composition — book, pen,
-                  pages and feather, with abstract ideas rising off them.
-                  Illustration only: no portrait, per the brief. */}
-              <Reveal delay={0.1} y={30} amount={0.15}>
-                <Box className="ink-stage" sx={{ px: { xs: 2, md: 3 }, pt: { xs: 3, md: 4 } }}>
-                  <Box
-                    aria-hidden="true"
-                    sx={{
-                      position: "absolute",
-                      inset: 0,
-                      background: "radial-gradient(64% 52% at 74% 6%, rgba(255,106,0,0.16), transparent 62%)",
-                      pointerEvents: "none",
-                    }}
-                  />
-                  <Box sx={{ position: "relative" }}>
-                    <PhilosophyScene />
-                  </Box>
-                </Box>
-              </Reveal>
-            </Box>
-          </Box>
-
-          {/* ══ Closing CTA ═════════════════════════════════════════ */}
-          <Box component="section" sx={{ mt: { xs: 10, md: 14 } }}>
-            <Reveal y={30}>
-              <InkSurface
-                variant="quiet"
+        {/* ── 10 · Mission (the page's existing band) ────────────────── */}
+        <Section label="Mission">
+          <Box className="ink-ab-mission">
+            <Box className="ink-ab-mission-main">
+              <Typography
+                component="span"
                 sx={{
-                  borderRadius: "30px",
-                  p: { xs: 4.5, sm: 6, md: 8 },
-                  textAlign: "center",
-                  borderColor: INK.borderWarm,
-                  boxShadow: "0 30px 70px rgba(0,0,0,0.55), 0 0 70px rgba(255,106,0,0.10)",
+                  display: "block",
+                  fontFamily: FONT_DISPLAY,
+                  fontSize: "0.62rem",
+                  fontWeight: 800,
+                  letterSpacing: "0.22em",
+                  textTransform: "uppercase",
+                  color: INK.orange,
                 }}
               >
-                {/* Decoration: bloom, corner glows and a feather watermark —
-                    all behind the copy and non-interactive. */}
-                <Box
-                  aria-hidden="true"
-                  sx={{
-                    position: "absolute",
-                    inset: 0,
-                    background:
-                      "radial-gradient(58% 70% at 50% 118%, rgba(255,106,0,0.22), transparent 66%), radial-gradient(38% 46% at 6% -6%, rgba(249,115,22,0.14), transparent 64%)",
-                    pointerEvents: "none",
-                  }}
-                />
-                <Box
-                  component="svg"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                  sx={{
-                    position: "absolute",
-                    left: { xs: -22, md: 24 },
-                    bottom: { xs: -18, md: -12 },
-                    width: { xs: 130, md: 170 },
-                    height: { xs: 130, md: 170 },
-                    color: INK.orange,
-                    opacity: 0.11,
-                    transform: "rotate(-18deg)",
-                    pointerEvents: "none",
-                  }}
-                >
-                  <g fill="none" stroke="currentColor" strokeWidth="0.75" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z" />
-                    <line x1="16" y1="8" x2="2" y2="22" />
-                    <line x1="17.5" y1="15" x2="9" y2="15" />
-                  </g>
-                </Box>
-                <Box
-                  component="svg"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                  sx={{
-                    position: "absolute",
-                    right: { xs: -26, md: 32 },
-                    top: { xs: -16, md: -10 },
-                    width: { xs: 150, md: 200 },
-                    height: { xs: 150, md: 200 },
-                    color: INK.orange,
-                    opacity: 0.08,
-                    transform: "rotate(22deg)",
-                    pointerEvents: "none",
-                  }}
-                >
-                  <g fill="none" stroke="currentColor" strokeWidth="0.75" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z" />
-                    <line x1="16" y1="8" x2="2" y2="22" />
-                    <line x1="17.5" y1="15" x2="9" y2="15" />
-                  </g>
-                </Box>
-                <Box
-                  aria-hidden="true"
-                  sx={{
-                    position: "absolute",
-                    left: "50%",
-                    top: 0,
-                    transform: "translateX(-50%)",
-                    width: "62%",
-                    height: 1,
-                    background: `linear-gradient(90deg, transparent, ${INK.orange}, transparent)`,
-                    opacity: 0.5,
-                  }}
-                />
+                Why we built it
+              </Typography>
+              <Typography
+                component="h2"
+                sx={{
+                  m: "1rem 0 0",
+                  fontFamily: FONT_DISPLAY,
+                  fontSize: "clamp(1.6rem, 3.2vw, 2.3rem)",
+                  fontWeight: 800,
+                  lineHeight: 1.15,
+                  letterSpacing: "-0.03em",
+                  color: INK.text,
+                }}
+              >
+                A publishing platform should leave people better off than it found them.
+              </Typography>
 
-                <Box sx={{ position: "relative" }}>
-                  <InkEyebrow align="center">Ready when you are</InkEyebrow>
-                  <Typography
-                    component="h2"
-                    sx={{
-                      fontFamily: FONT_DISPLAY,
-                      fontWeight: 800,
-                      fontSize: { xs: "2rem", sm: "2.5rem", md: "2.9rem" },
-                      lineHeight: 1.1,
-                      letterSpacing: "-0.03em",
-                      color: INK.text,
-                      mt: 2.5,
-                    }}
-                  >
-                    Start sharing your story.
-                  </Typography>
-                  <Typography
-                    sx={{
-                      mt: 2,
-                      mx: "auto",
-                      maxWidth: 540,
-                      fontSize: "1rem",
-                      lineHeight: 1.75,
-                      color: INK.text2,
-                    }}
-                  >
-                    Join a community of readers and writers. Your next favourite article — or your next published
-                    one — is one click away.
-                  </Typography>
+              <Box component="ul" className="ink-ab-mission-points">
+                {MISSION_POINTS.map((point) => (
+                  <Box component="li" key={point.title} className="ink-ab-mission-point">
+                    <Box className="ink-ab-mission-icon" aria-hidden="true">
+                      {point.icon}
+                    </Box>
+                    <Box>
+                      <Typography
+                        component="span"
+                        sx={{
+                          display: "block",
+                          fontFamily: FONT_DISPLAY,
+                          fontSize: "0.98rem",
+                          fontWeight: 800,
+                          color: INK.text,
+                        }}
+                      >
+                        {point.title}
+                      </Typography>
+                      <Typography
+                        component="span"
+                        sx={{ display: "block", mt: "0.2rem", fontSize: "0.88rem", color: INK.text2 }}
+                      >
+                        {point.body}
+                      </Typography>
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
 
-                  <Stack
-                    direction={{ xs: "column", sm: "row" }}
-                    spacing={1.75}
-                    justifyContent="center"
-                    sx={{ mt: 4.5 }}
-                  >
-                    <InkPrimaryButton
-                      size="large"
-                      endIcon={<ArrowForwardRounded />}
-                      onClick={() => navigate("/register")}
-                    >
-                      Create an account
-                    </InkPrimaryButton>
-                    <InkGhostButton size="large" onClick={() => navigate("/explore")}>
-                      Browse stories
-                    </InkGhostButton>
-                  </Stack>
+            <Reveal delay={0.1} className="ink-ab-quote-reveal">
+              <InkSurface variant="hi" className="ink-ab-quote">
+                <Box className="ink-ab-quote-mark" aria-hidden="true">
+                  <InkFeather />
                 </Box>
+                <Typography component="blockquote" className="ink-ab-quote-text">
+                  Ideas change people.
+                </Typography>
+                <Typography component="p" className="ink-ab-quote-sub">
+                  People change the world around them. That is the whole theory of this place.
+                </Typography>
               </InkSurface>
             </Reveal>
           </Box>
-        </Container>
+        </Section>
+
+        {/* ── 11 · The ecosystem ─────────────────────────────────────── */}
+        <Section label="The ecosystem">
+          <InkSectionHead
+            eyebrow="The ecosystem"
+            title="How it all fits together"
+            subtitle="Six parts, one loop. The AI is one of the six — and it is not the centre."
+          />
+          <CommunityDiagram />
+        </Section>
+
+        {/* ── 12 · Read / write / earn (the page's existing loop) ────── */}
+        <Section label="Read write earn">
+          <InkSectionHead
+            eyebrow="Three things you can do here"
+            title={
+              <>
+                Read. Write. <InkHighlight>Earn</InkHighlight>.
+              </>
+            }
+            subtitle="In that order — because you can do the first one before you have anything to say."
+          />
+          <ReadWriteEarn />
+        </Section>
+
+        {/* ── 13 · Transparency ──────────────────────────────────────── */}
+        <Section label="Authorship">
+          <InkSectionHead
+            eyebrow="The rule we hold ourselves to"
+            title="AI shouldn't make authors invisible."
+            subtitle="Every step of a published piece is labelled with who did it. This is that label, at article scale."
+          />
+          <AuthorshipTimeline />
+        </Section>
+
+        {/* ── 14 · Future ────────────────────────────────────────────── */}
+        <Section id="future" label="Future">
+          <FutureVision />
+        </Section>
+
+        {/* ── 15 · The close ─────────────────────────────────────────── */}
+        <Section label="Get started" className="ink-ab-cta-sec">
+          <ClosingCta />
+        </Section>
       </Box>
     </Box>
   );
