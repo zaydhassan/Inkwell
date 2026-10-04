@@ -292,11 +292,6 @@
   50% { opacity: 0.85; }
 }
 
-/* Live status dot (floating cards, hero identity chip). */
-.ink-dot-live {
-  animation: inkPulse 2.6s ease-in-out infinite;
-}
-
 /* ── Eyebrow: the small orange overline above every section heading ─── */
 .ink-eyebrow {
   display: inline-flex;
@@ -662,8 +657,7 @@
   .ink-drift-b,
   .ink-steam,
   .ink-caret,
-  .ink-pulse,
-  .ink-dot-live {
+  .ink-pulse {
     animation: none !important;
   }
 

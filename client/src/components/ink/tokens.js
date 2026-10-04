@@ -57,16 +57,3 @@ export const riseIn = {
   hidden: { opacity: 0, y: 22 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } },
 };
-
-/* The brief's four social-proof figures. Illustrative marketing values for
-   the demo build — NOT live platform statistics. Every surface that renders
-   them must carry the disclaimer; `InkStatsBand` does. */
-export const STATS = [
-  { value: 10, suffix: "K+", label: "Stories published" },
-  { value: 50, suffix: "K+", label: "Active readers" },
-  { value: 100, suffix: "+", label: "Countries" },
-  { value: 4.9, decimals: 1, suffix: "/5", label: "Community rating" },
-];
-
-export const STATS_DISCLAIMER =
-  "Illustrative figures for the demo build — not live platform statistics.";

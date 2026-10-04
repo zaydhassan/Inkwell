@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { Box } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -6,45 +6,23 @@ import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import InkStoryCard from "./ink/InkStoryCard";
 import SkeletonBlogCard from "./SkeletonBlogCard";
 import { InkGhostButton, InkSectionHead, InkHighlight } from "./ink";
-import generatePlaceholderPosts from "../data/placeholderPosts";
-import { initialsOf, toStoryCard } from "../utils/blogCard";
+import { toStoryCard } from "../utils/blogCard";
 
 /* ─────────────────────────────────────────────────────────────────────
    InkWell — "Fresh Ink" story grid (Home only).
 
-   Four states, in priority order: loading skeletons → error + retry →
-   the real feed → frontend-only demo stories when the feed is genuinely
-   empty. The demo stories are generated in the browser and are never
-   persisted; when real posts exist they replace the demo set entirely.
+   Three states, in priority order: loading skeletons → error + retry →
+   the real feed, and an honest empty state when the feed has no posts.
 
-   The old build had TWO card components (real vs placeholder) that had
-   drifted apart visually. Both states now render the same `InkStoryCard`,
-   which is also what enforces the data-honesty rule: reading time, likes
-   and comments only ever appear on a card flagged `isDemo`.
+   There used to be a fourth: a frontend-only set of demo stories with
+   fabricated like/comment counts, shown when the feed was empty. It is
+   gone. InkWell does not render an engagement figure it cannot back with
+   real data, so an empty platform says so rather than dressing itself in
+   invented numbers. The card below renders counts only when the listing
+   endpoints supply genuinely counted ones.
    ───────────────────────────────────────────────────────────────────── */
 
 const POST_COUNT = 6;
-
-/* Demo post → card props. These figures are fabricated by design (see
-   data/placeholderPosts.js) and are only ever rendered on `isDemo` cards.
-   Real posts go through the shared `toStoryCard` mapper, so Home and Explore
-   render an identical card for the same post. */
-const toDemoCard = (post) => ({
-  id: post.id,
-  title: post.title,
-  excerpt: post.description,
-  image: post.image,
-  category: post.category,
-  author: post.author,
-  initials: initialsOf(post.author),
-  avatarGradient: post.avatarGradient,
-  date: post.date,
-  readingTime: post.readingTime,
-  likes: post.likes,
-  comments: post.comments,
-  trending: post.trending,
-  isDemo: true,
-});
 
 const CommunitySection = ({
   blogs = [],
@@ -54,25 +32,8 @@ const CommunitySection = ({
   bookmarkedIds = [],
   onToggleBookmark,
 }) => {
-  // Randomize the demo set once per mount.
-  const placeholders = useMemo(() => generatePlaceholderPosts(POST_COUNT), []);
-
-  // When the feed loads empty, hold skeletons for ~1s then crossfade into
-  // the demo stories, so the grid reads as "loading", not "broken".
-  const [showPlaceholders, setShowPlaceholders] = useState(false);
-
-  useEffect(() => {
-    if (loading || blogs.length > 0 || error) {
-      setShowPlaceholders(false);
-      return undefined;
-    }
-    const t = setTimeout(() => setShowPlaceholders(true), 1000);
-    return () => clearTimeout(t);
-  }, [loading, blogs.length, error]);
-
   const hasBlogs = blogs.length > 0;
   const cards = useMemo(() => blogs.map((b) => toStoryCard(b)), [blogs]);
-  const demoCards = useMemo(() => placeholders.map(toDemoCard), [placeholders]);
 
   const renderGrid = (items, key) => (
     <motion.div
@@ -121,7 +82,7 @@ const CommunitySection = ({
                 Stories worth <InkHighlight>your time.</InkHighlight>
               </>
             }
-            subtitle="Hand-picked stories from the InkWell community."
+            subtitle="The latest from the InkWell community."
           />
 
           {!loading && !error && hasBlogs && (
@@ -151,10 +112,20 @@ const CommunitySection = ({
             </motion.div>
           ) : hasBlogs ? (
             renderGrid(cards, "real")
-          ) : showPlaceholders ? (
-            renderGrid(demoCards, "demo")
           ) : (
-            renderSkeletons("empty-skeletons")
+            <motion.div
+              key="empty"
+              className="ink-stories-state"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <p style={{ marginBottom: "1.25rem", color: "var(--ink-text-2)" }}>
+                No stories have been published yet. Be the first — your words will appear here.
+              </p>
+              <InkGhostButton onClick={onRetry}>Refresh</InkGhostButton>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>

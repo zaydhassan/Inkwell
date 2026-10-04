@@ -6,10 +6,10 @@ import { InkBadge, InkGhostButton, InkSectionHead } from "../ink";
    "Your stories" — the three most recent posts, drafts included. Sits between
    Rewards and Settings so the six mandated sections keep their order.
 
-   Deliberately NOT `InkStoryCard`. That card is built for Home's curated demo
-   shape — `post.id`, `post.isDemo`, `post.initials`, `post.author`,
-   `post.date`, `post.likes` — none of which an API blog document carries, so
-   it would render a blank byline and link to `/blog-details/undefined`.
+   Deliberately NOT `InkStoryCard`. That card consumes a finished story-card
+   shape — `post.id`, `post.initials`, `post.author`, `post.date`,
+   `post.likes` — none of which a raw API blog document carries, so it would
+   render a blank byline and link to `/blog-details/undefined`.
 
    Drafts link to the editor and published posts to the reader, because
    `/blog-details/:id` will not serve a draft.

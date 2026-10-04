@@ -43,27 +43,6 @@ export const InkFloatingCard = ({ children, float, className = "", sx }) => (
   </Box>
 );
 
-/* The small status dot on a floating card — green for "just published",
-   orange for platform activity. Kept to these two, per the brief. */
-export const InkStatusDot = ({ tone = "live", sx }) => (
-  <Box
-    aria-hidden="true"
-    className={tone === "live" ? "ink-dot-live" : undefined}
-    sx={{
-      width: 7,
-      height: 7,
-      borderRadius: "50%",
-      flexShrink: 0,
-      bgcolor: tone === "live" ? "#22C55E" : INK.orange,
-      boxShadow:
-        tone === "live"
-          ? "0 0 0 3px rgba(34,197,94,0.18)"
-          : "0 0 0 3px rgba(255,106,0,0.18)",
-      ...sx,
-    }}
-  />
-);
-
 /* ── Avatar group ────────────────────────────────────────────────────
    Overlapping initials discs. Deliberately image-free: nothing is fetched
    and no real person is depicted — which is also why the About page can

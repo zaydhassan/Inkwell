@@ -17,10 +17,6 @@
   max-width: 1200px;
 }
 
-.ink-home-section--tight {
-  max-width: 1120px;
-}
-
 /* ── Hero ───────────────────────────────────────────────────────────── */
 .ink-hero {
   position: relative;
@@ -161,11 +157,6 @@
   text-align: center;
   padding-block: 3.5rem;
   color: var(--ink-text-2);
-}
-
-/* ── Stats ──────────────────────────────────────────────────────────── */
-.ink-home-stats {
-  padding-block: clamp(1rem, 3vw, 2rem) var(--ink-section-y);
 }
 
 /* ── Newsletter CTA ─────────────────────────────────────────────────── */

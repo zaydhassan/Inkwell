@@ -6,11 +6,11 @@
    hand-matched edits.
    ───────────────────────────────────────────────────────────────────── */
 
-export { INK, FONT_DISPLAY, FONT_BODY, EASE, staggerContainer, riseIn, STATS, STATS_DISCLAIMER } from "./tokens";
+export { INK, FONT_DISPLAY, FONT_BODY, EASE, staggerContainer, riseIn } from "./tokens";
 export { Reveal, CountUp } from "./InkReveal";
 export { default as InkBackdrop } from "./InkBackdrop";
 export { default as InkSectionHead, InkEyebrow, InkHeading, InkHighlight } from "./InkSectionHead";
-export { default as InkSurface, InkFloatingCard, InkStatusDot, InkAvatarGroup } from "./InkSurface";
+export { default as InkSurface, InkFloatingCard, InkAvatarGroup } from "./InkSurface";
 export { default as InkButton, InkPrimaryButton, InkGhostButton, InkBadge, InkMeta } from "./InkButton";
 export { default as InkStatsBand } from "./InkStatsBand";
 export { default as InkFeather, FeatherGlyph } from "./InkFeather";

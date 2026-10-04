@@ -5,38 +5,33 @@ import { useNavigate } from "react-router-dom";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import FavoriteIcon from "@mui/icons-material/Favorite";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import { InkBadge, InkMeta } from "./InkButton";
-import { InkStatusDot } from "./InkSurface";
 import { EASE, INK } from "./tokens";
 import "./InkStoryCard.css";
 
 /* ─────────────────────────────────────────────────────────────────────
    InkWell story card.
 
-   ONE card for the real feed and the frontend-only demo posts, which is what
-   stops the two from looking like different products (the old build had two
-   separate cards that drifted apart).
-
-   The data-honesty rule this card enforces: a figure is rendered only when the
-   data behind it is real.
+   The data-honesty rule this card enforces: a figure is rendered only when
+   the data behind it is real.
      • Category, title, excerpt, author, date and tags come from the blog
        document itself.
      • `likes` / `comments` come from the real Like and Comment collections
-       (the listing endpoints aggregate them per page), so a real card shows
-       genuinely counted numbers — never an invented one. A card with no counts
-       supplied simply omits that row rather than showing a zero.
+       (the listing endpoints aggregate them per page), so a card shows
+       genuinely counted numbers — never an invented one. A card with no
+       counts supplied simply omits that row rather than showing a zero.
      • `readingTime` is supplied by the caller, computed from the post body
        with the shared `readingTime` util.
-     • The demo cards on Home are explicitly flagged `isDemo` and carry
-       fabricated figures by design; they are always labelled "Demo".
+
+   There is no demo mode: the frontend-only placeholder stories that used to
+   carry fabricated counts are gone, so every card here is a real post.
 
    `likes`/`comments` are read-only here on purpose. Liking is a real action
    with points attached, and it already lives on the blog detail page; a card
    that faked a toggle would duplicate that logic in a second place. The one
-   interactive control on a real card is the bookmark toggle, wired to the real
+   interactive control is the bookmark toggle, wired to the real
    /api/v1/bookmarks endpoints.
    ───────────────────────────────────────────────────────────────────── */
 
@@ -81,36 +76,28 @@ const InkStoryCard = ({
 }) => {
   const navigate = useNavigate();
   const reduce = useReducedMotion();
-  const [demoLiked, setDemoLiked] = useState(false);
 
-  const isDemo = Boolean(post.isDemo);
-  const likes = isDemo ? post.likes + (demoLiked ? 1 : 0) : post.likes;
-  const hasCounts = typeof likes === "number" || typeof post.comments === "number";
-
-  const open = () => {
-    if (!isDemo) navigate(`/blog-details/${post.id}`);
-  };
+  const open = () => navigate(`/blog-details/${post.id}`);
 
   return (
     <motion.article
       className={`ink-story-card ink-surface${size === "feature" ? " ink-story-card--feature" : ""}`}
-      // Only real posts are interactive, so only they advertise a pointer.
-      style={{ cursor: isDemo ? "default" : "pointer", height: "100%" }}
+      style={{ cursor: "pointer", height: "100%" }}
       initial={reduce ? false : { opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.2 }}
       transition={{ duration: 0.5, ease: EASE, delay: Math.min(index, 5) * 0.06 }}
       whileHover={reduce ? undefined : { y: -6 }}
       onClick={open}
-      tabIndex={isDemo ? undefined : 0}
-      role={isDemo ? undefined : "link"}
+      tabIndex={0}
+      role="link"
       onKeyDown={(e) => {
-        if (!isDemo && (e.key === "Enter" || e.key === " ")) {
+        if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           open();
         }
       }}
-      aria-label={isDemo ? undefined : `Read ${post.title}`}
+      aria-label={`Read ${post.title}`}
     >
       <Cover src={post.image} alt={post.title} zoom={!reduce} />
 
@@ -167,39 +154,11 @@ const InkStoryCard = ({
           </Box>
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.4, flexShrink: 0 }}>
-            {hasCounts && (
-              <>
-                {/* Demo figures are click-to-play (they are illustrative);
-                    real ones are a plain count that leads into the post, where
-                    liking actually happens. */}
-                {isDemo ? (
-                  <Box
-                    component="button"
-                    type="button"
-                    className="ink-story-action"
-                    aria-label={demoLiked ? "Unlike this story" : "Like this story"}
-                    aria-pressed={demoLiked}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDemoLiked((v) => !v);
-                    }}
-                  >
-                    {demoLiked ? (
-                      <FavoriteIcon sx={{ fontSize: 16, color: INK.orange }} />
-                    ) : (
-                      <FavoriteBorderIcon sx={{ fontSize: 16 }} />
-                    )}
-                    {likes}
-                  </Box>
-                ) : (
-                  typeof likes === "number" && (
-                    <InkMeta icon={<FavoriteBorderIcon />}>{likes}</InkMeta>
-                  )
-                )}
-                {typeof post.comments === "number" && (
-                  <InkMeta icon={<ChatBubbleOutlineIcon />}>{post.comments}</InkMeta>
-                )}
-              </>
+            {typeof post.likes === "number" && (
+              <InkMeta icon={<FavoriteBorderIcon />}>{post.likes}</InkMeta>
+            )}
+            {typeof post.comments === "number" && (
+              <InkMeta icon={<ChatBubbleOutlineIcon />}>{post.comments}</InkMeta>
             )}
 
             <Box
@@ -210,13 +169,8 @@ const InkStoryCard = ({
               aria-pressed={bookmarked}
               onClick={(e) => {
                 e.stopPropagation();
-                if (isDemo) return;
                 onToggleBookmark?.(post.id);
               }}
-              // Demo posts have nothing to save, so the control is decorative
-              // there rather than a button that silently does nothing.
-              disabled={isDemo}
-              style={isDemo ? { opacity: 0.5, cursor: "default" } : undefined}
             >
               {bookmarked ? (
                 <BookmarkIcon sx={{ fontSize: 17, color: INK.orange }} />
@@ -227,15 +181,6 @@ const InkStoryCard = ({
           </Box>
         </Box>
       </Box>
-
-      {/* Demo cards carry a hairline "demo" affordance so a curious user can
-          tell they are illustrative, not published posts. */}
-      {isDemo && (
-        <Box className="ink-story-demo">
-          <InkStatusDot tone="accent" sx={{ width: 5, height: 5 }} />
-          Demo
-        </Box>
-      )}
     </motion.article>
   );
 };

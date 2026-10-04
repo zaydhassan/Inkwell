@@ -6,10 +6,11 @@ import { useSelector } from 'react-redux';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import ArrowForwardRounded from '@mui/icons-material/ArrowForwardRounded';
+import AutoAwesomeOutlined from '@mui/icons-material/AutoAwesomeOutlined';
 import EditNoteOutlined from '@mui/icons-material/EditNoteOutlined';
 import ForumOutlined from '@mui/icons-material/ForumOutlined';
+import GroupsOutlined from '@mui/icons-material/GroupsOutlined';
 import TrendingUpOutlined from '@mui/icons-material/TrendingUpOutlined';
-import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
 import { validateEmail } from '../utils/validate';
 import { toastBookmarked } from '../utils/toasts';
 import CommunitySection from '../components/CommunitySection';
@@ -26,9 +27,6 @@ import {
   InkPrimaryButton,
   InkGhostButton,
   InkFloatingCard,
-  InkStatusDot,
-  InkAvatarGroup,
-  InkStatsBand,
   InkFeather,
 } from '../components/ink';
 import './Home.css';
@@ -37,10 +35,13 @@ import './Home.css';
    InkWell — Home.
 
    The product landing / discovery page: cinematic hero, the community's
-   freshest stories, the platform's social proof, and a newsletter CTA.
-   Four sections, exactly as the brief specifies — the cards are reserved
-   for the story grid and the two CTA surfaces, so no two sections read
-   the same.
+   freshest stories, and a newsletter CTA. Three sections — the card
+   surfaces are reserved for the story grid and the newsletter panel, so
+   no two sections read the same.
+
+   There is deliberately no "by the numbers" band: the figures it used to
+   show were invented, and InkWell publishes no number it cannot back with
+   real data.
 
    Everything visual comes from the shared InkWell system (styles/
    inkwell.css + components/ink), so this page and About are visibly the
@@ -60,19 +61,44 @@ const CAPABILITIES = [
   { icon: <TrendingUpOutlined />, label: 'Grow Your Reach' },
 ];
 
-// Invented persona for the hero's identity card, and initials-only avatars
-// for the community card. No real person is depicted and no face image is
-// fetched — the discs render initials, exactly like the About page.
-const HERO_AUTHOR = { name: 'Maya Chen', initials: 'MC' };
-const COMMUNITY = [
-  { initials: 'AR', bg: '#7C2D12' },
-  { initials: 'MK', bg: '#B45309' },
-  { initials: 'JD', bg: '#4A423A' },
-  { initials: 'SO', bg: '#9A3412' },
-];
+// The hero's floating cards say what InkWell does — never how many people are
+// doing it. Nothing here shows a figure, because every figure we could show
+// would be invented: InkWell publishes no number it cannot back with real
+// data. (See the REAL DATA OR NO DATA note in components/ink/InkStatsBand.)
 
-// Rising bars behind the "reads this week" figure. Purely illustrative.
-const SPARK = [35, 55, 42, 78, 100];
+// One floating card: an orange icon tile, a headline, a sub-line. The same
+// shape the About hero's cards use, so both pages speak one visual language.
+const HeroCard = ({ float, sx, icon, title, sub }) => (
+  <InkFloatingCard float={float} sx={sx}>
+    <Box sx={{ p: 1.35, pr: 1.6, display: 'flex', alignItems: 'center', gap: 1.15 }}>
+      <Box
+        aria-hidden="true"
+        sx={{
+          width: 34,
+          height: 34,
+          borderRadius: '12px',
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: INK.orangeSoft,
+          color: INK.orange,
+          '& svg': { fontSize: 19 },
+        }}
+      >
+        {icon}
+      </Box>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography sx={{ fontSize: '0.76rem', fontWeight: 700, color: INK.text, lineHeight: 1.35 }}>
+          {title}
+        </Typography>
+        <Typography sx={{ fontSize: '0.68rem', color: INK.text3, lineHeight: 1.35 }}>
+          {sub}
+        </Typography>
+      </Box>
+    </Box>
+  </InkFloatingCard>
+);
 
 const HeroVisual = () => (
   <Box className="ink-hero-visual">
@@ -95,92 +121,32 @@ const HeroVisual = () => (
       </Box>
     </motion.div>
 
-    {/* Identity card — upper left. */}
-    <InkFloatingCard
+    {/* Upper left — the editor. */}
+    <HeroCard
       float="ink-float-a"
-      sx={{ top: 0, left: { xs: 0, md: '-2%' }, maxWidth: 232 }}
-    >
-      <Box sx={{ p: 1.25, pr: 1.75, display: 'flex', alignItems: 'center', gap: 1.15 }}>
-        <Box
-          aria-hidden="true"
-          sx={{
-            width: 34,
-            height: 34,
-            borderRadius: '50%',
-            flexShrink: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'linear-gradient(135deg,#7C2D12,#B45309)',
-            color: '#F5F1EA',
-            fontSize: 12,
-            fontWeight: 700,
-            border: `1px solid ${INK.border}`,
-          }}
-        >
-          {HERO_AUTHOR.initials}
-        </Box>
-        <Box sx={{ minWidth: 0 }}>
-          <Typography
-            sx={{ fontSize: '0.76rem', fontWeight: 700, color: INK.text, lineHeight: 1.35 }}
-          >
-            {HERO_AUTHOR.name}
-          </Typography>
-          <Typography sx={{ fontSize: '0.68rem', color: INK.text3, lineHeight: 1.35 }}>
-            published a new story
-          </Typography>
-        </Box>
-        <InkStatusDot tone="live" sx={{ ml: 0.5 }} />
-      </Box>
-    </InkFloatingCard>
+      sx={{ top: 0, left: { xs: 0, md: '-2%' }, maxWidth: 236 }}
+      icon={<EditNoteOutlined />}
+      title="Distraction-free editor"
+      sub="Draft, refine, publish"
+    />
 
-    {/* Reads metric — right edge. */}
-    <InkFloatingCard
+    {/* Right edge — the writing copilot. */}
+    <HeroCard
       float="ink-float-b"
-      sx={{ top: '38%', right: { xs: 0, md: '-3%' }, minWidth: 156 }}
-    >
-      <Box sx={{ p: 1.4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
-          <VisibilityOutlined sx={{ fontSize: 16, color: INK.orange }} />
-          <Typography sx={{ fontSize: '0.9rem', fontWeight: 800, color: INK.text }}>
-            2.4K
-          </Typography>
-          <Typography sx={{ fontSize: '0.68rem', color: INK.text3 }}>
-            reads this week
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 0.5, height: 26 }}>
-          {SPARK.map((h, i) => (
-            <Box
-              key={i}
-              sx={{
-                width: 7,
-                height: `${h}%`,
-                borderRadius: '3px 3px 0 0',
-                background:
-                  i === SPARK.length - 1
-                    ? `linear-gradient(180deg, ${INK.orange2}, ${INK.orange})`
-                    : 'rgba(255,255,255,0.13)',
-              }}
-            />
-          ))}
-        </Box>
-      </Box>
-    </InkFloatingCard>
+      sx={{ top: '38%', right: { xs: 0, md: '-3%' }, maxWidth: 236 }}
+      icon={<AutoAwesomeOutlined />}
+      title="AI-assisted writing"
+      sub="Research and refine"
+    />
 
-    {/* Community card — lower left, mirroring the About hero's card. */}
-    <InkFloatingCard
+    {/* Lower left — the community. */}
+    <HeroCard
       float="ink-float-c"
-      sx={{ bottom: 0, left: { xs: '4%', md: '2%' } }}
-    >
-      <Box sx={{ p: 1.25, pr: 1.75, display: 'flex', alignItems: 'center', gap: 1.25 }}>
-        <InkAvatarGroup members={COMMUNITY} size={28} />
-        <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: INK.text, whiteSpace: 'nowrap' }}>
-          Writers publishing today
-        </Typography>
-        <InkStatusDot tone="accent" sx={{ ml: 0.25 }} />
-      </Box>
-    </InkFloatingCard>
+      sx={{ bottom: 0, left: { xs: '4%', md: '2%' }, maxWidth: 236 }}
+      icon={<GroupsOutlined />}
+      title="A community of writers"
+      sub="Follow, comment, and grow"
+    />
   </Box>
 );
 
@@ -402,13 +368,6 @@ const Home = () => {
         bookmarkedIds={bookmarkedIds}
         onToggleBookmark={handleToggleBookmark}
       />
-
-      {/* ── Social proof — the SHARED stats band, also used on About ─── */}
-      <Box component="section" className="ink-home-stats" aria-label="InkWell by the numbers">
-        <div className="ink-home-section ink-home-section--tight">
-          <InkStatsBand />
-        </div>
-      </Box>
 
       {/* ── Newsletter CTA ───────────────────────────────────────────── */}
       <Box component="section" className="ink-newsletter" aria-label="Newsletter">

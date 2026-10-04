@@ -116,6 +116,16 @@ const PHILOSOPHY = [
   "Participation that rewards you back.",
 ];
 
+/* What the old stats band showed instead of invented platform figures.
+   Qualitative on purpose — InkWell publishes no numbers it cannot back with
+   real data. See the REAL DATA OR NO DATA note in InkStatsBand. */
+const HIGHLIGHTS = [
+  { icon: <AutoStoriesOutlined />, title: "Human-first publishing", sub: "Written by people, for people." },
+  { icon: <AutoAwesomeOutlined />, title: "AI-assisted writing", sub: "Draft, refine and research in place." },
+  { icon: <VisibilityOutlined />, title: "Thoughtful discovery", sub: "Curated, not an endless feed." },
+  { icon: <BoltOutlined />, title: "Creator-focused tools", sub: "Everything you need to publish well." },
+];
+
 // Deterministic, image-free avatars for the community card — initials on
 // warm surfaces, so nothing is fetched and no real person is depicted.
 const FACES = [
@@ -367,11 +377,11 @@ const AboutPage = () => {
                     </Box>
                     <Box>
                       <Typography
-                        sx={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: "1.05rem", lineHeight: 1.1, color: INK.text }}
+                        sx={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: "1.05rem", lineHeight: 1.2, color: INK.text }}
                       >
-                        10K+
+                        Publish with ease
                       </Typography>
-                      <Typography sx={{ fontSize: "0.72rem", color: INK.text3 }}>Stories Published</Typography>
+                      <Typography sx={{ fontSize: "0.72rem", color: INK.text3 }}>Drafts, tags, one-click publish</Typography>
                     </Box>
                   </Stack>
                 </InkFloatingCard>
@@ -395,15 +405,15 @@ const AboutPage = () => {
                       }}
                       aria-hidden="true"
                     >
-                      <GroupsOutlined />
+                      <MenuBookOutlined />
                     </Box>
                     <Box>
                       <Typography
-                        sx={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: "1.05rem", lineHeight: 1.1, color: INK.text }}
+                        sx={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: "1.05rem", lineHeight: 1.2, color: INK.text }}
                       >
-                        50K+
+                        Reader-first
                       </Typography>
-                      <Typography sx={{ fontSize: "0.72rem", color: INK.text3 }}>Active Readers</Typography>
+                      <Typography sx={{ fontSize: "0.72rem", color: INK.text3 }}>A calm, focused reading view</Typography>
                     </Box>
                   </Stack>
                 </InkFloatingCard>
@@ -411,8 +421,8 @@ const AboutPage = () => {
             </Reveal>
           </Box>
 
-          {/* ══ Stats ═══════════════════════════════════════════════ */}
-          <InkStatsBand sx={{ mt: { xs: 8, md: 12 } }} />
+          {/* ══ Highlights ══════════════════════════════════════════ */}
+          <InkStatsBand values={HIGHLIGHTS} sx={{ mt: { xs: 8, md: 12 } }} />
 
           <Box className="ink-rule" sx={{ mt: { xs: 9, md: 13 } }} />
 

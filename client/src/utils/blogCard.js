@@ -80,7 +80,6 @@ export const toStoryCard = (blog, { includeReadingTime = true } = {}) => {
       // Tagging a post with its own category is common, and the category
       // already has a badge of its own — showing it twice reads as a bug.
       .filter((t) => t.toLowerCase() !== category.toLowerCase()),
-    isDemo: false,
   };
 };
 
