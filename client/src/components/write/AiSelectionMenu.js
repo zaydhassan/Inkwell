@@ -148,7 +148,7 @@ const AiSelectionMenu = ({ anchor, actions, onAction, onClose }) => {
   return createPortal(
     <div
       ref={menuRef}
-      className="ist-sel-menu"
+      className="ist-sel-menu ink-portal"
       data-coarse={coarse ? "" : undefined}
       style={coarse ? undefined : { top: pos?.top ?? -9999, left: pos?.left ?? -9999 }}
       role="toolbar"

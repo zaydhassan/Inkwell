@@ -34,7 +34,9 @@
   position: relative;
   aspect-ratio: 16 / 10;
   overflow: hidden;
-  background: #14110F;
+  /* A plate: the cover is artwork, so the frame stays dark in both themes
+     and reads as a framed inset on the light page. */
+  background: var(--ink-plate-bg);
   flex-shrink: 0;
   /* Warm cinematic grade. It lives on the container, not the <img>, because the
      image animates its own inline `filter` for the blur-up entrance and an
@@ -171,6 +173,9 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  /* Light text on a disc whose fill is chosen per author (see
+     `avatarGradient` in InkStoryCard.js) — it never follows the page
+     theme, so this stays a literal rather than a token. */
   color: #f5f1ea;
   font-size: 0.66rem;
   font-weight: 700;

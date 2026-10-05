@@ -51,10 +51,11 @@ const NAV_ITEMS = [
   { label: "About", path: "/about", Icon: InfoRoundedIcon, match: (p) => p === "/about" },
 ];
 
-// The floating capsule's surface. The design system ships `--ink-bg` (#0F0E0D)
-// as an opaque token, but the capsule has to stay translucent for the page to
-// read through the blur, so the alpha lives here.
-const PILL_BG = "rgba(15,14,13,0.88)";
+// The floating capsule's surface. The design system ships `--ink-bg` as an
+// opaque token, but the capsule has to stay translucent for the page to read
+// through the blur, so the system exposes this translucent sibling — which,
+// unlike a literal here, follows the theme.
+const PILL_BG = "var(--ink-nav-bg)";
 
 // The keyboard-cap badge inside the search field. Styled as a tiny physical key
 // — that reads as "premium product" far more than a plain text hint.
@@ -66,8 +67,8 @@ const KBD_SX = {
   height: 22,
   minWidth: 30,
   borderRadius: "7px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025))",
+  border: "1px solid var(--ink-border)",
+  background: "linear-gradient(180deg, var(--ink-wash-2), var(--ink-wash))",
   color: "var(--ink-text-3)",
   fontFamily: "inherit",
   fontSize: "0.62rem",
@@ -102,7 +103,7 @@ const navBtnSx = (active) => ({
     "& > *:nth-of-type(1)": { fontSize: 18 },
   },
   "&:hover": {
-    backgroundColor: active ? "var(--ink-orange-soft)" : "rgba(255,255,255,0.045)",
+    backgroundColor: active ? "var(--ink-orange-soft)" : "var(--ink-wash)",
     borderColor: active ? "rgba(255,106,0,0.10)" : "transparent",
     color: active ? "var(--ink-orange)" : "var(--ink-text)",
     transform: "translateY(-1px)",
@@ -129,7 +130,7 @@ const drawerBtnSx = (active) => ({
   },
   "&:hover": {
     color: active ? "var(--ink-orange)" : "var(--ink-text)",
-    backgroundColor: active ? "var(--ink-orange-soft)" : "rgba(255,255,255,0.045)",
+    backgroundColor: active ? "var(--ink-orange-soft)" : "var(--ink-wash)",
   },
 });
 
@@ -151,7 +152,7 @@ const POPOVER_SX = {
   backgroundImage: "none",
   color: "var(--ink-text)",
   border: "1px solid var(--ink-border)",
-  boxShadow: "0 18px 50px rgba(0,0,0,0.5)",
+  boxShadow: "var(--ink-shadow-card)",
 };
 
 const Navbar = () => {
@@ -254,24 +255,20 @@ const Navbar = () => {
     { label: "Contact", path: "/contact", Icon: MailOutlineRoundedIcon },
   ];
 
-  // Home, About, Profile and Create Blog are locked to the dark editorial
-  // canvas regardless of the app theme (see `.ink` in styles/inkwell.css). The
-  // bar is sticky and sits ABOVE the page, so its own band is not covered by
-  // that canvas — and since the bar is transparent, the app's body background
-  // shows through it. With the app in its (default) light theme that paints a
-  // white strip across the top of an otherwise dark page. Painting the band
-  // with the canvas colour on exactly these routes keeps the capsule floating
-  // on the page it belongs to, and leaves every other page's chrome untouched.
+  // Routes whose page canvas is the editorial `.ink` surface. The bar is
+  // sticky and sits ABOVE the page, so its own band is not covered by that
+  // canvas — and since the bar is transparent, the app's body background
+  // shows through it instead. Painting the band with `--ink-bg` on exactly
+  // these routes keeps the capsule floating on the page it belongs to, and
+  // leaves every other page's chrome untouched. The token resolves per
+  // theme, so this single rule covers both light and dark.
   //
   // Note this is a route list, not a "does the page use ink" test: Edit Blog
-  // (`/edit-blog/:id`) is still on the light theme and must NOT be added here,
-  // even though the nav's "Write" item matches both routes.
+  // (`/edit-blog/:id`) renders its own editor chrome and must NOT be added
+  // here, even though the nav's "Write" item matches both routes.
   //
-  // Explore is on the list for the same reason as Home and About: it is an
-  // always-dark editorial page, and it is reachable by three paths. The
-  // Leaderboard joined it when it was rebuilt on the same canvas — it is the
-  // third page to opt into `.ink`, and without this entry the light app theme
-  // would paint a white band behind the capsule on top of it.
+  // Explore is reachable by three paths (`/explore`, `/blogs`, `/category`),
+  // which is why it is matched by prefix rather than equality.
   const onEditorialPage =
     location.pathname === "/" ||
     location.pathname === "/about" ||
@@ -371,10 +368,10 @@ const Navbar = () => {
               color: "var(--ink-text)",
               backdropFilter: scrolled ? "blur(20px)" : "blur(16px)",
               WebkitBackdropFilter: scrolled ? "blur(20px)" : "blur(16px)",
-              border: "1px solid rgba(255,255,255,0.09)",
+              border: "1px solid var(--ink-border)",
               boxShadow: scrolled
-                ? "0 18px 50px rgba(0,0,0,0.34)"
-                : "0 14px 40px rgba(0,0,0,0.20)",
+                ? "var(--ink-shadow)"
+                : "var(--ink-shadow-card)",
               transition: "box-shadow .35s ease, backdrop-filter .35s ease, -webkit-backdrop-filter .35s ease",
               // Hairline top highlight: lifts the capsule off the page without
               // reaching for heavy glassmorphism. `& > *` keeps every real child
@@ -385,7 +382,7 @@ const Navbar = () => {
                 inset: 0,
                 zIndex: 0,
                 borderRadius: "inherit",
-                background: "linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0) 42%)",
+                background: "linear-gradient(180deg, var(--ink-wash), transparent 42%)",
                 pointerEvents: "none",
               },
               "& > *": { position: "relative", zIndex: 1 },
@@ -424,12 +421,12 @@ const Navbar = () => {
                   display: "grid",
                   placeItems: "center",
                   flexShrink: 0,
-                  bgcolor: "rgba(255,255,255,0.035)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  boxShadow: "0 0 22px rgba(255,106,0,0.16), inset 0 1px 0 rgba(255,255,255,0.07)",
+                  bgcolor: "var(--ink-wash)",
+                  border: "1px solid var(--ink-border)",
+                  boxShadow: "0 0 22px rgba(255,106,0,0.16), inset 0 1px 0 var(--ink-wash-2)",
                 }}
               >
-                <QuillGlyph sx={{ width: { xs: 21, md: 24 }, height: { xs: 21, md: 24 }, color: "#F5F1EA" }} />
+                <QuillGlyph sx={{ width: { xs: 21, md: 24 }, height: { xs: 21, md: 24 }, color: "var(--ink-text)" }} />
                 <Box
                   component="span"
                   sx={{
@@ -523,8 +520,8 @@ const Navbar = () => {
                   height: 44,
                   px: 1.75,
                   borderRadius: 999,
-                  bgcolor: "rgba(255,255,255,0.025)",
-                  border: "1px solid rgba(255,255,255,0.08)",
+                  bgcolor: "var(--ink-wash)",
+                  border: "1px solid var(--ink-border-soft)",
                   font: "inherit",
                   textAlign: "left",
                   cursor: "pointer",
@@ -532,7 +529,7 @@ const Navbar = () => {
                   transition: "border-color .17s ease, background-color .17s ease",
                   "&:hover": {
                     borderColor: "var(--ink-border-warm)",
-                    backgroundColor: "rgba(255,255,255,0.045)",
+                    backgroundColor: "var(--ink-wash)",
                   },
                   "&:focus-visible": { outline: "2px solid var(--ink-orange)", outlineOffset: 2 },
                 }}
@@ -579,7 +576,7 @@ const Navbar = () => {
                   flexShrink: 0,
                   width: "1px",
                   height: 24,
-                  bgcolor: "rgba(255,255,255,0.10)",
+                  bgcolor: "var(--ink-border)",
                   mx: { md: 0.5 },
                 }}
               />
@@ -620,7 +617,7 @@ const Navbar = () => {
                       sx={{
                         width: 42,
                         height: 42,
-                        border: "1px solid rgba(255,255,255,0.15)",
+                        border: "1px solid var(--ink-border)",
                         transition: "border-color .17s ease, box-shadow .17s ease",
                       }}
                     />
@@ -675,7 +672,7 @@ const Navbar = () => {
                     fontSize: "0.86rem",
                     whiteSpace: "nowrap",
                     color: "var(--ink-text)",
-                    border: "1px solid rgba(255,255,255,0.12)",
+                    border: "1px solid var(--ink-border)",
                     backgroundColor: "transparent",
                     transition: "color .17s ease, border-color .17s ease, background-color .17s ease",
                     "& .MuiButton-startIcon": { color: "var(--ink-text-2)", mr: 0.75, transition: "color .17s ease" },

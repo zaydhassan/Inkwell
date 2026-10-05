@@ -15,9 +15,19 @@
        theme untouched.
      • Every rule below is scoped under `.ink`/`.ink-nav` or an `ink-`
        prefixed class, so nothing leaks outward.
-     • Home and About are deliberately always-dark (per the brief) and so
-       ignore the app's `data-theme`. This is the same approach the Login
-       page already takes with its own local accent system.
+     • The dark values below are the DEFAULT, and a light set overrides
+       them under `[data-theme="light"]`. The light selector excludes
+       `.ink-login` on purpose: Login is deliberately theme-invariant (see
+       its own stylesheet) and must stay dark in both modes. Login depends
+       on THIS block for its tokens, so the `:not()` guard is what keeps it
+       dark — never make the light override an unqualified `.ink` rule.
+
+   Two things deliberately do NOT flip with the theme:
+     • Artwork plates (`.ink-plate`, `.ink-stage` and friends) — hand-drawn
+       dark illustrations and the hero photograph keep their dark key light
+       and read as framed panels on a light page.
+     • Text sitting on an orange fill (`--ink-on-orange`), since the accent
+       itself is the same in both modes.
 
    Accessibility note: the brief's muted tone `#77716A` only clears about
    4.1:1 on this canvas, which fails AA for body copy. So muted *text* uses
@@ -26,7 +36,8 @@
    ───────────────────────────────────────────────────────────────────── */
 
 .ink,
-.ink-nav {
+.ink-nav,
+.ink-portal {
   /* Surfaces */
   --ink-bg: #0f0e0d;
   --ink-bg-alt: #151311;
@@ -44,6 +55,13 @@
   --ink-text-3: #8e887f;
   --ink-text-3-decor: #77716a;
 
+  /* Semantic status. Red must never double as the brand accent, so it gets
+     its own pair rather than borrowing orange. Both deepen in light mode:
+     a #f87171 error label on white reaches only ~2.9:1, so the light block
+     swaps in darker hues that clear AA. Dark values are unchanged. */
+  --ink-danger: #f87171;
+  --ink-success: #7a9e76;
+
   /* Accent — the only brand colour on these surfaces. */
   --ink-orange: #ff6a00;
   --ink-orange-2: #f97316;
@@ -58,6 +76,28 @@
   --ink-glow-soft: 0 0 32px rgba(255, 106, 0, 0.12);
   --ink-ring: 0 0 0 4px rgba(255, 106, 0, 0.22);
 
+  /* Polarity-aware fills. These are the washes, rails and control fills
+     that must INVERT with the theme: a white-alpha lift reads as depth on
+     a near-black card and disappears on a white one, so each is named here
+     and redefined in the light block below. */
+  --ink-wash: rgba(255, 255, 255, 0.04);
+  --ink-wash-2: rgba(255, 255, 255, 0.07);
+  --ink-fill: rgba(15, 14, 13, 0.6);
+  /* The navbar capsule is translucent so the page reads through its blur,
+     so it cannot just use the opaque `--ink-bg`. */
+  --ink-nav-bg: rgba(15, 14, 13, 0.88);
+  --ink-float-bg: rgba(27, 25, 23, 0.72);
+  --ink-quiet-bg: linear-gradient(150deg, #201c18 0%, #171513 55%, #131110 100%);
+  --ink-scrim: rgba(24, 22, 20, 0.82);
+
+  /* Fixed — these do NOT flip with the theme. `--ink-plate-bg` is the
+     canvas for hand-drawn dark artwork, and `--ink-on-orange` is the label
+     colour on an orange fill (the accent is identical in both modes). */
+  --ink-plate-bg: linear-gradient(165deg, #1a1714 0%, #131110 48%, #0c0a09 100%);
+  --ink-plate-line: rgba(255, 255, 255, 0.1);
+  --ink-plate-text: #f5f1ea;
+  --ink-on-orange: #17110c;
+
   /* Type stacks — display for headings, body for copy. */
   --ink-font-display: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
   --ink-font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -67,6 +107,69 @@
   --ink-section-y: clamp(4rem, 9vw, 7.5rem);
   --ink-radius: 22px;
   --ink-radius-lg: 28px;
+}
+
+/* ── Light mode ───────────────────────────────────────────────────────
+   The warm-white reading of the same system. Surfaces follow the house
+   light recipe (see index.css `:root`): off-white canvas, white cards,
+   hairline dividers, soft warm-grey shadows. The orange accent is kept —
+   orange is the editorial layer's identity in BOTH modes, and it is the
+   one thing the light set must not "correct" to charcoal.
+
+   `.ink-login` is excluded deliberately: Login provides for itself below
+   this block and is theme-invariant by design.
+
+   `.ink-portal` is the token provider for ink-styled nodes React portals
+   straight into <body> (the AI selection menu). Those nodes are outside
+   `.ink`, so without it they would fall out of the token scope entirely. */
+[data-theme="light"] .ink:not(.ink-login),
+[data-theme="light"] .ink-nav,
+[data-theme="light"] .ink-portal {
+  /* Surfaces */
+  --ink-bg: #faf8f5;
+  --ink-bg-alt: #ffffff;
+  --ink-card: #ffffff;
+  --ink-card-hi: #fffdfa;
+
+  /* Lines — a warm near-black at low alpha, not a grey. */
+  --ink-border: rgba(23, 17, 12, 0.12);
+  --ink-border-soft: rgba(23, 17, 12, 0.07);
+  --ink-border-warm: rgba(255, 106, 0, 0.4);
+
+  /* Type. text-3 is chosen to clear AA on the off-white canvas, matching
+     the accessibility note above. */
+  --ink-text: #17110c;
+  --ink-text-2: #5b534a;
+  --ink-text-3: #7a7268;
+  --ink-text-3-decor: #948c82;
+
+  /* Status, deepened for the white canvas (see the note on the dark pair). */
+  --ink-danger: #b91c1c;
+  --ink-success: #3f6b3a;
+
+  /* Accent — unchanged hue, lighter washes so orange stays a highlight
+     rather than a stain on white. */
+  --ink-orange: #ff6a00;
+  --ink-orange-2: #f97316;
+  --ink-orange-deep: #c2410c;
+  --ink-orange-soft: rgba(255, 106, 0, 0.1);
+  --ink-orange-softer: rgba(255, 106, 0, 0.05);
+
+  /* Depth — warm-grey, never black. */
+  --ink-shadow: 0 24px 60px rgba(23, 17, 12, 0.12);
+  --ink-shadow-card: 0 14px 40px rgba(23, 17, 12, 0.08);
+  --ink-glow: 0 0 60px rgba(255, 106, 0, 0.14);
+  --ink-glow-soft: 0 0 32px rgba(255, 106, 0, 0.1);
+  --ink-ring: 0 0 0 4px rgba(255, 106, 0, 0.2);
+
+  /* The polarity flip: every white-alpha lift becomes a black-alpha one. */
+  --ink-wash: rgba(23, 17, 12, 0.04);
+  --ink-wash-2: rgba(23, 17, 12, 0.07);
+  --ink-fill: rgba(255, 255, 255, 0.75);
+  --ink-nav-bg: rgba(255, 255, 255, 0.88);
+  --ink-float-bg: rgba(255, 255, 255, 0.8);
+  --ink-quiet-bg: linear-gradient(150deg, #ffffff 0%, #faf8f5 55%, #f4f1ec 100%);
+  --ink-scrim: rgba(255, 255, 255, 0.85);
 }
 
 /* The page canvas. Home and About both mount one of these as their root. */
@@ -157,13 +260,47 @@
    Used by the Home hero photo AND the About desk illustration, so the two
    pages share one visual container — same radius, same border, same warm
    spill, same glow. */
-.ink-stage {
+/* A plate is a surface that stays dark in BOTH themes. The hero frame is
+   one, and so is every container holding hand-drawn dark artwork — on a
+   light page they read as a deliberately framed inset rather than a
+   stray dark blob. Anything that must NOT flip belongs on this class. */
+.ink-stage,
+.ink-plate,
+.ink-ab-stage,
+.ink-ab-hero-viz-inner,
+.ink-lb-stage,
+.ink-explore-hero-art {
+  /* A plate is a dark island, so the tokens its children read must stay dark
+     with it. The light override targets `.ink` itself; this targets a
+     descendant, so re-declaring the type/surface tokens here wins for the
+     whole subtree. In dark mode these are exactly the values the `.ink`
+     default already carries, so nothing moves — this only stops light-mode
+     text from going dark-on-dark inside a plate. */
+  --ink-text: #f5f1ea;
+  --ink-text-2: #b5aea5;
+  --ink-text-3: #8e887f;
+  --ink-text-3-decor: #77716a;
+  --ink-card: #1b1917;
+  --ink-card-hi: #211e1a;
+  --ink-border: rgba(255, 255, 255, 0.1);
+  --ink-border-soft: rgba(255, 255, 255, 0.06);
+  --ink-wash: rgba(255, 255, 255, 0.04);
+  --ink-wash-2: rgba(255, 255, 255, 0.07);
+  --ink-fill: rgba(15, 14, 13, 0.6);
+  --ink-float-bg: rgba(27, 25, 23, 0.72);
+  --ink-nav-bg: rgba(15, 14, 13, 0.88);
+  --ink-quiet-bg: linear-gradient(150deg, #201c18 0%, #171513 55%, #131110 100%);
+  --ink-scrim: rgba(24, 22, 20, 0.82);
+}
+.ink-stage,
+.ink-plate {
   position: relative;
   border-radius: var(--ink-radius-lg);
   overflow: hidden;
-  background: linear-gradient(165deg, #1a1714 0%, #131110 48%, #0c0a09 100%);
-  border: 1px solid var(--ink-border);
+  background: var(--ink-plate-bg);
+  border: 1px solid var(--ink-plate-line);
   box-shadow: var(--ink-shadow), var(--ink-glow);
+  color: var(--ink-plate-text);
 }
 
 /* Warm light spill from the upper-left plus a cool edge at the lower
@@ -179,7 +316,8 @@
   pointer-events: none;
 }
 
-/* Inner top highlight for depth. */
+/* Inner top highlight for depth. Stays white-alpha in both themes: it sits
+   on the plate, which is dark either way. */
 .ink-stage::after {
   content: "";
   position: absolute;
@@ -219,13 +357,13 @@
 }
 
 .ink-surface-quiet {
-  background: linear-gradient(150deg, #201c18 0%, #171513 55%, #131110 100%);
+  background: var(--ink-quiet-bg);
 }
 
 /* ── Floating cards ─────────────────────────────────────────────────── */
 .ink-float-card {
   border-radius: 18px;
-  background: rgba(27, 25, 23, 0.72);
+  background: var(--ink-float-bg);
   border: 1px solid var(--ink-border);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(14px);
@@ -330,7 +468,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-text-2);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--ink-wash);
   border: 1px solid var(--ink-border);
   white-space: nowrap;
 }
@@ -381,7 +519,7 @@
 .ink-value-card:focus-within .ink-value-icon {
   transform: translateY(-3px) rotate(-4deg);
   background-color: var(--ink-orange);
-  color: #17110c;
+  color: var(--ink-on-orange);
 }
 
 .ink-value-card .ink-bignum {
@@ -491,7 +629,7 @@
 
 .ink-btn-primary {
   background: var(--ink-orange);
-  color: #17110c;
+  color: var(--ink-on-orange);
   box-shadow: 0 10px 28px rgba(255, 106, 0, 0.28);
 }
 
@@ -530,7 +668,7 @@
   min-height: 54px;
   padding: 0.75rem 1.15rem;
   border-radius: 999px;
-  background: rgba(15, 14, 13, 0.6);
+  background: var(--ink-fill);
   border: 1.5px solid var(--ink-border);
   color: var(--ink-text);
   font-family: var(--ink-font-body);
@@ -549,7 +687,7 @@
 }
 
 .ink-input[aria-invalid="true"] {
-  border-color: #f87171;
+  border-color: var(--ink-danger);
 }
 
 /* A labelled settings field: label above, control, then hint or error.
@@ -576,7 +714,7 @@
   min-height: 52px;
   padding: 0.85rem 1.05rem;
   border-radius: 14px;
-  background: rgba(15, 14, 13, 0.6);
+  background: var(--ink-fill);
   border: 1.5px solid var(--ink-border);
   color: var(--ink-text);
   font-family: var(--ink-font-body);
@@ -606,7 +744,7 @@
    surfaces, so it must never double as a warning colour. */
 .ink-field-control[aria-invalid="true"],
 .ink-textarea[aria-invalid="true"] {
-  border-color: #f87171;
+  border-color: var(--ink-danger);
 }
 
 .ink-field-hint,
@@ -620,7 +758,7 @@
 }
 
 .ink-field-error {
-  color: #f87171;
+  color: var(--ink-danger);
 }
 
 /* ── Meter: one progress rail for level progress and the daily goal ──── */
@@ -629,7 +767,7 @@
   width: 100%;
   height: 6px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--ink-wash-2);
   overflow: hidden;
 }
 

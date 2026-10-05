@@ -108,7 +108,7 @@
 }
 
 .ink-rail-link:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--ink-wash);
   color: var(--ink-text);
 }
 
@@ -393,7 +393,7 @@
   padding: clamp(1.1rem, 2.5vw, 1.5rem);
   border-radius: var(--ink-radius);
   border: 1px solid var(--ink-border-soft);
-  background: rgba(255, 255, 255, 0.015);
+  background: var(--ink-wash);
   min-height: 100%;
 }
 
@@ -420,7 +420,7 @@
 /* Locked: greyed, and visibly a slot rather than a broken card. */
 .ink-badge-tile.is-locked .ink-badge-tile-icon {
   color: var(--ink-text-3);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ink-wash);
   border-color: var(--ink-border-soft);
   filter: grayscale(1);
   opacity: 0.55;

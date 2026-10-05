@@ -3,6 +3,31 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script>
+      /* Apply the persisted theme to <html> BEFORE first paint. ThemeProvider
+         resolves the theme synchronously but writes `data-theme` in a
+         useEffect — after the first render — so without this a light-mode
+         reader sees the dark editorial canvas flash on every page load.
+         Deliberately mirrors getInitialTheme() in src/context/ThemeContext.js:
+         persisted choice > OS preference > light. Keep the two in step. */
+      (function () {
+        try {
+          var stored = window.localStorage.getItem("inkwell-theme");
+          var theme =
+            stored === "light" || stored === "dark"
+              ? stored
+              : window.matchMedia &&
+                  window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light";
+          var root = document.documentElement;
+          root.setAttribute("data-theme", theme);
+          if (theme === "dark") root.classList.add("dark");
+        } catch (e) {
+          /* localStorage blocked (private mode) — fall through to the default */
+        }
+      })();
+    </script>
     <meta name="theme-color" content="#111111" />
     <meta
       name="description"

@@ -55,7 +55,7 @@
 }
 
 .ink-ab-rail-track {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--ink-wash-2);
   border-radius: 999px;
 }
 
@@ -143,14 +143,17 @@
 }
 
 /* One frame for every illustration on the page — the writer's desk and the
-   philosophy scene are different drawings and should sit in the same mount. */
+   philosophy scene are different drawings and should sit in the same mount.
+   This is a PLATE: the drawings are hand-painted for a near-black ground and
+   cannot be recoloured, so the mount stays dark in both themes and reads as a
+   framed inset on the light page. Do not swap these for `--ink-card`. */
 .ink-ab-stage {
   display: grid;
   place-items: center;
   padding: clamp(1rem, 2.4vw, 1.75rem);
   border-radius: var(--ink-radius);
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--ink-border-soft);
+  background: var(--ink-plate-bg);
+  border: 1px solid var(--ink-plate-line);
   overflow: hidden;
 }
 
@@ -159,11 +162,12 @@
   max-width: 460px;
 }
 
+/* Also a plate — this is the inner frame the hero illustration sits in. */
 .ink-ab-hero-viz-inner {
   padding: clamp(1.25rem, 2.4vw, 2rem);
   border-radius: var(--ink-radius-lg);
-  background: linear-gradient(180deg, rgba(27, 25, 23, 0.9), rgba(15, 14, 13, 0.92));
-  border: 1px solid var(--ink-border);
+  background: var(--ink-plate-bg);
+  border: 1px solid var(--ink-plate-line);
   box-shadow: var(--ink-shadow-card), 0 0 70px rgba(255, 106, 0, 0.06);
 }
 
@@ -197,7 +201,7 @@
 }
 
 .ink-ab-flow-node:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ink-wash);
 }
 
 .ink-ab-flow-label {
@@ -221,7 +225,7 @@
   width: 1px;
   height: 14px;
   margin-left: 18.5px;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--ink-wash-2);
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -236,7 +240,7 @@
   padding: 1rem 1.1rem;
   min-height: 104px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--ink-wash);
   border: 1px solid var(--ink-border-soft);
 }
 
@@ -267,7 +271,7 @@
   width: 72%;
   height: 72%;
   border-radius: 50%;
-  border: 1px dashed rgba(255, 255, 255, 0.09);
+  border: 1px dashed var(--ink-wash-2);
 }
 
 .ink-ab-orbit-ring {
@@ -296,9 +300,9 @@
 .ink-ab-orbit-core {
   padding: 1.25rem 1.4rem;
   border-radius: var(--ink-radius);
-  background: rgba(24, 22, 20, 0.92);
+  background: var(--ink-card);
   border: 1px solid rgba(255, 106, 0, 0.18);
-  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.45), 0 0 44px rgba(255, 106, 0, 0.06);
+  box-shadow: 0 22px 60px var(--ink-shadow), 0 0 44px rgba(255, 106, 0, 0.06);
   text-align: center;
 }
 
@@ -369,7 +373,7 @@
   gap: 0.85rem;
   padding: 0.9rem 1rem;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--ink-wash);
   border: 1px solid var(--ink-border-soft);
 }
 
@@ -400,7 +404,7 @@
   height: 100%;
   padding: clamp(1.25rem, 2.2vw, 1.75rem);
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--ink-wash);
   border: 1px solid var(--ink-border-soft);
   transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s ease,
     background-color 0.22s ease;
@@ -409,7 +413,7 @@
 .ink-ab-problem:hover {
   transform: translateY(-3px);
   border-color: rgba(255, 106, 0, 0.22);
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--ink-wash);
 }
 
 .ink-ab-problem-top {
@@ -426,7 +430,7 @@
   height: 42px;
   border-radius: 13px;
   color: var(--ink-text-3);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ink-wash-2);
   border: 1px solid var(--ink-border-soft);
 }
 
@@ -439,7 +443,7 @@
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: -0.03em;
-  color: rgba(255, 255, 255, 0.11);
+  color: var(--ink-wash-2);
 }
 
 /* ── 04 · The workflow ──────────────────────────────────────────────── */
@@ -474,7 +478,7 @@
 }
 
 .ink-ab-steps-tab:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ink-wash);
 }
 
 .ink-ab-steps-tab[data-active] {
@@ -506,7 +510,7 @@
   padding: clamp(1.4rem, 2.4vw, 2rem);
   min-height: 400px;
   border-radius: var(--ink-radius);
-  background: rgba(24, 22, 20, 0.82);
+  background: var(--ink-card);
   border: 1px solid var(--ink-border);
   box-shadow: var(--ink-shadow-card);
 }
@@ -534,7 +538,7 @@
   min-height: 132px;
   padding: 1rem;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--ink-wash);
   border: 1px solid var(--ink-border-soft);
 }
 
@@ -549,12 +553,12 @@
   display: block;
   height: 7px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.11);
+  background: var(--ink-wash-2);
 }
 
 .ink-ab-mock-bar[data-tone="strong"] {
   height: 9px;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--ink-wash-2);
 }
 
 .ink-ab-mock-bar[data-tone="warm"] {
@@ -562,7 +566,7 @@
 }
 
 .ink-ab-mock-bar[data-tone="muted"] {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ink-wash-2);
 }
 
 /* The cut: a struck-through line, the "refine" step's whole idea. */
@@ -611,14 +615,14 @@
   gap: 0.6rem;
   padding: 0.45rem 0.6rem;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--ink-wash);
 }
 
 .ink-ab-mock-src-dot {
   width: 12px;
   height: 12px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--ink-wash-2);
 }
 
 /* The mock labels are the smallest words on the page, so they get the lifted
@@ -670,7 +674,7 @@
   gap: 0.5rem;
   padding: 0.9rem;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ink-wash);
   border: 1px solid var(--ink-border-soft);
 }
 
@@ -686,7 +690,7 @@
   height: 22px;
   border-radius: 50%;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--ink-wash-2);
 }
 
 .ink-ab-mock-avatar[data-alt] {
@@ -713,7 +717,7 @@
   gap: 0.35rem;
   padding: 0.5rem;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--ink-wash);
   border: 1px solid var(--ink-border-soft);
 }
 
@@ -740,7 +744,7 @@
   height: 100%;
   padding: clamp(1.4rem, 2.4vw, 2rem);
   border-radius: var(--ink-radius);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--ink-wash);
   border: 1px solid var(--ink-border-soft);
 }
 
@@ -751,7 +755,7 @@
 /* The InkWell side is the louder of the two — the section is a comparison,
    and the answer should out-weigh the thing it is answering. */
 .ink-ab-chain.is-ours {
-  background: linear-gradient(180deg, rgba(255, 106, 0, 0.07), rgba(24, 22, 20, 0.85));
+  background: linear-gradient(180deg, rgba(255, 106, 0, 0.07), var(--ink-card));
   border-color: rgba(255, 106, 0, 0.22);
   box-shadow: 0 0 60px rgba(255, 106, 0, 0.06);
 }
@@ -781,7 +785,7 @@
   width: 2px;
   height: 0.9rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--ink-wash-2);
   overflow: hidden;
 }
 
@@ -829,7 +833,7 @@
   height: 100%;
   padding: clamp(1.25rem, 2vw, 1.6rem);
   border-radius: 20px;
-  background: rgba(24, 22, 20, 0.72);
+  background: var(--ink-float-bg);
   border: 1px solid var(--ink-border-soft);
   transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s ease,
     box-shadow 0.22s ease;
@@ -838,7 +842,7 @@
 .ink-ab-feature:hover {
   transform: translateY(-4px);
   border-color: rgba(255, 106, 0, 0.34);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.4), 0 0 30px rgba(255, 106, 0, 0.07);
+  box-shadow: 0 18px 44px var(--ink-shadow-card), 0 0 30px rgba(255, 106, 0, 0.07);
 }
 
 .ink-ab-feature-head {
@@ -867,7 +871,7 @@
 .ink-ab-feature:hover .ink-ab-feature-icon {
   transform: translateY(-3px) rotate(-5deg);
   background: var(--ink-orange);
-  color: #17110c;
+  color: var(--ink-on-orange);
 }
 
 /* The "short demonstration": dim at rest, full strength on hover. */
@@ -897,7 +901,7 @@
   min-height: 268px;
   padding: clamp(1.2rem, 2vw, 1.6rem);
   border-radius: var(--ink-radius);
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--ink-wash);
   border: 1px solid var(--ink-border-soft);
 }
 
@@ -934,7 +938,7 @@
   margin-top: 1.25rem;
   padding: 0.9rem 1rem;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ink-wash);
   border: 1px solid rgba(255, 106, 0, 0.28);
   color: var(--ink-text);
   font-family: var(--ink-font-display);
@@ -969,21 +973,21 @@
   min-height: 190px;
   padding: clamp(1.2rem, 2vw, 1.6rem);
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.015);
+  background: var(--ink-wash);
   border: 1px dashed var(--ink-border);
 }
 
 .ink-ab-demo-card {
   padding: clamp(1.2rem, 2vw, 1.5rem);
   border-radius: 20px;
-  background: rgba(24, 22, 20, 0.82);
+  background: var(--ink-card);
   border: 1px solid var(--ink-border);
   box-shadow: var(--ink-shadow-card);
 }
 
 .ink-ab-demo-card--live {
   border-color: rgba(255, 106, 0, 0.3);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.4), 0 0 40px rgba(255, 106, 0, 0.08);
+  box-shadow: 0 18px 44px var(--ink-shadow-card), 0 0 40px rgba(255, 106, 0, 0.08);
 }
 
 .ink-ab-demo-card[data-tone="accepted"] {
@@ -1031,7 +1035,7 @@
   bottom: 12px;
   width: 2px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--ink-wash-2);
   overflow: hidden;
 }
 
@@ -1266,7 +1270,7 @@
   padding: clamp(1.5rem, 4vw, 3rem);
   border-radius: var(--ink-radius-lg);
   background: radial-gradient(38% 46% at 50% 50%, rgba(255, 106, 0, 0.09), transparent 72%),
-    rgba(255, 255, 255, 0.015);
+    var(--ink-wash);
   border: 1px solid var(--ink-border-soft);
 }
 
@@ -1279,7 +1283,7 @@
   height: 100%;
   padding: 1.1rem 1.15rem;
   border-radius: 18px;
-  background: rgba(24, 22, 20, 0.72);
+  background: var(--ink-float-bg);
   border: 1px solid var(--ink-border-soft);
 }
 
@@ -1288,7 +1292,7 @@
    one of six — so it gets a warm border and a word. */
 .ink-ab-hub-node[data-assistant] .ink-ab-hub-card {
   border-color: rgba(255, 106, 0, 0.16);
-  background: linear-gradient(180deg, rgba(255, 106, 0, 0.045), rgba(24, 22, 20, 0.72));
+  background: linear-gradient(180deg, rgba(255, 106, 0, 0.045), var(--ink-float-bg));
 }
 
 .ink-ab-hub-tag {
@@ -1328,9 +1332,9 @@
   text-align: center;
   padding: clamp(1.1rem, 2vw, 1.5rem);
   border-radius: var(--ink-radius);
-  background: rgba(24, 22, 20, 0.94);
+  background: var(--ink-card);
   border: 1px solid rgba(255, 106, 0, 0.28);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45), 0 0 44px rgba(255, 106, 0, 0.08);
+  box-shadow: 0 18px 50px var(--ink-shadow), 0 0 44px rgba(255, 106, 0, 0.08);
 }
 
 .ink-ab-loop {
@@ -1351,7 +1355,7 @@
   justify-content: space-between;
   gap: 0.5rem;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--ink-wash);
   border: 1px solid var(--ink-border-soft);
 }
 
@@ -1448,7 +1452,7 @@
   height: 100%;
   padding: clamp(1.35rem, 2.4vw, 1.9rem);
   border-radius: var(--ink-radius);
-  background: rgba(24, 22, 20, 0.72);
+  background: var(--ink-float-bg);
   border: 1px solid var(--ink-border-soft);
   transition: border-color 0.22s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -1483,7 +1487,7 @@
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: -0.03em;
-  color: rgba(255, 255, 255, 0.11);
+  color: var(--ink-wash-2);
 }
 
 .ink-ab-rwe-list {
@@ -1540,7 +1544,7 @@
 .ink-ab-trace-spine-line {
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ink-wash-2);
 }
 
 /* The same seven columns as the steps, gutter included — without the gap the
@@ -1559,8 +1563,8 @@
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.24);
-  border: 2px solid #100e0d;
+  background: var(--ink-wash-2);
+  border: 2px solid var(--ink-bg);
 }
 
 .ink-ab-trace-spine-dot[data-who="ai"] {
@@ -1733,7 +1737,7 @@
   /* One column: the placement only makes sense as a two-dimensional
      arrangement, so it is dropped and the core moves to the top. */
   .ink-ab-hub {
-    background: rgba(255, 255, 255, 0.015);
+    background: var(--ink-wash);
   }
 
   .ink-ab-hub-node,
@@ -1812,7 +1816,7 @@
     text-align: left;
     padding: 1rem;
     border-radius: 16px;
-    background: rgba(255, 255, 255, 0.025);
+    background: var(--ink-wash);
     border: 1px solid var(--ink-border-soft);
   }
 

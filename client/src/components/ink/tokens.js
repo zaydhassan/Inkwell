@@ -1,41 +1,50 @@
 /* ─────────────────────────────────────────────────────────────────────
    InkWell design tokens — the JS mirror.
 
-   These values are a deliberate, explicit copy of the CSS custom
-   properties declared in `src/styles/inkwell.css` (.ink / .ink-nav). They
-   exist only for the handful of places JSX needs a colour it cannot reach
-   through a CSS class — inline SVG fills, framer-motion gradients, and the
-   MUI `sx` escape hatches.
+   These are the names for the CSS custom properties declared in
+   `src/styles/inkwell.css` (.ink / .ink-nav). They exist for the handful of
+   places JSX needs a colour it cannot reach through a CSS class — inline
+   SVG fills, framer-motion gradients, and the MUI `sx` escape hatches.
 
-   ⚠ If you change a value here, change it in inkwell.css too. The CSS file
-   is the source of truth; this file follows it.
+   The values are `var(--ink-*)` REFERENCES, not copies. That is deliberate:
+   a literal here would pin the JSX to one theme and silently ignore the
+   light/dark switch, which is exactly the bug this file used to cause.
+   Referencing the custom property means every consumer follows
+   `[data-theme]` for free, with no context plumbing. SVG `fill`/`stroke`/
+   `stop-color` and the `sx` prop all accept custom properties.
+
+   ⚠ Only ever put a var reference here. If a value is needed outside a
+   themed subtree (or a renderer that cannot resolve custom properties),
+   pass the resolved colour explicitly at the call site instead.
    ───────────────────────────────────────────────────────────────────── */
 
 export const INK = {
   /* Surfaces */
-  bg: "#0F0E0D",
-  bgAlt: "#151311",
-  card: "#1B1917",
-  cardHi: "#211E1A",
+  bg: "var(--ink-bg)",
+  bgAlt: "var(--ink-bg-alt)",
+  card: "var(--ink-card)",
+  cardHi: "var(--ink-card-hi)",
 
   /* Lines */
-  border: "rgba(255,255,255,0.10)",
-  borderSoft: "rgba(255,255,255,0.06)",
-  borderWarm: "rgba(255,106,0,0.35)",
+  border: "var(--ink-border)",
+  borderSoft: "var(--ink-border-soft)",
+  borderWarm: "var(--ink-border-warm)",
 
   /* Type. `text3` is lifted from the brief's #77716A, which only clears
-     ~4.1:1 on this canvas — see the note in inkwell.css. */
-  text: "#F5F1EA",
-  text2: "#B5AEA5",
-  text3: "#8E887F",
-  text3Decor: "#77716A",
+     ~4.1:1 on the dark canvas — see the note in inkwell.css. */
+  text: "var(--ink-text)",
+  text2: "var(--ink-text-2)",
+  text3: "var(--ink-text-3)",
+  text3Decor: "var(--ink-text-3-decor)",
 
-  /* Accent */
-  orange: "#FF6A00",
-  orange2: "#F97316",
-  orangeDeep: "#C2410C",
-  orangeSoft: "rgba(255,106,0,0.14)",
-  orangeSofter: "rgba(255,106,0,0.06)",
+  /* Accent — identical in both themes. */
+  orange: "var(--ink-orange)",
+  orange2: "var(--ink-orange-2)",
+  orangeDeep: "var(--ink-orange-deep)",
+  orangeSoft: "var(--ink-orange-soft)",
+  orangeSofter: "var(--ink-orange-softer)",
+  /* A raw orange glow: there is no token for it because it is a wash over
+     artwork, not a surface, and orange does not change with the theme. */
   orangeGlow: "rgba(255,106,0,0.15)",
 };
 

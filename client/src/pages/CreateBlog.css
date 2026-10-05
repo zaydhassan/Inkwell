@@ -18,13 +18,14 @@
    ───────────────────────────────────────────────────────────────────── */
 
 .ink-write {
-  /* Studio surfaces + lines. The brief gives exact values for these three:
-     the editor canvas reads a touch deeper than the token card, the panel
-     a touch deeper than that, and its hairline sits between the shared
-     border tokens. */
-  --ist-editor: #171614;
-  --ist-panel: #11100F;
-  --ist-border: rgba(255, 255, 255, 0.08);
+  /* Studio surfaces + lines. The editor canvas reads a touch deeper than
+     the token card, the panel a touch deeper than that, and the hairline
+     sits between the shared border tokens — so these alias the ink tokens
+     rather than pinning literals. The studio is `.ink`, so the light set
+     reaches them and the whole shell themes with the rest of the app. */
+  --ist-editor: var(--ink-bg-alt);
+  --ist-panel: var(--ink-bg);
+  --ist-border: var(--ink-border);
   /* The right panel's width; immersive mode zeroes it via the shell. */
   --ist-aside: 420px;
   min-height: 100dvh;
@@ -56,7 +57,7 @@
   gap: 1rem;
   height: 64px;
   padding: 0 clamp(0.75rem, 2vw, 1.5rem);
-  background: rgba(15, 14, 13, 0.92);
+  background: var(--ink-nav-bg);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--ist-border);
@@ -89,7 +90,7 @@
 .ist-topbar-home:hover {
   color: var(--ink-text);
   border-color: var(--ist-border);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--ink-wash);
 }
 
 .ist-topbar-brand {
@@ -132,7 +133,7 @@
   padding: 0 0.9rem;
   border-radius: 999px;
   border: 1px solid var(--ist-border);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ink-wash);
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -206,13 +207,13 @@
 }
 
 .ist-topbar .ink-btn-ghost {
-  background: rgba(21, 19, 17, 0.9);
+  background: var(--ink-float-bg);
   color: var(--ink-text-2);
 }
 
 .ist-topbar .ink-btn-ghost:hover {
   color: var(--ink-text);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ink-wash-2);
   border-color: var(--ist-border);
   transform: none;
 }
@@ -315,7 +316,7 @@
 
 .ist-rail-item:hover {
   color: var(--ink-text-2);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--ink-wash);
 }
 
 .ist-rail-item.is-active {
@@ -402,8 +403,8 @@
   inset: 0;
   border-radius: 15.5px;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+    linear-gradient(var(--ink-wash) 1px, transparent 1px),
+    linear-gradient(90deg, var(--ink-wash) 1px, transparent 1px);
   background-size: 44px 44px;
   mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.75), transparent 62%);
   -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.75), transparent 62%);
@@ -432,7 +433,7 @@
   padding: 0 0.95rem;
   border-radius: 999px;
   border: 1px solid var(--ist-border);
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--ink-wash);
   font-family: var(--ink-font-body);
   font-size: 0.78rem;
   font-weight: 600;
@@ -476,7 +477,7 @@
 .ist-immersive-toggle:hover {
   color: var(--ink-text);
   border-color: var(--ist-border);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--ink-wash);
 }
 
 /* ── The compact cover strip, expanded from the pill ────────────────── */
@@ -486,7 +487,7 @@
   padding: 0.9rem;
   border: 1px solid var(--ink-border-soft);
   border-radius: 13px;
-  background: rgba(255, 255, 255, 0.015);
+  background: var(--ink-wash);
 }
 
 .ist-cover-strip .ink-cover-modes {
@@ -517,7 +518,7 @@
 }
 
 .ist-cover-strip-ghost:hover {
-  color: #f87171;
+  color: var(--ink-danger);
 }
 
 /* ── The cover band: the chosen image as the story's masthead ───────── */
@@ -637,7 +638,7 @@
 
 .ink-write .ql-snow.ql-toolbar button:hover,
 .ink-write .ql-snow.ql-toolbar button:focus-visible {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ink-wash-2);
 }
 
 .ink-write .ql-snow.ql-toolbar button.ql-active {
@@ -784,7 +785,7 @@
 .ink-write .ql-editor pre,
 .ink-write .ql-editor code {
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ink-wash-2);
   color: var(--ink-text);
 }
 
@@ -808,7 +809,7 @@
 .ink-write .ql-snow .ql-tooltip input[type="text"] {
   padding: 0.3rem 0.5rem;
   border-radius: 8px;
-  background: rgba(15, 14, 13, 0.6);
+  background: var(--ink-fill);
   border: 1px solid var(--ink-border);
   color: var(--ink-text);
 }
@@ -851,7 +852,7 @@
 .ink-write-error {
   margin: 0.5rem 0 0;
   font-size: 0.8rem;
-  color: #f87171;
+  color: var(--ink-danger);
 }
 
 .ist-canvas-error-inset {
@@ -888,7 +889,7 @@
   padding: 0.65rem 0.9rem;
   border-radius: 16px;
   border: 1px solid var(--ist-border);
-  background: rgba(17, 16, 15, 0.88);
+  background: var(--ink-float-bg);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
@@ -915,7 +916,7 @@
   padding: 0;
   border-radius: 50%;
   border: 1px solid var(--ink-border);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ink-wash);
   color: var(--ink-text-2);
   cursor: pointer;
   transition: background-color 0.22s ease, color 0.22s ease,
@@ -935,7 +936,7 @@
 .ink-voice.is-live .ink-voice-btn {
   background: var(--ink-orange);
   border-color: var(--ink-orange);
-  color: #17110c;
+  color: var(--ink-on-orange);
   animation: inkVoicePulse 2.2s ease-in-out infinite;
 }
 
@@ -1040,7 +1041,7 @@
   padding: 0.1rem 0.42rem;
   border-radius: 6px;
   border: 1px solid var(--ist-border);
-  background: rgba(15, 14, 13, 0.65);
+  background: var(--ink-fill);
   font-family: var(--ink-font-body);
   font-size: 0.65rem;
   font-weight: 600;
@@ -1129,7 +1130,7 @@
   /* Gutter for the content + room for the focus ring. */
   padding: 1.15rem 1.05rem 1.8rem;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+  scrollbar-color: var(--ink-wash-2) transparent;
 }
 
 .ist-side-scroll::-webkit-scrollbar {
@@ -1137,7 +1138,7 @@
 }
 
 .ist-side-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ink-wash-2);
   border-radius: 999px;
 }
 
@@ -1154,7 +1155,7 @@
   width: 42px;
   height: 4px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--ink-wash-2);
 }
 
 .ist-drawer-title {
@@ -1184,7 +1185,7 @@
 .ist-drawer-quick:hover {
   color: var(--ink-text);
   border-color: var(--ist-border);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--ink-wash);
 }
 
 .ist-drawer-quick svg {
@@ -1262,7 +1263,7 @@
   padding: 0.7rem 0.85rem;
   border: 1px solid var(--ink-border-soft);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--ink-wash);
   font-size: 0.74rem;
   line-height: 1.65;
   color: var(--ink-text-2);
@@ -1277,9 +1278,9 @@
   gap: 0.65rem;
   margin-bottom: 1rem;
   padding: 0.8rem 0.9rem;
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  border: 1px solid var(--ink-wash-2);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--ink-wash);
 }
 
 .ist-ai-offline-icon {
@@ -1339,7 +1340,7 @@
 .ist-chat-msg.is-user {
   align-self: flex-end;
   max-width: 92%;
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--ink-wash);
   border: 1px solid var(--ink-border-soft);
   color: var(--ink-text);
 }
@@ -1379,7 +1380,7 @@
   padding: 0 0.5rem 0 0.95rem;
   border: 1px solid var(--ink-border);
   border-radius: 15px;
-  background: rgba(21, 19, 17, 0.65);
+  background: var(--ink-fill);
   transition: border-color 0.22s ease, box-shadow 0.22s ease;
 }
 
@@ -1416,7 +1417,7 @@
   border-radius: 12px;
   border: 0;
   background: var(--ink-orange);
-  color: #17110c;
+  color: var(--ink-on-orange);
   cursor: pointer;
   box-shadow: 0 6px 18px rgba(255, 106, 0, 0.25);
   transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
@@ -1462,8 +1463,8 @@
   gap: 0.55rem;
   padding: 12px 12px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  background: #191816;
+  border: 1px solid var(--ink-wash-2);
+  background: var(--ink-card);
   font-family: var(--ink-font-body);
   text-align: left;
   cursor: pointer;
@@ -1473,7 +1474,7 @@
 
 .ist-quick:hover {
   border-color: rgba(255, 106, 0, 0.3);
-  background: #1D1C19;
+  background: var(--ink-card-hi);
 }
 
 .ist-quick:disabled {
@@ -1521,7 +1522,7 @@
   padding: 0.85rem 0.9rem 0.9rem;
   border-radius: 14px;
   border: 1px solid rgba(255, 106, 0, 0.35);
-  background: linear-gradient(180deg, rgba(255, 106, 0, 0.055), rgba(25, 24, 22, 0.98) 55%);
+  background: linear-gradient(180deg, rgba(255, 106, 0, 0.055), var(--ink-card) 55%);
 }
 
 .ist-suggestion-head {
@@ -1558,7 +1559,7 @@
 .ist-suggestion-close:hover,
 .ist-enhance-dismiss:hover {
   color: var(--ink-text);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ink-wash-2);
 }
 
 .ist-suggestion-close svg {
@@ -1577,7 +1578,7 @@
   padding: 0.75rem;
   border-radius: 11px;
   border: 1px solid rgba(255, 106, 0, 0.16);
-  background: rgba(15, 14, 13, 0.45);
+  background: var(--ink-fill);
 }
 
 .ist-suggestion-label {
@@ -1600,7 +1601,7 @@
   line-height: 1.6;
   color: var(--ink-text-3);
   text-decoration: line-through;
-  text-decoration-color: rgba(255, 255, 255, 0.25);
+  text-decoration-color: var(--ink-text-3);
   max-height: 7.5rem;
   overflow: hidden;
 }
@@ -1637,7 +1638,7 @@
   font-family: var(--ink-font-body);
   font-size: 0.68rem;
   font-weight: 700;
-  color: #17110c;
+  color: var(--ink-on-orange);
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.2s ease;
 }
@@ -1658,7 +1659,7 @@
   height: 32px;
   padding: 0 0.75rem;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  border: 1px solid var(--ink-wash-2);
   background: none;
   font-family: var(--ink-font-body);
   font-size: 0.68rem;
@@ -1694,7 +1695,7 @@
   padding: 0.85rem 0.9rem;
   border-radius: 12px;
   border: 1px solid var(--ink-border-soft);
-  background: rgba(255, 255, 255, 0.015);
+  background: var(--ink-wash);
 }
 
 .ist-insights-working {
@@ -1775,7 +1776,7 @@
 .ist-insight .ink-meter {
   height: 5px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--ink-wash-2);
   border: 0;
   overflow: hidden;
 }
@@ -1805,8 +1806,8 @@
 .ist-enhance-item {
   padding: 0.7rem 0.8rem;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  background: #191816;
+  border: 1px solid var(--ink-wash-2);
+  background: var(--ink-card);
 }
 
 .ist-enhance-head {
@@ -1832,7 +1833,7 @@
 
 .ist-enhance-badge--note {
   border-color: var(--ink-border-soft);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ink-wash);
   color: var(--ink-text-3);
 }
 
@@ -1908,7 +1909,7 @@
 
 .is-good .ist-seo-state-dot {
   /* Success reads as a calm sage, not a neon green. */
-  background: #7a9e76;
+  background: var(--ink-success);
   box-shadow: 0 0 0 3px rgba(122, 158, 118, 0.12);
 }
 
@@ -1941,7 +1942,7 @@
 }
 
 .is-good .ist-seo-state-word {
-  color: #7a9e76;
+  color: var(--ink-success);
 }
 
 .is-warn .ist-seo-state-word {
@@ -2083,7 +2084,7 @@
 .ink-panel-error {
   margin: 0.6rem 0 0;
   font-size: 0.76rem;
-  color: #f87171;
+  color: var(--ink-danger);
 }
 
 /* ── Details tab: the article-metadata workspace ────────────────────── */
@@ -2129,7 +2130,7 @@
 .ist-det-error {
   margin: 10px 0 0;
   font-size: 11px;
-  color: #f87171;
+  color: var(--ink-danger);
 }
 
 /* ── Category pills ─────────────────────────────────────────────────── */
@@ -2148,8 +2149,8 @@
   height: 32px;
   padding: 0 11px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: var(--ink-wash);
+  border: 1px solid var(--ink-wash-2);
   color: var(--ink-text-2);
   font-family: var(--ink-font-body);
   font-size: 11px;
@@ -2194,7 +2195,7 @@
   padding: 7px 10px 7px 14px;
   border-radius: 12px;
   background: var(--ink-bg-alt);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  border: 1px solid var(--ink-wash-2);
   cursor: text;
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
@@ -2364,7 +2365,7 @@
   height: 5px;
   margin-top: 11px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--ink-wash-2);
   overflow: hidden;
 }
 
@@ -2389,8 +2390,8 @@
   flex: 1;
   padding: 5px 0;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--ink-wash-2);
+  background: var(--ink-wash);
   color: var(--ink-text-3-decor);
   font-family: var(--ink-font-body);
   font-size: 10px;
@@ -2471,7 +2472,7 @@
   padding: clamp(1.4rem, 4vw, 2rem) 1rem;
   border: 1.5px dashed var(--ink-border);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.015);
+  background: var(--ink-wash);
   text-align: center;
   cursor: pointer;
   transition: border-color 0.22s ease, background-color 0.22s ease;
@@ -2550,7 +2551,7 @@
   padding: 0.3rem 0.6rem;
   border-radius: 999px;
   border: 1px solid var(--ink-border);
-  background: rgba(15, 14, 13, 0.82);
+  background: var(--ink-nav-bg);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   font: inherit;
@@ -2567,7 +2568,7 @@
 .ink-cover-remove:hover {
   color: var(--ink-text);
   border-color: var(--ink-border-warm);
-  background: rgba(15, 14, 13, 0.95);
+  background: var(--ink-nav-bg);
 }
 
 /* ── Schedule ───────────────────────────────────────────────────────── */
@@ -2634,7 +2635,10 @@
 }
 
 .ink-check.is-done .ink-check-box {
-  /* Calm sage again — the checklist's success tone, never neon. */
+  /* Calm sage again — the checklist's success tone, never neon. This one
+     stays a literal rather than `--ink-success`: the box is a FILL with a
+     near-black tick on it, so deepening the green for the light canvas
+     would put dark-on-dark. The sage reads on white as it is. */
   background: #7a9e76;
   border-color: #7a9e76;
   color: #10130f;
@@ -2670,7 +2674,7 @@
   padding: 0.95rem 1rem 1rem;
   border-radius: 16px;
   border: 1px solid var(--ink-border);
-  background: #161513;
+  background: var(--ink-card);
   box-shadow: 0 28px 70px rgba(0, 0, 0, 0.55);
   animation: istPopIn 0.18s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -2727,7 +2731,7 @@
 }
 
 .ist-template:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--ink-wash);
 }
 
 .ist-template-title {
@@ -2749,7 +2753,7 @@
   position: fixed;
   inset: 0;
   z-index: 80;
-  background: rgba(10, 9, 8, 0.97);
+  background: var(--ink-bg);
   animation: istFade 0.22s ease;
 }
 
@@ -2779,7 +2783,7 @@
   padding: 0.45rem 0.9rem;
   border-radius: 999px;
   border: 1px solid var(--ink-border);
-  background: rgba(21, 19, 17, 0.9);
+  background: var(--ink-float-bg);
   font-family: var(--ink-font-body);
   font-size: 0.74rem;
   font-weight: 700;
@@ -2902,7 +2906,7 @@
 .ist-preview-body pre,
 .ist-preview-body code {
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ink-wash-2);
   color: var(--ink-text);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.88em;
@@ -3242,13 +3246,13 @@
    the text-selection menu.
 
    Every surface here speaks the copilot column's existing language: the
-   #191816 card, the 0.07 hairline, orange for the live affordance.
+   `--ink-card` card, the wash hairline, orange for the live affordance.
 
-   The selection menu is portaled to <body>, i.e. OUTSIDE the .ink scope
-   that defines the ink tokens — so these rules give every token a literal
-   fallback (`var(--ink-text-2, #b5aea5)`). Inside the panel the token wins;
-   on the portaled node the fallback keeps the same colours. That is why
-   the fallbacks are written out rather than left to inherit.
+   The selection menu is portaled to <body>, i.e. OUTSIDE the `.ink` scope
+   that defines the ink tokens — so that node carries `ink-portal`, the
+   third token provider in styles/inkwell.css. It gives the portaled menu
+   the same tokens (and the same `[data-theme="light"]` set) as `.ink`, so
+   these rules can reference the tokens plainly with no literal fallback.
    ═════════════════════════════════════════════════════════════════════ */
 
 /* ── Parameter picker (tone, simplify level, brainstorm lens) ────────── */
@@ -3257,15 +3261,15 @@
   margin-top: 0.6rem;
   padding: 0.7rem 0.75rem 0.75rem;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  background: #191816;
+  border: 1px solid var(--ink-wash-2);
+  background: var(--ink-card);
 }
 
 .ist-param-label {
   margin: 0 0 0.5rem;
   font-size: 0.66rem;
   font-weight: 700;
-  color: var(--ink-text-2, #b5aea5);
+  color: var(--ink-text-2);
 }
 
 .ist-param-chips,
@@ -3279,12 +3283,12 @@
   height: 28px;
   padding: 0 0.7rem;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--ink-wash-2);
   background: transparent;
   font-family: var(--ink-font-body, "Inter", system-ui, sans-serif);
   font-size: 0.66rem;
   font-weight: 600;
-  color: var(--ink-text-2, #b5aea5);
+  color: var(--ink-text-2);
   cursor: pointer;
   transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
 }
@@ -3292,7 +3296,7 @@
 .ist-param-chip:hover {
   border-color: rgba(255, 106, 0, 0.5);
   background: rgba(255, 106, 0, 0.08);
-  color: var(--ink-text, #f5f1ea);
+  color: var(--ink-text);
 }
 
 .ist-param-cancel,
@@ -3304,13 +3308,13 @@
   font-family: var(--ink-font-body, "Inter", system-ui, sans-serif);
   font-size: 0.64rem;
   font-weight: 700;
-  color: var(--ink-text-3, #8e887f);
+  color: var(--ink-text-3);
   cursor: pointer;
 }
 
 .ist-param-cancel:hover,
 .ist-sel-cancel:hover {
-  color: var(--ink-text, #f5f1ea);
+  color: var(--ink-text);
 }
 
 /* ── Failure card: what happened, and a way back ─────────────────────── */
@@ -3327,13 +3331,13 @@
   margin: 0;
   font-size: 0.76rem;
   font-weight: 700;
-  color: var(--ink-text, #f5f1ea);
+  color: var(--ink-text);
 }
 
 .ist-ai-error-note {
   margin: 0.2rem 0 0.65rem;
   font-size: 0.68rem;
-  color: var(--ink-text-3, #8e887f);
+  color: var(--ink-text-3);
 }
 
 /* ── Research sources ────────────────────────────────────────────────── */
@@ -3342,7 +3346,7 @@
   font-size: 13px !important;
   margin-right: 0.3rem;
   vertical-align: -2px;
-  color: var(--ink-orange, #ff6a00) !important;
+  color: var(--ink-orange) !important;
 }
 
 .ist-sources-status {
@@ -3351,7 +3355,7 @@
   gap: 0.45rem;
   margin-top: 0.85rem;
   font-size: 0.72rem;
-  color: var(--ink-text-2, #b5aea5);
+  color: var(--ink-text-2);
 }
 
 .ist-sources {
@@ -3364,8 +3368,8 @@
 .ist-source {
   padding: 0.7rem 0.75rem;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  background: #191816;
+  border: 1px solid var(--ink-wash-2);
+  background: var(--ink-card);
 }
 
 .ist-source-title {
@@ -3373,7 +3377,7 @@
   font-size: 0.74rem;
   font-weight: 700;
   line-height: 1.35;
-  color: var(--ink-text, #f5f1ea);
+  color: var(--ink-text);
 }
 
 .ist-source-meta {
@@ -3383,7 +3387,7 @@
   gap: 0.4rem;
   margin: 0.3rem 0 0;
   font-size: 0.62rem;
-  color: var(--ink-text-3, #8e887f);
+  color: var(--ink-text-3);
 }
 
 /* A middot between the publisher and the date, only when both exist. */
@@ -3396,7 +3400,7 @@
   margin: 0.45rem 0 0;
   font-size: 0.7rem;
   line-height: 1.55;
-  color: var(--ink-text-2, #b5aea5);
+  color: var(--ink-text-2);
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -3406,7 +3410,7 @@
 .ist-source-url {
   margin: 0.4rem 0 0;
   font-size: 0.62rem;
-  color: var(--ink-text-3, #8e887f);
+  color: var(--ink-text-3);
   overflow-wrap: anywhere;
 }
 
@@ -3437,7 +3441,7 @@
   font-family: var(--ink-font-body, "Inter", system-ui, sans-serif);
   font-size: 0.66rem;
   font-weight: 700;
-  color: var(--ink-orange, #ff6a00);
+  color: var(--ink-orange);
   cursor: pointer;
 }
 
@@ -3456,8 +3460,8 @@
   max-width: calc(100vw - 24px);
   padding: 5px 6px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  background: #191816;
+  border: 1px solid var(--ink-wash-2);
+  background: var(--ink-card);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
   font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   /* The menu must not swallow the drag that created the selection. */
@@ -3482,7 +3486,7 @@
   font-family: inherit;
   font-size: 0.68rem;
   font-weight: 600;
-  color: #b5aea5;
+  color: var(--ink-text-2);
   white-space: nowrap;
   cursor: pointer;
   transition: background-color 0.16s ease, color 0.16s ease;
@@ -3492,24 +3496,24 @@
 .ist-sel-item:focus-visible {
   outline: none;
   background: rgba(255, 106, 0, 0.12);
-  color: #f5f1ea;
+  color: var(--ink-text);
 }
 
 .ist-sel-icon {
   font-size: 15px !important;
-  color: #8e887f !important;
+  color: var(--ink-text-3) !important;
   transition: color 0.16s ease;
 }
 
 .ist-sel-item:hover .ist-sel-icon,
 .ist-sel-item:focus-visible .ist-sel-icon {
-  color: #ff6a00 !important;
+  color: var(--ink-orange) !important;
 }
 
 .ist-sel-brand {
   padding: 0 0.35rem 0 0.2rem;
   font-size: 0.72rem;
-  color: #ff6a00;
+  color: var(--ink-orange);
 }
 
 .ist-sel-close {
@@ -3523,14 +3527,14 @@
   border: 0;
   border-radius: 8px;
   background: none;
-  color: #8e887f;
+  color: var(--ink-text-3);
   cursor: pointer;
   transition: color 0.16s ease, background-color 0.16s ease;
 }
 
 .ist-sel-close:hover {
-  color: #f5f1ea;
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--ink-text);
+  background: var(--ink-wash-2);
 }
 
 .ist-sel-close svg {
@@ -3549,7 +3553,7 @@
   margin: 0;
   font-size: 0.66rem;
   font-weight: 700;
-  color: #b5aea5;
+  color: var(--ink-text-2);
 }
 
 .ist-sel-cancel {

@@ -8,10 +8,12 @@
    grain and the drifting glow) and only adds what is specific to a
    leaderboard, kept as `--lb-*` tokens scoped to `.ink-leaderboard`.
 
-   Why local tokens at all: the spec for this page pins a slightly different
-   palette from the shared canvas (border 0.08 rather than 0.06/0.10, a gold
-   accent the rest of the app does not have). Aliasing them here means the
-   page matches its spec exactly without repainting Home, About or Explore.
+   Why local tokens at all: the page's spec pins a slightly different surface
+   mix from the shared canvas (a translucent card, a lifted card, its own row
+   wash) plus a gold accent the rest of the app does not have. The `--lb-*`
+   block aliases the ink tokens for the first group and only keeps literals
+   for the medals, so the whole page follows `[data-theme]` with the rest of
+   the editorial layer.
 
    Colour discipline: orange for structure and emphasis, gold/silver/bronze
    for rank only. No purple, blue or cyan anywhere — rank is also always
@@ -19,12 +21,12 @@
    ───────────────────────────────────────────────────────────────────── */
 
 .ink-leaderboard {
-  --lb-card: rgba(24, 22, 20, 0.82);
-  --lb-elevated: #1d1a17;
-  --lb-line: rgba(255, 255, 255, 0.08);
-  --lb-line-soft: rgba(255, 255, 255, 0.05);
-  --lb-row: rgba(255, 255, 255, 0.025);
-  --lb-text-2: #b8b0a6;
+  --lb-card: var(--ink-float-bg);
+  --lb-elevated: var(--ink-card-hi);
+  --lb-line: var(--ink-border);
+  --lb-line-soft: var(--ink-border-soft);
+  --lb-row: var(--ink-wash);
+  --lb-text-2: var(--ink-text-2);
   --lb-gold: #f5a623;
   --lb-silver: #9ea7b3;
   --lb-bronze: #b0804f;
@@ -123,8 +125,8 @@
   height: 44px;
   padding: 4px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: var(--ink-wash);
+  border: 1px solid var(--ink-border);
 }
 
 .ink-lb-seg-btn {
@@ -144,7 +146,7 @@
 
 .ink-lb-seg-btn:hover {
   color: var(--ink-text);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--ink-wash);
 }
 
 .ink-lb-seg-btn[aria-pressed="true"],
@@ -162,8 +164,8 @@
 /* The Writers / Readers switch is the same control, visually secondary. */
 .ink-lb-seg--alt .ink-lb-seg-btn[aria-pressed="true"] {
   color: var(--ink-text);
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.14);
+  background: var(--ink-wash-2);
+  border-color: var(--ink-border);
 }
 
 /* ── Trophy stage ─────────────────────────────────────────────────────
@@ -175,9 +177,21 @@
   border-radius: var(--ink-radius-lg);
   padding: clamp(1.25rem, 2.6vw, 2rem) clamp(1rem, 2.4vw, 1.75rem) 0;
   overflow: hidden;
-  background: linear-gradient(165deg, #1a1714 0%, #141210 52%, #100e0d 100%);
-  border: 1px solid var(--lb-line);
+  background: var(--ink-plate-bg);
+  border: 1px solid var(--ink-plate-line);
   box-shadow: var(--ink-shadow-card), 0 0 70px rgba(255, 106, 0, 0.07);
+  /* The stage is a plate (see the plate token block in inkwell.css), so the
+     `--lb-*` aliases are re-pointed here rather than at `.ink-leaderboard`:
+     the page-root aliases were already resolved to the LIGHT ink values
+     before the plate got a say, which would have put the winner's name on
+     the dark stage in near-black. Re-aliasing re-resolves them against the
+     plate's own dark ink tokens, so no value is spelled out twice. */
+  --lb-card: var(--ink-float-bg);
+  --lb-elevated: var(--ink-card-hi);
+  --lb-line: var(--ink-border);
+  --lb-line-soft: var(--ink-border-soft);
+  --lb-row: var(--ink-wash);
+  --lb-text-2: var(--ink-text-2);
 }
 
 .ink-lb-stage::before {
@@ -246,7 +260,7 @@
   place-items: center;
   font-size: 0.7rem;
   font-weight: 800;
-  color: #17110c;
+  color: var(--ink-on-orange);
   border: 2px solid #100e0d;
 }
 
@@ -291,7 +305,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--lb-text-2);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
+  background: linear-gradient(180deg, var(--ink-wash-2), var(--ink-wash));
   overflow: hidden;
 }
 
@@ -332,8 +346,8 @@
   width: 100%;
   aspect-ratio: 1;
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.035), transparent 70%);
-  border: 1px dashed rgba(255, 255, 255, 0.16);
+  background: radial-gradient(circle at 50% 50%, var(--ink-wash), transparent 70%);
+  border: 1px dashed var(--ink-border);
 }
 
 /* ── Boards ───────────────────────────────────────────────────────────
@@ -383,7 +397,7 @@
   flex-shrink: 0;
   padding: 0.3rem 0.7rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--ink-wash);
   border: 1px solid var(--lb-line-soft);
   font-size: 0.68rem;
   font-weight: 700;
@@ -446,7 +460,7 @@
    elements, and they carry their lift below. */
 .ink-lb-trow:hover {
   border-color: var(--lb-line);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--ink-wash);
 }
 
 /* Rank 1 gets the warm lift — the only row with a glow. */
@@ -470,24 +484,24 @@
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: var(--lb-text-2);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ink-wash);
   border: 1px solid var(--lb-line-soft);
 }
 
 .ink-lb-trow[data-rank="1"] .ink-lb-rank {
-  color: #17110c;
+  color: var(--ink-on-orange);
   background: linear-gradient(135deg, #ffd08a, var(--lb-gold));
   border-color: rgba(245, 166, 35, 0.5);
 }
 
 .ink-lb-trow[data-rank="2"] .ink-lb-rank {
-  color: #17110c;
+  color: var(--ink-on-orange);
   background: linear-gradient(135deg, #e6ebf1, var(--lb-silver));
   border-color: rgba(158, 167, 179, 0.5);
 }
 
 .ink-lb-trow[data-rank="3"] .ink-lb-rank {
-  color: #17110c;
+  color: var(--ink-on-orange);
   background: linear-gradient(135deg, #e0bb8d, var(--lb-bronze));
   border-color: rgba(176, 128, 79, 0.5);
 }
@@ -637,7 +651,7 @@
 .ink-lb-topic-bar {
   height: 5px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--ink-wash-2);
   overflow: hidden;
 }
 
@@ -681,7 +695,7 @@
 
 .ink-lb-skel {
   border-radius: 12px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.045));
+  background: linear-gradient(90deg, var(--ink-wash), var(--ink-wash-2), var(--ink-wash));
   background-size: 200% 100%;
   animation: inkLbShimmer 1.5s ease-in-out infinite;
 }

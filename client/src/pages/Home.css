@@ -175,7 +175,7 @@
   align-items: center;
   background:
     radial-gradient(70% 120% at 8% 50%, rgba(255, 106, 0, 0.13), transparent 62%),
-    linear-gradient(140deg, #1c1916 0%, #171513 55%, #121110 100%);
+    var(--ink-quiet-bg);
   border: 1px solid var(--ink-border);
   box-shadow: var(--ink-shadow-card);
 }
@@ -228,8 +228,8 @@
   font-weight: 600;
 }
 
-.ink-newsletter-msg--ok { color: #4ade80; }
-.ink-newsletter-msg--err { color: #f87171; }
+.ink-newsletter-msg--ok { color: var(--ink-success); }
+.ink-newsletter-msg--err { color: var(--ink-danger); }
 
 /* ── Responsive ─────────────────────────────────────────────────────── */
 @media (max-width: 899.95px) {
