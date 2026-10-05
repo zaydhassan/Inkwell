@@ -20,6 +20,26 @@ const blogViewSchema = new mongoose.Schema(
       ref: "users",
       required: true,
     },
+    // How far through the article body the reader actually got (0–100),
+    // reported by the reader's own scroll maths (components/ReadingProgress).
+    // It is the FURTHEST point reached, never the latest: the reader writes it
+    // with $max, so scrolling back to the top (or opening the article and
+    // leaving immediately) can't erase the progress a previous visit earned.
+    // 0 means "opened but never scrolled into the body", which is a real state
+    // and is rendered as a plain "Read on <date>" rather than a 0% bar.
+    progress: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+    },
+    // The most recent visit, as opposed to `created_at` (the FIRST view).
+    // Together they let the history page separate "when you read it" from
+    // "when you last came back to it".
+    lastReadAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: { createdAt: "created_at", updatedAt: false } }
 );

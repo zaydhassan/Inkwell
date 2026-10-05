@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -6,7 +6,7 @@ import {
   Divider, Menu, MenuItem, Container, Stack, Chip, Grid, Tooltip, Skeleton
 } from "@mui/material";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
-import { Favorite, FavoriteBorder, Share, Comment, Edit, Delete, Report, Bookmark, BookmarkBorder, AccessTime, Headphones, Pause, PlayArrow, FileDownload } from "@mui/icons-material";
+import { Favorite, FavoriteBorder, Share, Comment, Edit, Delete, Report, Bookmark, BookmarkBorder, AccessTime, Headphones, Pause, PlayArrow, FileDownload, ArrowUpward } from "@mui/icons-material";
 import toast from "react-hot-toast";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
@@ -100,6 +100,89 @@ const BlogDetails = () => {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [blog]);
+
+  // Persist how far through the article the reader gets. Throttled to at most
+  // one write every 5s of scrolling, plus a final flush on unmount so leaving
+  // mid-article still records where they stopped. The server stores the
+  // FURTHEST value ($max), so a late or out-of-order write can never lower it.
+  const progressTimer = useRef(null);
+  const pendingProgress = useRef(0);
+  const lastSentProgress = useRef(-1);
+
+  const flushProgress = useCallback(() => {
+    const currentUser = user || JSON.parse(localStorage.getItem("user") || "{}");
+    // The route is authed; anonymous readers simply aren't tracked.
+    if (!currentUser?._id || !id) return;
+    const pct = pendingProgress.current;
+    if (pct === lastSentProgress.current) return;
+    lastSentProgress.current = pct;
+    // Non-critical: a failed write costs nothing, the next scroll reports again.
+    axios.patch(`/api/v1/reading-history/${id}/progress`, { progress: pct }).catch(() => {});
+  }, [id, user]);
+
+  const handleProgress = useCallback(
+    (pct) => {
+      pendingProgress.current = pct;
+      if (progressTimer.current) return; // a flush is already scheduled
+      progressTimer.current = setTimeout(() => {
+        progressTimer.current = null;
+        flushProgress();
+      }, 5000);
+    },
+    [flushProgress]
+  );
+
+  useEffect(
+    () => () => {
+      if (progressTimer.current) clearTimeout(progressTimer.current);
+      flushProgress();
+    },
+    [flushProgress]
+  );
+
+  // The reader's saved position in THIS article, so "Continue reading" on the
+  // Reading History page can genuinely continue. Offered as an opt-in jump
+  // rather than an automatic scroll: someone opening an article to quote it or
+  // re-read a section would not want to be dropped into the middle.
+  //
+  // Only offered between 5% and 95% — below that there is nothing to resume
+  // from, and above it they have effectively finished.
+  const [resumeAt, setResumeAt] = useState(0);
+
+  useEffect(() => {
+    const currentUser = user || JSON.parse(localStorage.getItem("user") || "{}");
+    if (!currentUser?._id || !id) {
+      setResumeAt(0);
+      return undefined;
+    }
+    let cancelled = false;
+    axios
+      .get(`/api/v1/reading-history/${id}/progress`)
+      .then(({ data }) => {
+        if (cancelled) return;
+        const pct = Number(data?.progress) || 0;
+        setResumeAt(pct >= 5 && pct <= 95 ? pct : 0);
+      })
+      .catch(() => {
+        /* Non-critical: the pill just doesn't appear. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, user]);
+
+  // Reuses the same maths ReadingProgress uses to measure: resumeAt% of the
+  // distance between "box top at viewport top" and "box bottom at viewport
+  // bottom". One-shot — the pill has done its job once it jumps.
+  const jumpToResume = useCallback(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const distance = rect.height - window.innerHeight;
+    const top = window.scrollY + rect.top + (distance > 0 ? (resumeAt / 100) * distance : 0);
+    window.scrollTo({ top, behavior: "smooth" });
+    setResumeAt(0);
+  }, [resumeAt]);
 
   useEffect(() => {
     const fetchBlogDetails = async () => {
@@ -316,7 +399,10 @@ const BlogDetails = () => {
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
-        <Skeleton variant="rounded" height={{ xs: 260, md: 420 }} sx={{ borderRadius: 4, mb: 3 }} />
+        {/* Skeleton.height takes only a number or string — a responsive
+            object here is forwarded to the DOM as an invalid attribute and
+            drops the height entirely, so the breakpoint lives in sx. */}
+        <Skeleton variant="rounded" sx={{ height: { xs: 260, md: 420 }, borderRadius: 4, mb: 3 }} />
         <Grid container spacing={3}>
           <Grid item xs={12} md={8}>
             <Stack spacing={2}>
@@ -364,7 +450,32 @@ const BlogDetails = () => {
 
   return (
     <>
-    <ReadingProgress contentRef={contentRef} />
+    <ReadingProgress contentRef={contentRef} onProgress={handleProgress} />
+
+    {/* Offer to drop the reader back where they stopped. Rendered only when
+        there is a real saved position to return to (see the effect above). */}
+    {resumeAt > 0 && (
+      <Box
+        sx={{
+          position: "fixed",
+          zIndex: 1200,
+          right: { xs: 12, md: 28 },
+          left: { xs: 12, md: "auto" },
+          bottom: { xs: 12, md: 28 },
+          display: "flex",
+          justifyContent: { xs: "stretch", md: "flex-end" },
+        }}
+      >
+        <GradientButton
+          onClick={jumpToResume}
+          startIcon={<ArrowUpward />}
+          aria-label={`Resume reading at ${resumeAt} percent`}
+          sx={{ width: { xs: "100%", md: "auto" } }}
+        >
+          Resume at {resumeAt}%
+        </GradientButton>
+      </Box>
+    )}
     <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
       {/* Cover */}
       <Box
