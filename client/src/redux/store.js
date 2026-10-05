@@ -148,6 +148,20 @@ const notificationsSlice = createSlice({
     decrementUnread(state) {
       if (state.unreadCount > 0) state.unreadCount -= 1;
     },
+
+    // Mark ONE notification read in place. The Activity page is the only
+    // caller: it flips the row optimistically while the PATCH is in flight,
+    // so the item's own read dot clears and the bell's count drops in the
+    // same tick. Without this the page would have to keep a second copy of
+    // the list just to track which rows it had read — two sources of truth
+    // for the same flag, which is exactly what the shared slice avoids.
+    markReadOne(state, action) {
+      const item = state.list.find((n) => n._id === action.payload);
+      if (item && !item.read) {
+        item.read = true;
+        if (state.unreadCount > 0) state.unreadCount -= 1;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -175,7 +189,7 @@ const notificationsSlice = createSlice({
 
 export const notificationsActions = notificationsSlice.actions;
 
-export const { clearNotifications, decrementUnread } = notificationsSlice.actions;
+export const { clearNotifications, decrementUnread, markReadOne } = notificationsSlice.actions;
 
 export const store = configureStore({
   reducer: {

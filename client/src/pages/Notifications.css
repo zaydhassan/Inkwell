@@ -1,0 +1,976 @@
+/* ─────────────────────────────────────────────────────────────────────
+   InkWell — the Activity Center (Notifications).
+
+   Rides the shared editorial system: `.ink` supplies every --ink-* token and
+   `InkBackdrop` supplies the 54px grid, the grain and the drifting glow. Only
+   what is specific to this page is added, kept as `--nt-*` tokens scoped to
+   `.ink-notifications` so nothing leaks into the other editorial pages.
+
+   Why local tokens at all: this page mixes surfaces the shared canvas does not
+   name — a quieter panel than a card, a hover lift, the timeline hairline and
+   the amber-free orange glow. They alias the ink tokens wherever a match
+   exists; the only literals left are the black shadows and the rgba(0,0,0)
+   scrims, which are theme-invariant by design.
+
+   Colour discipline: orange is the single accent (milestones, the unread dot,
+   the active filter). Types are told apart by ICON and WORD, never by colour
+   alone — rank/priority is mirrored in the label text, so the hierarchy
+   survives greyscale and colour blindness. No purple, violet, indigo, blue or
+   cyan anywhere.
+   ───────────────────────────────────────────────────────────────────── */
+
+.ink-notifications {
+  --nt-panel: var(--ink-bg-alt);
+  --nt-card: var(--ink-card);
+  --nt-raised: var(--ink-card-hi);
+  --nt-line: var(--ink-border);
+  --nt-line-soft: var(--ink-border-soft);
+  --nt-hover: var(--ink-wash-2);
+  --nt-spine: var(--ink-border-soft);
+  --nt-glow: rgba(255, 106, 0, 0.12);
+  --nt-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* The timeline column: the node sits on its centreline. */
+  --nt-spine-x: 11px;
+}
+
+.ink-nt-wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 1360px;
+  margin-inline: auto;
+  padding-inline: var(--ink-gutter);
+  padding-block: clamp(1.75rem, 4vw, 3rem) clamp(4rem, 8vw, 6.5rem);
+}
+
+/* Screen-reader-only, for the loading announcements. */
+.ink-nt-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ── Hero ───────────────────────────────────────────────────────────── */
+
+.ink-nt-hero {
+  position: relative;
+  max-width: 720px;
+  padding-block: clamp(0.5rem, 2vw, 1.5rem) clamp(1.5rem, 3.5vw, 2.5rem);
+}
+
+.ink-nt-hero::before {
+  content: "";
+  position: absolute;
+  inset: -30% -40% -20% -30%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(44% 52% at 18% 22%, var(--nt-glow), transparent 70%);
+}
+
+.ink-nt-tick {
+  width: 22px;
+  height: 1px;
+  background: var(--ink-orange);
+}
+
+.ink-nt-title {
+  margin: 0.85rem 0 0;
+  font-family: var(--ink-font-display);
+  font-size: clamp(2.15rem, 5.2vw, 3.35rem);
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  color: var(--ink-text);
+}
+
+.ink-nt-title em {
+  font-style: normal;
+  color: var(--ink-orange);
+}
+
+.ink-nt-standfirst {
+  margin: 1rem 0 0;
+  max-width: 54ch;
+  font-size: clamp(0.95rem, 1.5vw, 1.06rem);
+  line-height: 1.65;
+  color: var(--ink-text-2);
+}
+
+/* ── Summary strip ──────────────────────────────────────────────────── */
+
+.ink-nt-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin: 1.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--nt-line);
+  border-radius: var(--ink-radius);
+  background: linear-gradient(180deg, var(--nt-raised), var(--nt-card));
+  overflow: hidden;
+}
+
+.ink-nt-summary-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1 1 0;
+  min-width: 116px;
+  padding: 1.05rem 1.35rem;
+  border-right: 1px solid var(--nt-line-soft);
+}
+
+.ink-nt-summary-cell:last-child {
+  border-right: none;
+}
+
+.ink-nt-summary-value {
+  font-family: var(--ink-font-display);
+  font-size: clamp(1.5rem, 3vw, 1.95rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--ink-text);
+}
+
+.ink-nt-summary-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-text-3);
+}
+
+/* ── Filter bar ─────────────────────────────────────────────────────── */
+
+.ink-nt-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.ink-nt-filters {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem;
+  border: 1px solid var(--nt-line);
+  border-radius: 999px;
+  background: var(--nt-panel);
+  /* A segmented control that scrolls rather than wraps on narrow screens. */
+  overflow-x: auto;
+  scrollbar-width: none;
+  max-width: 100%;
+}
+
+.ink-nt-filters::-webkit-scrollbar {
+  display: none;
+}
+
+.ink-nt-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.95rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-text-3);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.18s var(--nt-ease), background 0.18s var(--nt-ease),
+    border-color 0.18s var(--nt-ease);
+}
+
+.ink-nt-filter:hover {
+  color: var(--ink-text);
+  background: var(--nt-hover);
+}
+
+.ink-nt-filter.is-active {
+  color: var(--ink-orange);
+  background: var(--ink-orange-soft);
+  border-color: rgba(255, 106, 0, 0.32);
+}
+
+.ink-nt-filter:focus-visible {
+  outline: 2px solid var(--ink-orange);
+  outline-offset: 2px;
+}
+
+.ink-nt-filter-count {
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--nt-hover);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: inherit;
+}
+
+.ink-nt-filter.is-active .ink-nt-filter-count {
+  background: rgba(255, 106, 0, 0.18);
+}
+
+.ink-nt-markall {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--nt-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-text-2);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.18s var(--nt-ease), border-color 0.18s var(--nt-ease),
+    background 0.18s var(--nt-ease);
+}
+
+.ink-nt-markall:hover:not(:disabled) {
+  color: var(--ink-orange);
+  border-color: rgba(255, 106, 0, 0.32);
+  background: var(--ink-orange-softer);
+}
+
+.ink-nt-markall:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.ink-nt-markall:focus-visible,
+.ink-nt-card a:focus-visible,
+.ink-nt-row:focus-visible {
+  outline: 2px solid var(--ink-orange);
+  outline-offset: 2px;
+}
+
+.ink-nt-markall-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-orange);
+}
+
+.ink-nt-caughtup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--nt-line-soft);
+  border-radius: 999px;
+  color: var(--ink-text-3);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+/* ── Layout ─────────────────────────────────────────────────────────── */
+
+.ink-nt-layout {
+  display: grid;
+  /* Feed ≈ 68%, rail ≈ 32%, matching the page spec. */
+  grid-template-columns: minmax(0, 2.05fr) minmax(0, 1fr);
+  gap: clamp(1.25rem, 2.6vw, 2rem);
+  align-items: start;
+}
+
+.ink-nt-col-main {
+  min-width: 0;
+}
+
+.ink-nt-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+  /* The rail follows the reader down the feed on tall screens. */
+  position: sticky;
+  top: 104px;
+}
+
+/* ── Feed panel ─────────────────────────────────────────────────────── */
+
+.ink-nt-panel {
+  border: 1px solid var(--nt-line);
+  border-radius: var(--ink-radius-lg);
+  background: var(--nt-panel);
+  padding: clamp(0.75rem, 1.6vw, 1.25rem) clamp(0.75rem, 1.8vw, 1.5rem)
+    clamp(1rem, 2vw, 1.5rem);
+}
+
+.ink-nt-group + .ink-nt-group {
+  margin-top: 1.5rem;
+}
+
+.ink-nt-group-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.5rem 0 0.65rem;
+  padding-left: calc(var(--nt-spine-x) + 26px);
+}
+
+.ink-nt-group-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-text-3);
+}
+
+.ink-nt-group-count {
+  padding: 0.05rem 0.42rem;
+  border-radius: 999px;
+  background: var(--nt-hover);
+  font-size: 0.66rem;
+  font-weight: 800;
+  color: var(--ink-text-3);
+}
+
+.ink-nt-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ── Activity row ───────────────────────────────────────────────────── */
+
+.ink-nt-item {
+  position: relative;
+  padding-left: calc(var(--nt-spine-x) + 26px);
+}
+
+/* The timeline. Each item draws its own segment so consecutive items join
+   into one continuous hairline; the group's first and last trim the
+   overhang so the line starts and ends at a node rather than floating. */
+.ink-nt-item::before {
+  content: "";
+  position: absolute;
+  left: var(--nt-spine-x);
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--nt-spine);
+}
+
+.ink-nt-item:first-child::before {
+  top: 26px;
+}
+
+.ink-nt-item:last-child::before {
+  bottom: auto;
+  height: 26px;
+}
+
+.ink-nt-spine {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(var(--nt-spine-x) + 26px);
+  height: 26px;
+  display: flex;
+  align-items: center;
+}
+
+.ink-nt-node {
+  position: absolute;
+  left: calc(var(--nt-spine-x) - 4px);
+  top: 22px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--nt-line);
+  border: 2px solid var(--nt-panel);
+}
+
+.ink-nt-node.is-unread {
+  background: var(--ink-orange);
+  box-shadow: 0 0 0 4px rgba(255, 106, 0, 0.14);
+}
+
+.ink-nt-row {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  background: transparent;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+  /* Row entrance. `--nt-i` is the item's index (set inline), so the feed
+     ripples in once; it never re-runs, because the list only re-renders on
+     a filter change. */
+  animation: ink-nt-rise 0.5s var(--nt-ease) backwards;
+  animation-delay: calc(var(--nt-i, 0) * 45ms);
+  transition: background 0.18s var(--nt-ease), border-color 0.18s var(--nt-ease),
+    transform 0.18s var(--nt-ease);
+}
+
+.ink-nt-row:hover {
+  background: var(--nt-hover);
+  border-color: var(--nt-line);
+  transform: translateY(-1px);
+}
+
+/* Unread sits a shade brighter than read, without a badge. */
+.ink-nt-row.is-unread {
+  background: var(--ink-orange-softer);
+  border-color: rgba(255, 106, 0, 0.16);
+}
+
+.ink-nt-row.is-unread:hover {
+  background: var(--ink-orange-soft);
+}
+
+.ink-nt-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--nt-raised);
+  border: 1px solid var(--nt-line);
+  color: var(--ink-text-2);
+  transition: transform 0.18s var(--nt-ease);
+}
+
+.ink-nt-icon svg {
+  font-size: 19px;
+}
+
+.ink-nt-row:hover .ink-nt-icon {
+  transform: scale(1.06);
+}
+
+/* Priority: milestones take the accent and a touch more presence. */
+.ink-nt-icon--milestone {
+  color: var(--ink-orange);
+  background: var(--ink-orange-soft);
+  border-color: rgba(255, 106, 0, 0.28);
+}
+
+.ink-nt-icon--conversation {
+  color: var(--ink-text);
+}
+
+.ink-nt-row--milestone {
+  padding-block: 1rem;
+}
+
+.ink-nt-row--milestone .ink-nt-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  box-shadow: 0 0 26px var(--nt-glow);
+}
+
+.ink-nt-row--milestone.is-unread {
+  box-shadow: inset 0 0 0 1px rgba(255, 106, 0, 0.2), 0 10px 30px rgba(0, 0, 0, 0.22);
+}
+
+.ink-nt-avatar {
+  border: 1px solid var(--nt-line);
+}
+
+.ink-nt-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.ink-nt-msg {
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink-text);
+}
+
+.ink-nt-row.is-unread .ink-nt-msg {
+  font-weight: 700;
+}
+
+.ink-nt-row:not(.is-unread) .ink-nt-msg {
+  color: var(--ink-text-2);
+}
+
+/* The type is spelled out, so the icon is never the only signal. */
+.ink-nt-type {
+  display: inline-block;
+  margin-right: 0.5rem;
+  padding: 0.05rem 0.42rem;
+  border-radius: 999px;
+  background: var(--nt-hover);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-text-3);
+  vertical-align: 1px;
+}
+
+.ink-nt-row--milestone .ink-nt-type {
+  background: rgba(255, 106, 0, 0.16);
+  color: var(--ink-orange);
+}
+
+.ink-nt-related {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--ink-text-3);
+}
+
+.ink-nt-time {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-text-3-decor);
+}
+
+.ink-nt-unread {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ink-orange);
+  /* A slow breath, not a blink — and it stops under reduced motion. */
+  animation: ink-nt-pulse 2.4s ease-in-out infinite;
+}
+
+.ink-nt-go {
+  font-size: 1rem;
+  color: var(--ink-orange);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.18s var(--nt-ease), transform 0.18s var(--nt-ease);
+}
+
+.ink-nt-row:hover .ink-nt-go {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* No destination → no arrow, and the hover lift is quieter. */
+.ink-nt-row.is-inert:hover {
+  border-color: var(--nt-line-soft);
+}
+
+@keyframes ink-nt-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ink-nt-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 106, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(255, 106, 0, 0);
+  }
+}
+
+@keyframes ink-nt-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes ink-nt-shimmer {
+  0% {
+    background-position: -140% 0;
+  }
+  100% {
+    background-position: 240% 0;
+  }
+}
+
+.ink-nt-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.25rem;
+}
+
+/* ── Rail cards ─────────────────────────────────────────────────────── */
+
+.ink-nt-card {
+  border: 1px solid var(--nt-line);
+  border-radius: var(--ink-radius);
+  background: var(--nt-card);
+  padding: 1.25rem 1.35rem;
+}
+
+.ink-nt-card-title {
+  margin: 0 0 1rem;
+  font-family: var(--ink-font-display);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-text-3);
+}
+
+.ink-nt-card-note {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.6;
+  color: var(--ink-text-3);
+}
+
+.ink-nt-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1.1rem 0 0;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--nt-line-soft);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink-text-2);
+}
+
+.ink-nt-stats {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.ink-nt-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.5rem 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ink-text);
+}
+
+.ink-nt-stat + .ink-nt-stat {
+  border-top: 1px solid var(--nt-line-soft);
+}
+
+.ink-nt-stat-icon {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+  background: var(--nt-hover);
+  color: var(--ink-orange);
+}
+
+.ink-nt-stat-icon svg {
+  font-size: 15px;
+}
+
+.ink-nt-stat-value {
+  min-width: 0;
+}
+
+/* ── Milestone card ─────────────────────────────────────────────────── */
+
+.ink-nt-card--milestone {
+  border-color: rgba(255, 106, 0, 0.22);
+  background: linear-gradient(180deg, var(--ink-orange-softer), var(--nt-card) 62%);
+}
+
+.ink-nt-milestone {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.ink-nt-milestone-glyph {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--ink-orange-soft);
+  border: 1px solid rgba(255, 106, 0, 0.28);
+  color: var(--ink-orange);
+  font-size: 1.15rem;
+  box-shadow: 0 0 26px var(--nt-glow);
+}
+
+.ink-nt-milestone-glyph svg {
+  font-size: 22px;
+}
+
+.ink-nt-milestone--empty .ink-nt-milestone-glyph {
+  background: var(--nt-hover);
+  border-color: var(--nt-line);
+  box-shadow: none;
+}
+
+.ink-nt-milestone-text {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--ink-text);
+}
+
+.ink-nt-milestone-time {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-text-3-decor);
+}
+
+/* ── Quick actions ──────────────────────────────────────────────────── */
+
+.ink-nt-quick {
+  margin: 0 0 1.1rem;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.ink-nt-quick li + li {
+  border-top: 1px solid var(--nt-line-soft);
+}
+
+.ink-nt-quick a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.6rem 0;
+  color: var(--ink-text-2);
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.18s var(--nt-ease), padding-left 0.18s var(--nt-ease);
+}
+
+.ink-nt-quick a:hover {
+  color: var(--ink-orange);
+  padding-left: 0.25rem;
+}
+
+.ink-nt-card-cta {
+  width: 100%;
+  justify-content: center;
+}
+
+/* ── States ─────────────────────────────────────────────────────────── */
+
+.ink-nt-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: clamp(2.5rem, 6vw, 4rem) 1.5rem;
+}
+
+.ink-nt-state--quiet {
+  padding: clamp(1.75rem, 4vw, 2.5rem) 1.25rem;
+}
+
+.ink-nt-state-glyph {
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  margin-bottom: 1rem;
+  border-radius: 20px;
+  background: var(--nt-raised);
+  border: 1px solid var(--nt-line);
+  font-size: 1.5rem;
+}
+
+/* The floating empty-state glyph — the page's one piece of ambient motion,
+   and it respects reduced motion like everything else here. */
+.ink-nt-float {
+  animation: ink-nt-float 4.5s ease-in-out infinite;
+}
+
+.ink-nt-state-title {
+  margin: 0 0 0.4rem;
+  font-family: var(--ink-font-display);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--ink-text);
+}
+
+.ink-nt-state-text {
+  margin: 0;
+  max-width: 42ch;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--ink-text-2);
+}
+
+.ink-nt-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+/* ── Skeletons ──────────────────────────────────────────────────────── */
+
+.ink-nt-skel {
+  display: block;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--nt-hover) 0%,
+    var(--ink-wash-2) 40%,
+    var(--nt-hover) 80%
+  );
+  background-size: 220% 100%;
+  animation: ink-nt-shimmer 1.5s linear infinite;
+}
+
+.ink-nt-skel-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+  flex: none;
+}
+
+.ink-nt-skel-row {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  animation: ink-nt-shimmer 1.5s linear infinite;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+  /* Narrower viewports keep both columns but hand the feed a bigger share;
+     only the sticky is dropped, since a short rail has nothing to travel. */
+  .ink-nt-layout {
+    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  }
+
+  .ink-nt-rail {
+    position: static;
+  }
+}
+
+@media (max-width: 860px) {
+  .ink-nt-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ink-nt-hero {
+    max-width: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .ink-nt-summary-cell {
+    min-width: 50%;
+    border-right: none;
+    border-bottom: 1px solid var(--nt-line-soft);
+  }
+
+  .ink-nt-summary-cell:nth-child(odd) {
+    border-right: 1px solid var(--nt-line-soft);
+  }
+
+  .ink-nt-summary-cell:last-child,
+  .ink-nt-summary-cell:nth-last-child(2):nth-child(odd) {
+    border-bottom: none;
+  }
+
+  /* The row sheds to icon + text; the avatar rides inside the text line so
+     the message keeps its width on a phone. */
+  .ink-nt-row,
+  .ink-nt-skel-row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.7rem;
+    padding: 0.75rem 0.65rem;
+  }
+
+  .ink-nt-row .ink-nt-avatar {
+    display: none;
+  }
+
+  .ink-nt-msg {
+    font-size: 0.86rem;
+  }
+
+  .ink-nt-go {
+    display: none;
+  }
+
+  .ink-nt-bar {
+    gap: 0.6rem;
+  }
+
+  .ink-nt-markall,
+  .ink-nt-caughtup {
+    font-size: 0.74rem;
+  }
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .ink-nt-row,
+  .ink-nt-skel,
+  .ink-nt-skel-row,
+  .ink-nt-unread,
+  .ink-nt-float {
+    animation: none !important;
+  }
+
+  .ink-nt-row {
+    opacity: 1;
+  }
+
+  .ink-nt-row,
+  .ink-nt-icon,
+  .ink-nt-go,
+  .ink-nt-quick a {
+    transition: none;
+  }
+
+  .ink-nt-row:hover {
+    transform: none;
+  }
+
+  .ink-nt-row:hover .ink-nt-icon {
+    transform: none;
+  }
+}

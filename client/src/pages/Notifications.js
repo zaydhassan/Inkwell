@@ -1,214 +1,247 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Box,
-  Typography,
-  Stack,
-  Tabs,
-  Tab,
-  CircularProgress,
-  Skeleton,
-  Button,
-} from "@mui/material";
+import { useDispatch, useSelector } from "react-redux";
+import { Box } from "@mui/material";
 import axios from "axios";
 import toast from "react-hot-toast";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
-import ReplyIcon from "@mui/icons-material/Reply";
-import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
-import MilitaryTechIcon from "@mui/icons-material/MilitaryTech";
-import NotificationsIcon from "@mui/icons-material/Notifications";
-import GlassCard from "../components/GlassCard";
-import GradientButton from "../components/GradientButton";
-import SectionHeading from "../components/SectionHeading";
-import UserAvatar from "../components/UserAvatar";
+import { InkBackdrop, InkGhostButton } from "../components/ink";
+import {
+  ActivityHero,
+  ActivityFilters,
+  ActivityFeed,
+  ActivitySidebar,
+  FeedSkeleton,
+  SidebarSkeleton,
+  FeedError,
+  FeedEmpty,
+  FilterEmpty,
+  FILTERS,
+  meta,
+  matchesFilter,
+  summarise,
+} from "../components/notifications";
+import { useAuth } from "../context/AuthContext";
+import {
+  fetchNotifications,
+  fetchUnreadCount,
+  markAllNotificationsRead,
+  markReadOne,
+} from "../redux/store";
+import "./Notifications.css";
 
-const TYPE_ICON = {
-  like: FavoriteBorderIcon,
-  comment: ChatBubbleOutlineIcon,
-  reply: ReplyIcon,
-  levelUp: EmojiEventsIcon,
-  badge: MilitaryTechIcon,
-  system: NotificationsIcon,
-};
+/* ─────────────────────────────────────────────────────────────────────
+   InkWell — Activity Center (the Notifications page).
 
-const TYPE_COLOR = {
-  like: "var(--accent)",
-  comment: "var(--text-secondary)",
-  reply: "var(--text-disabled)",
-  levelUp: "var(--accent)",
-  badge: "var(--accent)",
-  system: "var(--text-secondary)",
-};
+   This is a presentation layer over the notification API that already
+   exists. No endpoint was added, changed or removed; the list, the unread
+   count, the single mark-read and the mark-all-read all call the same
+   routes the page used before, and the list itself is read from the SHARED
+   redux notifications slice rather than a second local copy — so reading an
+   item here also drops the navbar bell's badge in the same tick.
 
-const relativeTime = (dateStr) => {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  if (d < 30) return `${d}d ago`;
-  return new Date(dateStr).toLocaleDateString();
-};
+   REAL DATA OR NO DATA, applied strictly:
+     • The feed renders exactly what the API returned. Where the server
+       leaves `text` empty (likes/comments/replies carry none) the sentence
+       is assembled from the populated actor + blog the API already sends —
+       never from a canned string.
+     • The summary strip is built by format.summarise() and only contains
+       countable figures (exact unread total, per-kind counts over the
+       loaded notifications). No zero-padding, no invented metrics.
+     • The rail's streak / published / saved / points each come from a real
+       endpoint and are DROPPED when that endpoint fails or says nothing.
+     • `mention` does not exist in this backend's type enum, so there is no
+       Mentions filter and no Mentions metric — see format.TYPES.
+     • There are no notification preferences to read or write anywhere in
+       the API, so there is no preferences card.
+     • Empty and error states carry no placeholder notifications at all.
+   ───────────────────────────────────────────────────────────────────── */
+
+// The API caps `limit` at 50 (utils/pagination MAX_LIMIT). Fetching the max
+// on the first page means the per-kind counts in the summary strip are exact
+// for any account with up to 50 notifications, and `hasMore` tells us when
+// they are not.
+const PAGE_SIZE = 50;
+
+const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
 
 const Notifications = () => {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [all, setAll] = useState([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [tab, setTab] = useState(0); // 0 = All, 1 = Unread
+  const { user } = useAuth();
 
-  const fetchPage = useCallback(async (p, append) => {
-    try {
-      if (append) setLoadingMore(true); else setLoading(true);
-      const { data } = await axios.get(`/api/v1/notifications?page=${p}&limit=20`);
-      setAll((prev) => (append ? [...prev, ...(data.notifications || [])] : data.notifications || []));
-      setHasMore(!!data.hasMore);
-      setPage(p);
-    } catch {
-      if (!append) setAll([]);
-      toast.error("Couldn't load notifications.");
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  }, []);
+  const list = useSelector((s) => s.notifications.list);
+  const unreadCount = useSelector((s) => s.notifications.unreadCount);
+  const page = useSelector((s) => s.notifications.page);
+  const hasMore = useSelector((s) => s.notifications.hasMore);
+  const status = useSelector((s) => s.notifications.status);
+
+  const [filter, setFilter] = useState("all");
+  const [failed, setFailed] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [marking, setMarking] = useState(false);
+  const [stats, setStats] = useState({ streak: null, published: null, saved: null, points: null, ready: false });
+
+  const load = useCallback(
+    async (p) => {
+      const res = await dispatch(fetchNotifications({ page: p, limit: PAGE_SIZE }));
+      setFailed(fetchNotifications.rejected.match(res));
+    },
+    [dispatch]
+  );
 
   useEffect(() => {
-    fetchPage(1, false);
-  }, [fetchPage]);
+    load(1);
+  }, [load]);
 
-  const visible = tab === 1 ? all.filter((n) => !n.read) : all;
+  // The badge count is the server's own total — kept in sync with the bell.
+  useEffect(() => {
+    dispatch(fetchUnreadCount());
+  }, [dispatch]);
 
-  const handleItemClick = async (n) => {
-    // Mark read on the server + locally.
-    if (!n.read) {
-      try {
-        await axios.patch(`/api/v1/notifications/${n._id}/read`);
-        setAll((prev) => prev.map((x) => (x._id === n._id ? { ...x, read: true } : x)));
-      } catch {
-        // non-critical
+  /* The rail's figures. Three independent requests, each tolerated
+     separately: a metric whose request failed stays `null` and its row is
+     simply not rendered (see ActivitySidebar). Nothing here is derived from
+     the notifications list, so the rail cannot echo the feed back at the
+     reader as if it were a profile stat. */
+  useEffect(() => {
+    if (!user?._id) {
+      setStats((s) => ({ ...s, ready: true }));
+      return undefined;
+    }
+    let alive = true;
+    Promise.allSettled([
+      axios.get("/api/v1/writing/stats"),
+      axios.get(`/api/v1/blog/user-blog/${user._id}`),
+      axios.get("/api/v1/bookmarks/ids"),
+    ]).then(([w, b, k]) => {
+      if (!alive) return;
+      const blogs = b.status === "fulfilled" ? b.value?.data?.userBlog?.blogs : null;
+      setStats({
+        streak: w.status === "fulfilled" ? num(w.value?.data?.currentStreak) : null,
+        // The endpoint returns every one of the user's blogs; "published" is
+        // the subset the rest of the app treats as public.
+        published: Array.isArray(blogs) ? blogs.filter((x) => x.status === "Published").length : null,
+        saved:
+          k.status === "fulfilled" && Array.isArray(k.value?.data?.ids)
+            ? k.value.data.ids.length
+            : null,
+        points: num(user.points),
+        ready: true,
+      });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [user?._id, user?.points]);
+
+  /* Per-segment counts are counts of the loaded feed — the same population
+     the segment filters — so a segment's number always matches what
+     selecting it shows. (The hero's Unread tile is the server's exact
+     total instead, which is the figure the bell badge also shows.) */
+  const counts = useMemo(() => {
+    const c = {};
+    for (const f of FILTERS) c[f.id] = 0;
+    for (const n of list) for (const f of FILTERS) if (matchesFilter(n, f.id)) c[f.id] += 1;
+    return c;
+  }, [list]);
+
+  const visible = useMemo(() => list.filter((n) => matchesFilter(n, filter)), [list, filter]);
+  const tiles = useMemo(() => summarise(list, unreadCount), [list, unreadCount]);
+  // `list` is newest-first, so the first milestone is the most recent one.
+  const milestone = useMemo(() => list.find((n) => meta(n.type).kind === "milestone") || null, [list]);
+
+  const handleOpen = useCallback(
+    (n, dest) => {
+      if (!n.read) {
+        // Optimistic: the row's dot clears and the bell's count drops now.
+        dispatch(markReadOne(n._id));
+        // Persist behind it. A failure is not fatal — the next unread-count
+        // poll reconciles the badge against the server's truth.
+        axios.patch(`/api/v1/notifications/${n._id}/read`).catch(() => {});
       }
-    }
-    if (n.blog?._id) navigate(`/blog-details/${n.blog._id}`);
-  };
+      if (dest) navigate(dest);
+    },
+    [dispatch, navigate]
+  );
 
-  const handleMarkAllRead = async () => {
-    try {
-      await axios.patch("/api/v1/notifications/read-all");
-      setAll((prev) => prev.map((n) => ({ ...n, read: true })));
-      toast.success("All notifications marked as read.");
-    } catch {
+  const handleMarkAll = async () => {
+    setMarking(true);
+    const res = await dispatch(markAllNotificationsRead());
+    setMarking(false);
+    if (markAllNotificationsRead.rejected.match(res)) {
       toast.error("Couldn't mark notifications as read.");
+    } else {
+      toast.success("All notifications marked as read.");
     }
   };
 
-  const hasUnread = all.some((n) => !n.read);
+  const handleMore = async () => {
+    setLoadingMore(true);
+    await load(page + 1);
+    setLoadingMore(false);
+  };
+
+  const loading = status === "loading" && list.length === 0;
+  const hasAny = list.length > 0;
+  // "No notifications at all" and "no unread" are different screens: the
+  // first replaces the feed, the second keeps it and just says so.
+  const nothingAtAll = !loading && !failed && !hasAny;
+  const activeFilter = FILTERS.find((f) => f.id === filter);
 
   return (
-    <Box sx={{ minHeight: "100vh", p: { xs: 2, md: 4 } }}>
-      <SectionHeading
-        eyebrow="Stay in the loop"
-        title="Notifications"
-        subtitle="Likes, comments, replies, and milestones — all in one place."
-        badge
-        align="left"
-        sx={{ mb: 4 }}
-      />
+    <Box className="ink ink-notifications" component="main">
+      {/* The same 54px grid / grain / drifting glow the other editorial
+          pages mount, so this reads as one of them rather than as a list. */}
+      <InkBackdrop hero drift />
 
-      <Box sx={{ maxWidth: 760, mx: "auto" }}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1 }}>
-          <Tabs value={tab} onChange={(_, v) => setTab(v)}>
-            <Tab label="All" />
-            <Tab label="Unread" />
-          </Tabs>
-          {hasUnread && (
-            <Button size="small" onClick={handleMarkAllRead} sx={{ textTransform: "none", fontWeight: 700, color: "primary.main" }}>
-              Mark all read
-            </Button>
-          )}
-        </Box>
+      <div className="ink-nt-wrap">
+        <ActivityHero tiles={tiles} loading={loading} />
 
-        {loading ? (
-          <Stack spacing={1.5}>
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} variant="rounded" height={72} sx={{ borderRadius: 4 }} />
-            ))}
-          </Stack>
-        ) : visible.length === 0 ? (
-          <GlassCard sx={{ p: 6, textAlign: "center" }}>
-            <NotificationsIcon sx={{ fontSize: 40, color: "text.secondary", mb: 1 }} />
-            <Typography variant="h6" sx={{ mb: 1 }}>
-              {tab === 1 ? "No unread notifications" : "You're all caught up"}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-              {tab === 1
-                ? "You've read everything — nice work."
-                : "Likes, comments, and milestones will show up here."}
-            </Typography>
-          </GlassCard>
-        ) : (
-          <Stack spacing={1.5}>
-            {visible.map((n) => {
-              const Icon = TYPE_ICON[n.type] || NotificationsIcon;
-              const color = TYPE_COLOR[n.type] || "var(--accent)";
-              return (
-                <GlassCard
-                  key={n._id}
-                  glowOnHover
-                  onClick={() => handleItemClick(n)}
-                  sx={{
-                    p: 2,
-                    cursor: "pointer",
-                    display: "flex",
-                    gap: 1.5,
-                    alignItems: "flex-start",
-                    borderLeft: n.read ? undefined : (t) => `3px solid ${t.palette.primary.main}`,
-                  }}
-                >
-                  <Box sx={{ mt: 0.25, color, display: "flex" }}>
-                    <Icon />
-                  </Box>
-                  <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography variant="body2" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      {n.actor && (
-                        <UserAvatar
-                          src={n.actor.profile_image}
-                          name={n.actor.username}
-                          sx={{ width: 22, height: 22 }}
-                        />
-                      )}
-                      <Box component="span" sx={{ fontWeight: n.read ? 500 : 700 }}>
-                        {n.text || "New notification"}
-                      </Box>
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {relativeTime(n.created_at)}
-                      {n.blog?.title ? ` · ${n.blog.title}` : ""}
-                    </Typography>
-                  </Stack>
-                </GlassCard>
-              );
-            })}
-
-            {hasMore && tab === 0 && (
-              <Box sx={{ display: "flex", justifyContent: "center", pt: 1 }}>
-                <GradientButton
-                  onClick={() => fetchPage(page + 1, true)}
-                  disabled={loadingMore}
-                  sx={{ borderRadius: 999, px: 3 }}
-                >
-                  {loadingMore ? "Loading…" : "Load more"}
-                </GradientButton>
-              </Box>
-            )}
-          </Stack>
+        {!nothingAtAll && (
+          <ActivityFilters
+            filter={filter}
+            onChange={setFilter}
+            counts={counts}
+            unreadCount={unreadCount}
+            hasAny={hasAny}
+            onMarkAll={handleMarkAll}
+            marking={marking}
+          />
         )}
-      </Box>
+
+        <div className="ink-nt-layout">
+          <div className="ink-nt-col-main">
+            {failed ? (
+              <FeedError onRetry={() => load(1)} />
+            ) : loading ? (
+              <FeedSkeleton rows={4} />
+            ) : nothingAtAll ? (
+              <FeedEmpty />
+            ) : visible.length === 0 ? (
+              <FilterEmpty filter={filter} labels={activeFilter?.label} />
+            ) : (
+              <>
+                <ActivityFeed items={visible} filter={filter} onOpen={handleOpen} />
+                {hasMore && (
+                  <div className="ink-nt-more">
+                    <InkGhostButton onClick={handleMore} disabled={loadingMore}>
+                      {loadingMore ? "Loading…" : "Load more activity"}
+                    </InkGhostButton>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          <aside className="ink-nt-rail">
+            {stats.ready ? (
+              <ActivitySidebar stats={stats} milestone={milestone} unreadCount={unreadCount} />
+            ) : (
+              <SidebarSkeleton />
+            )}
+          </aside>
+        </div>
+      </div>
     </Box>
   );
 };
