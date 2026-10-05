@@ -2,7 +2,24 @@ const mongoose = require("mongoose");
 const Bookmark = require("../models/bookmarkModel");
 const Blog = require("../models/blogModel");
 const BlogView = require("../models/blogViewModel");
+const User = require("../models/userModel");
+const Tag = require("../models/Tag");
+const { stripHtml, readingTime } = require("../utils/sanitize");
 const { parsePagination, paginateMeta } = require("../utils/pagination");
+
+// Orderings the bookmark list can actually apply. Both are fields on the
+// BOOKMARK row (when the reader saved it), so both genuinely drive the
+// paginated query. Title A–Z is handled separately in getBookmarks because the
+// title lives on the joined blog — see the note there.
+// Each carries `_id` as a tiebreaker. Two bookmarks saved in the same
+// millisecond are a real case — a seeded batch, or a fast double-save — and
+// without a second key Mongo is free to order those rows differently on each
+// page, which would let a row repeat on page 2 or vanish entirely between
+// pages. The title sort in getBookmarks does the same thing.
+const BOOKMARK_SORTS = {
+  recent: { created_at: -1, _id: -1 },
+  oldest: { created_at: 1, _id: 1 },
+};
 
 // Shape a populated blog the same way getAllBlogsController does so the client
 // BlogCard can render it unchanged: nested author (username + avatar) + tag
@@ -65,28 +82,126 @@ exports.getBookmarkedIds = async (req, res) => {
 };
 
 // The user's saved blogs, newest bookmark first. Populated with author + tags
-// so the Bookmarks page can reuse the same BlogCard as the rest of the app.
-// Only Published blogs are returned (a draft the author saved is meaningless to
-// surface here, and drafts may have been unpublished since the user bookmarked).
+// so the Bookmarks page can render its own editorial card. Only Published blogs
+// are returned (a draft the author saved is meaningless to surface here, and
+// drafts may have been unpublished since the user bookmarked).
+//
+// Accepts the same knobs the reading-history list does — `q`, `filter`
+// (unread | topic | writer), `topic`, `writer`, `sort` — all applied SERVER-side
+// before pagination, so the totals, the pagination and the empty state stay
+// truthful no matter how the reader narrows the list. Filtering the loaded page
+// instead would make every count on the page a lie.
+//
+// This also FIXES a totals bug the previous version had: it counted with
+// `countDocuments({user})` but rendered `rows.map(shapeBlog).filter(Boolean)`,
+// which silently drops bookmarks whose blog was deleted or unpublished since
+// saving. So `total`/`hasMore` could overstate what the grid actually shows
+// (getReadingHistory still has that defect — its line-193 comment claims a
+// reconciliation that was never written). Here the filtered set is resolved to
+// blogs FIRST, and that resolution is what both the rows and the total come
+// from, so the two cannot disagree.
 exports.getBookmarks = async (req, res) => {
   try {
-    const { page, limit, skip } = parsePagination(req);
-    const filter = { user: req.user._id };
-    const [rows, total] = await Promise.all([
-      Bookmark.find(filter)
-        .populate({
-          path: "blog",
-          match: { status: "Published" },
-          populate: [
-            { path: "user", select: "username profile_image" },
-            { path: "tags", select: "tag_name" },
-          ],
-        })
-        .sort({ created_at: -1 })
+    const { page, limit, skip, searchRegex } = parsePagination(req);
+    const userId = req.user._id;
+
+    // The reader's own saved blog ids. Everything below stays inside this set
+    // rather than scanning the blog collection — the same projection
+    // getBookmarkedIds already uses.
+    const saved = await Bookmark.find({ user: userId }).select("blog -_id").lean();
+    const savedIds = saved.map((b) => b.blog);
+
+    // ONE blog query describes the entire filtered set. Because (user, blog) is
+    // uniquely indexed, the number of blogs it resolves to IS the number of
+    // bookmarks that can render — so `matched.length` below is the honest total
+    // and no separate countDocuments is needed (or wanted: a count taken over a
+    // different predicate is exactly how the old total drifted).
+    const blogQuery = { _id: { $in: savedIds }, status: "Published" };
+
+    // Search reuses the app-wide `q` handling (parsePagination) rather than
+    // standing up a second search system. It is widened past the usual
+    // title/description pair to the fields a reader would expect: `category` is
+    // on the same document (free), while author and tag names live one hop
+    // away, so they resolve to an id set first. Ids only, so the payload stays
+    // small whatever the catalogue's size.
+    if (searchRegex) {
+      const [authors, tags] = await Promise.all([
+        User.find({ username: searchRegex }).select("_id").lean(),
+        Tag.find({ tag_name: searchRegex }).select("_id").lean(),
+      ]);
+      blogQuery.$or = [
+        { title: searchRegex },
+        { description: searchRegex },
+        { category: searchRegex },
+        { user: { $in: authors.map((a) => a._id) } },
+        { tags: { $in: tags.map((t) => t._id) } },
+      ];
+    }
+
+    // A filter must be one of the values below; anything else falls back to
+    // "all" rather than erroring, so a stale URL can't dead-end the page.
+    const tab = ["unread", "topic", "writer"].includes(req.query.filter)
+      ? req.query.filter
+      : "all";
+
+    if (tab === "topic" && req.query.topic) blogQuery.category = req.query.topic;
+    if (tab === "writer" && mongoose.Types.ObjectId.isValid(req.query.writer)) {
+      blogQuery.user = req.query.writer;
+    }
+
+    // "Unread" is the reading list's actual job: saved, but not yet read into.
+    // `progress > 0` is the same definition of "read into" that
+    // getReadingHistory uses for its `articles` filter, so the two pages agree
+    // on what reading means. It excludes the started set rather than including
+    // a finished one, because a blog with NO view row at all has never been
+    // opened and is unread — and a stored `progress: 0` means "opened but never
+    // scrolled in" (see HistoryCard/progressState), which stays unread too.
+    if (tab === "unread") {
+      const started = await BlogView.find({ user_id: userId, progress: { $gt: 0 } })
+        .select("blog_id -_id")
+        .lean();
+      blogQuery._id = { $in: savedIds, $nin: started.map((v) => v.blog_id) };
+    }
+
+    // Title A–Z cannot be expressed on the bookmark query: the title is not a
+    // field of the bookmark row, and populate cannot drive a sort. So the blog
+    // side provides the ORDER as well as the id set, and the title branch below
+    // pages over that order. (For the other sorts only the id set is needed,
+    // so the sort is a cheap deterministic `_id` one.)
+    const byTitle = req.query.sort === "title";
+    const matched = await Blog.find(blogQuery)
+      .select("_id title")
+      .sort(byTitle ? { title: 1, _id: 1 } : { _id: 1 })
+      .lean();
+    const total = matched.length;
+
+    // `match` is kept as defence against a blog changing status between the two
+    // queries — NOT as the thing that keeps the total honest any more.
+    const populate = {
+      path: "blog",
+      match: { status: "Published" },
+      populate: [
+        { path: "user", select: "username profile_image" },
+        { path: "tags", select: "tag_name" },
+      ],
+    };
+
+    let rows;
+    if (byTitle) {
+      // Page the ORDER, then fetch exactly those bookmarks, then restore the
+      // sliced order — the bookmark query has no notion of title, so its own
+      // result order is meaningless here.
+      const pageIds = matched.slice(skip, skip + limit).map((b) => b._id);
+      const found = await Bookmark.find({ user: userId, blog: { $in: pageIds } }).populate(populate);
+      const byBlogId = new Map(found.map((b) => [String(b.blog?._id || b.blog), b]));
+      rows = pageIds.map((id) => byBlogId.get(String(id))).filter(Boolean);
+    } else {
+      rows = await Bookmark.find({ user: userId, blog: { $in: matched.map((b) => b._id) } })
+        .populate(populate)
+        .sort(BOOKMARK_SORTS[req.query.sort] || BOOKMARK_SORTS.recent)
         .skip(skip)
-        .limit(limit),
-      Bookmark.countDocuments(filter),
-    ]);
+        .limit(limit);
+    }
 
     const blogs = rows.map(shapeBlog).filter(Boolean);
     res.status(200).json({
@@ -98,6 +213,151 @@ exports.getBookmarks = async (req, res) => {
   } catch (error) {
     console.error("Error fetching bookmarks:", error.message);
     res.status(500).json({ success: false, message: "Failed to fetch bookmarks." });
+  }
+};
+
+// Everything the Bookmarks rail needs, aggregated over the reader's WHOLE
+// collection in one pass.
+//
+// Deliberately not computed from the paged grid: a topic ranking, a writer
+// count or a reading-time total derived from only the first page of results
+// would silently understate the library, which is the exact failure mode "real
+// data or no data" exists to prevent. It is also deliberately NOT affected by
+// the reader's active filters — the rail describes the library, not the current
+// view — so the client never sends it `q`/`topic`.
+//
+// The inner join to Published blogs is what keeps `savedCount` equal to the
+// grid's own honest total: a bookmark whose post was deleted or unpublished
+// counts toward nothing here, exactly as it renders nowhere in the grid.
+exports.getBookmarksSummary = async (req, res) => {
+  try {
+    const userId = new mongoose.Types.ObjectId(req.user._id);
+
+    const [agg] = await Bookmark.aggregate([
+      { $match: { user: userId } },
+      {
+        $lookup: {
+          from: "blogs",
+          localField: "blog",
+          foreignField: "_id",
+          as: "b",
+          pipeline: [
+            { $match: { status: "Published" } },
+            { $project: { title: 1, image: 1, category: 1, user: 1, description: 1 } },
+          ],
+        },
+      },
+      { $unwind: "$b" },
+      {
+        $facet: {
+          // Totals. Counted here rather than from the capped lists below, so
+          // the figures can never be truncated by a display limit.
+          totals: [{ $group: { _id: null, saved: { $sum: 1 } } }],
+          // Distinct counts, each excluding a missing value — a null is not a
+          // topic or a writer, and counting it would overstate the figure.
+          topicCount: [
+            { $match: { "b.category": { $ne: null } } },
+            { $group: { _id: "$b.category" } },
+            { $count: "n" },
+          ],
+          writerCount: [
+            { $match: { "b.user": { $ne: null } } },
+            { $group: { _id: "$b.user" } },
+            { $count: "n" },
+          ],
+          // The most frequently bookmarked categories, and the writers behind
+          // them. Capped for display; the counts above are the true totals.
+          topics: [
+            { $match: { "b.category": { $ne: null } } },
+            { $group: { _id: "$b.category", count: { $sum: 1 } } },
+            { $sort: { count: -1, _id: 1 } },
+            { $limit: 24 },
+          ],
+          writers: [
+            { $match: { "b.user": { $ne: null } } },
+            { $group: { _id: "$b.user", count: { $sum: 1 } } },
+            { $sort: { count: -1, _id: 1 } },
+            { $limit: 24 },
+            {
+              $lookup: {
+                from: "users",
+                localField: "_id",
+                foreignField: "_id",
+                as: "u",
+                pipeline: [{ $project: { username: 1, profile_image: 1 } }],
+              },
+            },
+            { $unwind: { path: "$u", preserveNullAndEmptyArrays: true } },
+          ],
+          // The most recently BOOKMARKED — independent of the grid's filters,
+          // which is why the client must not send them here.
+          recent: [
+            { $sort: { created_at: -1 } },
+            { $limit: 5 },
+            {
+              $project: {
+                _id: 0,
+                blogId: "$b._id",
+                title: "$b.title",
+                image: "$b.image",
+                bookmarkedAt: "$created_at",
+                description: "$b.description",
+              },
+            },
+          ],
+          // Every saved body, for the reading-time total below. Measured in
+          // Node rather than in the pipeline: Mongo cannot regex-strip Quill
+          // markup ($replaceAll is literal-only; $function is disabled on many
+          // managed tiers), so a pipeline word count would count tags as words
+          // and overstate the figure.
+          descs: [{ $project: { _id: 0, description: "$b.description" } }],
+        },
+      },
+    ]);
+
+    const descs = agg?.descs || [];
+    // `description` is required on blogModel, so this rarely trips — but a
+    // blank body would make the sum a silent UNDERCOUNT, and the brief's rule
+    // is to drop a metric that cannot be calculated reliably rather than to
+    // show a partial one. null means "not measurable"; the client renders no
+    // cell for it rather than "0 min".
+    const measurable =
+      descs.length > 0 && descs.every((d) => stripHtml(d.description).length > 0);
+    const totalReadingMinutes = measurable
+      ? descs.reduce((sum, d) => sum + readingTime(d.description), 0)
+      : null;
+
+    res.status(200).json({
+      success: true,
+      message: "Bookmark summary fetched.",
+      summary: {
+        savedCount: agg?.totals?.[0]?.saved || 0,
+        topicCount: agg?.topicCount?.[0]?.n || 0,
+        writerCount: agg?.writerCount?.[0]?.n || 0,
+        totalReadingMinutes,
+        topics: (agg?.topics || []).map((t) => ({ name: t._id, count: t.count })),
+        writers: (agg?.writers || [])
+          .filter((w) => w.u?.username)
+          .map((w) => ({
+            id: String(w._id),
+            name: w.u.username,
+            avatar: w.u.profile_image,
+            count: w.count,
+          })),
+        // The bodies are dropped here: they were fetched only to measure, and
+        // never need to leave the server.
+        recent: (agg?.recent || []).map((r) => ({
+          id: String(r.blogId),
+          title: r.title,
+          image: r.image,
+          bookmarkedAt: r.bookmarkedAt,
+          readingMinutes: stripHtml(r.description).length > 0 ? readingTime(r.description) : null,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching bookmark summary:", error.message);
+    res.status(500).json({ success: false, message: "Failed to fetch bookmark summary." });
   }
 };
 

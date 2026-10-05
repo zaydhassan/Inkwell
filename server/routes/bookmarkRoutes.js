@@ -5,6 +5,7 @@ const { bookmarkSchema } = require("../validators/schemas");
 const {
   toggleBookmark,
   getBookmarks,
+  getBookmarksSummary,
   getBookmarkedIds,
   getReadingHistory,
   getReadingHistorySummary,
@@ -12,12 +13,15 @@ const {
   saveReadingProgress,
 } = require("../controllers/bookmarkController");
 
-// Bookmarks. Static segments (/toggle, /ids) are registered before any
+// Bookmarks. Static segments (/toggle, /ids, /summary) are registered before any
 // /:param route so they can't be shadowed (same class of bug we fixed on
 // userRoutes for /all-users).
 const router = express.Router();
 router.post("/toggle", authenticateUser, validate(bookmarkSchema), toggleBookmark);
 router.get("/ids", authenticateUser, getBookmarkedIds);
+// The rail's whole-collection aggregates. Registered with the other statics,
+// matching how readingHistoryRouter orders its own /summary below.
+router.get("/summary", authenticateUser, getBookmarksSummary);
 router.get("/", authenticateUser, getBookmarks);
 
 // Reading history is a distinct resource, so it gets its own mounted base path

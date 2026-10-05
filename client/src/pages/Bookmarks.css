@@ -1,0 +1,1096 @@
+/* ─────────────────────────────────────────────────────────────────────
+   InkWell — Bookmarks ("your personal reading library").
+
+   Rides on the shared editorial system: `.ink` supplies every --ink-*
+   token, InkBackdrop supplies the 54px grid, the grain and the drifting
+   glow. This file only adds what is specific to a library page, kept as a
+   small `--bm-*` alias block so the page follows [data-theme] with the
+   rest of the editorial layer rather than pinning its own colours.
+
+   Colour discipline: orange is the only accent (it is the editorial
+   layer's identity in both themes). Saves, pills, topic bars and the
+   bookmark controls are all readings of the same accent at different
+   intensities. No purple, violet, indigo, blue or cyan anywhere.
+
+   Structure: hero → controls → a 72/28 split (3-column article grid |
+   sticky library rail).
+
+   The filter bar is NOT styled here. It belongs to
+   components/reading/HistoryFilters, which imports styles/ink-filters.css
+   itself — one bar, shared by this page and Reading History, rather than
+   two copies that drift.
+   ───────────────────────────────────────────────────────────────────── */
+
+.ink-bm {
+  /* Local vocabulary for things the shared system has no name for. Every
+     value on the right is a token, so this block adds no colours — it only
+     names the ones this page reuses most. */
+  --bm-line: var(--ink-border);
+  --bm-line-soft: var(--ink-border-soft);
+  --bm-muted: var(--ink-text-3);
+  --bm-card: var(--ink-card);
+  --bm-card-hi: var(--ink-card-hi);
+  --bm-wash: var(--ink-wash);
+  --bm-wash-2: var(--ink-wash-2);
+  --bm-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --bm-hover: 220ms;
+
+  position: relative;
+  min-height: 100vh;
+  padding-bottom: clamp(4rem, 8vw, 6.5rem);
+}
+
+.ink-bm-wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 1360px;
+  margin-inline: auto;
+  padding-inline: var(--ink-gutter);
+  padding-block: clamp(1.5rem, 3.5vw, 2.75rem) 0;
+}
+
+/* ── Split hero ─────────────────────────────────────────────────────── */
+/* 55 / 45, and deliberately SHORT. Like History, this is an application
+   header rather than a landing-page statement: it should clear the way
+   for the article grid instead of filling the first screen. */
+.ink-bm-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 55fr) minmax(0, 45fr);
+  align-items: center;
+  gap: clamp(1.5rem, 3vw, 2.75rem);
+  padding-block: 0.75rem clamp(1.25rem, 2vw, 1.75rem);
+}
+
+.ink-bm-hero-sub {
+  margin-top: 1.25rem;
+  max-width: 540px;
+  font-size: clamp(0.98rem, 1.1vw, 1.05rem);
+  line-height: 1.65;
+  color: var(--ink-text-2);
+}
+
+/* The art panel. A plate, so the illustration keeps its dark key light in
+   both themes and reads as a framed inset rather than a dark blob. */
+.ink-bm-hero-art {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* A very subtle warm ambient behind the plate — the only page-wide glow
+   the hero gets, so orange stays a highlight rather than a wash. It paints
+   before the plate, so it reads as spill from behind the artwork. */
+.ink-bm-hero-art::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: min(520px, 104%);
+  height: 132%;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--ink-orange-soft), transparent);
+  filter: blur(28px);
+  pointer-events: none;
+}
+
+/* Held to 430px so the illustration supports the copy instead of
+   dominating the first screen. The SVG's own 460x360 box then lands it at
+   roughly 390x305 — comfortably inside the plate.
+
+   The frame is deliberately quieter than the shared `.ink-plate` default:
+   24px rather than 28, a hairline a shade under the house 10% white, and a
+   deep, diffuse drop shadow instead of the plate's ambient orange glow —
+   the artwork carries its own light, so the container only has to hold it.
+   The orange spill around it is the hero's `::before`, not this.
+
+   The tint sits OVER the plate's own dark base rather than replacing it.
+   `rgba(20, 18, 16, 0.72)` alone is still translucent, and on a light page
+   it would lift the ground to a mid grey — which is precisely the contrast
+   the near-black cards and warm off-white page stock need. Layering keeps
+   the frame's specified tone while guaranteeing a dark bed in both themes. */
+.ink-bm-plate {
+  width: 100%;
+  max-width: 430px;
+  padding: clamp(0.7rem, 1.4vw, 1rem);
+  border-radius: 24px;
+  background: linear-gradient(rgba(20, 18, 16, 0.72), rgba(20, 18, 16, 0.72)), var(--ink-plate-bg);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+}
+
+/* The artwork's one word. Set in the body face, spaced like every other
+   label on this page, and kept on the accent because it is the page's
+   subject rather than a caption. */
+.ink-bm-label {
+  font-family: var(--ink-font-body);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 1.3px;
+  fill: var(--ink-orange);
+}
+
+.ink-bm-art {
+  display: block;
+  width: 100%;
+}
+
+.ink-bm-art svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ── Hero motion ────────────────────────────────────────────────────── */
+/* The illustration is the one part of this page nobody is reading, so it is
+   also the only part allowed to move. Every piece runs on a long loop at a
+   DIFFERENT period, so the composition never settles into one obvious beat —
+   the intent is ambient life, not a loading spinner. Amplitudes are
+   deliberately tiny; this is a premium editorial hero, not a cartoon.
+
+   `transform-box: view-box` lets each origin be named in the SVG's own user
+   units (the 460x360 viewBox), which is what makes a pivot land on the real
+   hinge — the ribbon's top edge, a card's own centre — rather than on the
+   element's bounding box. Sparks are the exception: they are round, so
+   fill-box centring is exact and cheaper to reason about.
+
+   Every rule here is switched off wholesale under prefers-reduced-motion. */
+
+@keyframes ink-bm-breathe {
+  0%,
+  100% {
+    opacity: 0.72;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* The aura is the widest, softest layer, so it gets the longest and
+   shallowest cycle of anything here — a scale you can only just catch. */
+@keyframes ink-bm-aura-breathe {
+  0%,
+  100% {
+    opacity: 0.8;
+    transform: scale(0.985);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.015);
+  }
+}
+
+@keyframes ink-bm-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Four card drifts, four amplitudes. Two share a shape and differ only in
+   strength, which is enough to stop the orbit reading as a single rigid
+   object without any of them announcing itself. */
+@keyframes ink-bm-drift-a {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(-0.6deg);
+  }
+}
+
+@keyframes ink-bm-drift-b {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-9px) rotate(0.7deg);
+  }
+}
+
+@keyframes ink-bm-drift-c {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(0.5deg);
+  }
+}
+
+@keyframes ink-bm-drift-d {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-7px) rotate(-0.8deg);
+  }
+}
+
+@keyframes ink-bm-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 0.85;
+  }
+}
+
+/* Amplitudes are set by what is visible, not by what sounds tasteful: at
+   this render size the ribbon is ~58px long, so 2 degrees of swing moves its
+   tip barely 2px — animation you can only detect by sampling. 3.5 degrees
+   reads as a swing. */
+@keyframes ink-bm-sway {
+  0%,
+  100% {
+    transform: rotate(-3.5deg);
+  }
+  50% {
+    transform: rotate(3.5deg);
+  }
+}
+
+@keyframes ink-bm-twinkle {
+  0%,
+  100% {
+    opacity: 0.28;
+    transform: scale(0.55);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.35);
+  }
+}
+
+/* The room's light: the largest area on the page and the slowest cycle, so
+   the plate breathes rather than flickers. Opacity only — scaling a glow
+   this wide would read as a pulse, which is the wrong gesture. */
+.ink-bm-glow {
+  transform-box: view-box;
+  transform-origin: 230px 190px;
+  animation: ink-bm-breathe 11s ease-in-out infinite;
+}
+
+.ink-bm-aura {
+  transform-box: view-box;
+  transform-origin: 230px 210px;
+  animation: ink-bm-aura-breathe 13s ease-in-out infinite;
+}
+
+/* The orbit. Slow enough that you never catch it turning — you only notice,
+   eventually, that it has. */
+.ink-bm-ring {
+  transform-box: view-box;
+  transform-origin: 230px 210px;
+  animation: ink-bm-spin 72s linear infinite;
+}
+
+/* The four floating cards. Each selector targets the OUTER <g>; the card's
+   own tilt is an SVG transform on an inner <g>, so the CSS transform here
+   cannot overwrite it. Origins are each card's own centre, in user units. */
+.ink-bm-fc-a,
+.ink-bm-fc-b,
+.ink-bm-fc-c,
+.ink-bm-fc-d {
+  transform-box: view-box;
+}
+
+.ink-bm-fc-a {
+  transform-origin: 99px 82px;
+  animation: ink-bm-drift-a 8.4s ease-in-out infinite;
+}
+
+.ink-bm-fc-b {
+  transform-origin: 361px 80px;
+  animation: ink-bm-drift-b 10.6s ease-in-out infinite;
+  animation-delay: -2.2s;
+}
+
+.ink-bm-fc-c {
+  transform-origin: 365px 291px;
+  animation: ink-bm-drift-c 9.3s ease-in-out infinite;
+  animation-delay: -4.6s;
+}
+
+.ink-bm-fc-d {
+  transform-origin: 82px 278px;
+  animation: ink-bm-drift-d 11.4s ease-in-out infinite;
+  animation-delay: -6.1s;
+}
+
+/* The single "SAVED" mark is the only thing on the page allowed to pulse.
+   One heartbeat in the composition, on the one idea the page is about. */
+.ink-bm-glyph {
+  transform-box: view-box;
+  transform-origin: 317px 59px;
+  animation: ink-bm-pulse 4.2s ease-in-out infinite;
+}
+
+/* The ribbon hangs from the gutter of the open book, so it pivots at its
+   own top edge rather than at the middle of its length. */
+.ink-bm-ribbon {
+  transform-box: view-box;
+  transform-origin: 230px 230px;
+  animation: ink-bm-sway 6.2s ease-in-out infinite;
+}
+
+/* Five sparks, five periods, all with negative delays so they start
+   mid-cycle and never line up. */
+.ink-bm-spark {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ink-bm-twinkle 3.6s ease-in-out infinite;
+}
+
+.ink-bm-spark:nth-of-type(2) {
+  animation-duration: 4.4s;
+  animation-delay: -1.2s;
+}
+
+.ink-bm-spark:nth-of-type(3) {
+  animation-duration: 5.2s;
+  animation-delay: -2.7s;
+}
+
+.ink-bm-spark:nth-of-type(4) {
+  animation-duration: 4.9s;
+  animation-delay: -3.5s;
+}
+
+.ink-bm-spark:nth-of-type(5) {
+  animation-duration: 5.8s;
+  animation-delay: -4.8s;
+}
+
+/* ── Backdrop, dialled down ─────────────────────────────────────────── */
+/* The shared hero grid is tuned for the sparse editorial pages. This page
+   is as dense as History — cards, pills, rails — so the grid competes with
+   the card hairlines. Lowered here, on this page only, rather than in the
+   shared block. */
+.ink-bm .ink-grid {
+  opacity: 0.4;
+}
+
+/* ── Controls ───────────────────────────────────────────────────────── */
+.ink-bm-secthead {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bm-muted);
+  margin-bottom: 0.7rem;
+}
+
+.ink-bm-filterbar {
+  margin-bottom: 1.5rem;
+}
+
+/* ── 72 / 28 split ──────────────────────────────────────────────────── */
+.ink-bm-split {
+  display: grid;
+  grid-template-columns: minmax(0, 72fr) minmax(0, 28fr);
+  gap: 24px;
+  align-items: start;
+}
+
+/* An empty library has nothing for the rail to say, so the grid takes the
+   full width rather than leaving a 28% column of silence beside it. */
+.ink-bm-split.is-solo {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.ink-bm-main {
+  min-width: 0;
+}
+
+.ink-bm-resultline {
+  min-height: 1.4rem;
+  margin-bottom: 0.85rem;
+}
+
+.ink-bm-resultcount {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--bm-muted);
+}
+
+/* ── Article grid + card ────────────────────────────────────────────── */
+.ink-bm-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.ink-bm-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: var(--ink-radius);
+  background: var(--bm-card);
+  border: 1px solid var(--bm-line-soft);
+  overflow: hidden;
+  transition: transform var(--bm-hover) var(--bm-ease), border-color var(--bm-hover) var(--bm-ease),
+    box-shadow var(--bm-hover) var(--bm-ease), background var(--bm-hover) var(--bm-ease);
+}
+
+/* A restrained lift — a card in a grid, not a landing-page tile. The card
+   itself carries CSS transforms; the reveal stagger lives on the wrapper
+   (`.ink-bm-cell`), so framer's inline transform can never cancel this. */
+.ink-bm-card:hover,
+.ink-bm-card:focus-within {
+  transform: translateY(-2px);
+  border-color: var(--ink-border-warm);
+  background: var(--bm-card-hi);
+  box-shadow: var(--ink-shadow-card), var(--ink-glow-soft);
+}
+
+/* Grid cell = the stagger wrapper. The card inside fills the row so a tall
+   neighbour can't leave a short card floating. */
+.ink-bm-cell {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ink-bm-cover {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--ink-quiet-bg);
+}
+
+.ink-bm-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 260ms var(--bm-ease);
+}
+
+.ink-bm-card:hover .ink-bm-cover img {
+  transform: scale(1.02);
+}
+
+.ink-bm-cover-fallback {
+  position: absolute;
+  inset: 0;
+  background: var(--ink-quiet-bg);
+}
+
+.ink-bm-cover-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 55%);
+  pointer-events: none;
+}
+
+/* Circular bookmark control, top-right of the cover, above the stretched
+   title link so it keeps its own hit area. It renders FILLED here: every
+   card on this page is bookmarked by definition, and the control's job is
+   to take the article back out of the list. */
+.ink-bm-bm {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--ink-orange);
+  background: var(--ink-orange);
+  color: var(--ink-on-orange);
+  cursor: pointer;
+  transition: background var(--bm-hover) var(--bm-ease), color var(--bm-hover) var(--bm-ease),
+    border-color var(--bm-hover) var(--bm-ease), transform var(--bm-hover) var(--bm-ease);
+}
+
+.ink-bm-bm svg {
+  font-size: 18px;
+}
+
+.ink-bm-bm:hover {
+  transform: scale(1.06);
+  background: var(--ink-orange-2);
+  border-color: var(--ink-orange-2);
+  color: var(--ink-on-orange);
+}
+
+.ink-bm-bm:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.ink-bm-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 1.1rem 1.15rem 1.15rem;
+}
+
+.ink-bm-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.7rem;
+}
+
+.ink-bm-pill {
+  display: inline-block;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  background: var(--ink-orange-soft);
+  color: var(--ink-orange);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ink-bm-title {
+  font-family: var(--ink-font-display);
+  font-size: 1.14rem; /* ~18.2px */
+  font-weight: 700;
+  line-height: 1.32;
+  letter-spacing: -0.015em;
+  color: var(--ink-text);
+  margin: 0 0 0.55rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ink-bm-title-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* The stretched link: one tab stop for the whole card, with the bookmark
+   button lifted above it. */
+.ink-bm-title-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+.ink-bm-excerpt {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--bm-muted);
+  margin: 0 0 1rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ink-bm-author {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: auto;
+  padding-top: 0.25rem;
+}
+
+.ink-bm-author-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ink-bm-author-name {
+  font-size: 0.84rem;
+  font-weight: 650;
+  color: var(--ink-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ink-bm-author-date {
+  font-size: 0.75rem;
+  color: var(--bm-muted);
+}
+
+/* The footer affordance. It LOOKS like a button and is not one: the card's
+   stretched title link is the real destination, and a second interactive
+   element here would be a duplicate tab stop to the same article. It is
+   aria-hidden in the markup for the same reason. */
+.ink-bm-readmore {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  padding: 0.62rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--bm-line);
+  background: var(--bm-wash);
+  color: var(--ink-text);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  transition: background var(--bm-hover) var(--bm-ease), border-color var(--bm-hover) var(--bm-ease),
+    color var(--bm-hover) var(--bm-ease);
+}
+
+.ink-bm-readmore-arrow {
+  transition: transform var(--bm-hover) var(--bm-ease);
+}
+
+.ink-bm-card:hover .ink-bm-readmore,
+.ink-bm-card:focus-within .ink-bm-readmore {
+  background: var(--ink-orange-soft);
+  border-color: var(--ink-orange);
+  color: var(--ink-orange);
+}
+
+.ink-bm-card:hover .ink-bm-readmore-arrow,
+.ink-bm-card:focus-within .ink-bm-readmore-arrow {
+  transform: translateX(3px);
+}
+
+/* ── Right rail ─────────────────────────────────────────────────────── */
+.ink-bm-rail {
+  position: sticky;
+  /* Tuned against the pinned navbar capsule (88px) plus a little air —
+     the same offset the Explore and History rails use. */
+  top: 104px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+/* Stagger wrapper around each rail card; it has to be the flex/grid item so
+   the card inside still fills its band when the rail reflows to a 2-up
+   grid. */
+.ink-bm-railcell {
+  display: flex;
+  flex-direction: column;
+}
+
+.ink-bm-railcell > * {
+  flex: 1;
+}
+
+.ink-bm-railhead {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-orange);
+}
+
+.ink-bm-railcard {
+  border-radius: var(--ink-radius);
+  background: var(--bm-card);
+  border: 1px solid var(--bm-line-soft);
+  padding: 1rem 1.05rem 1.1rem;
+}
+
+.ink-bm-railcard-title {
+  font-family: var(--ink-font-display);
+  font-size: 0.98rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink-text);
+  margin: 0;
+}
+
+.ink-bm-railcard-sub {
+  margin: 0.3rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--bm-muted);
+}
+
+.ink-bm-railcard-text {
+  margin: 0.6rem 0 0;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: var(--bm-muted);
+}
+
+/* Stats — 2×2, each cell a figure the server actually aggregated. */
+.ink-bm-stats {
+  margin-top: 0.9rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.ink-bm-stat {
+  border-radius: 14px;
+  background: var(--bm-wash);
+  border: 1px solid var(--bm-line-soft);
+  padding: 0.7rem 0.75rem;
+}
+
+.ink-bm-stat-num {
+  font-family: var(--ink-font-display);
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--ink-text);
+}
+
+.ink-bm-stat-label {
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--bm-muted);
+}
+
+/* Topics */
+.ink-bm-topics {
+  margin-top: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.ink-bm-topic-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.4rem;
+}
+
+.ink-bm-topic-name {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--ink-text);
+  text-transform: capitalize;
+}
+
+.ink-bm-topic-count {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--bm-muted);
+}
+
+.ink-bm-topic-rail {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bm-wash-2);
+  overflow: hidden;
+}
+
+.ink-bm-topic-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--ink-orange-2), var(--ink-orange));
+  transition: width 700ms var(--bm-ease);
+}
+
+/* Recently bookmarked */
+.ink-bm-recent {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.ink-bm-recentrow + .ink-bm-recentrow {
+  border-top: 1px solid var(--bm-line-soft);
+}
+
+.ink-bm-recentlink {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0;
+  text-decoration: none;
+  color: inherit;
+  transition: color var(--bm-hover) var(--bm-ease);
+}
+
+.ink-bm-recentthumb {
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--ink-quiet-bg);
+}
+
+.ink-bm-recentthumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ink-bm-recentthumb-fallback {
+  width: 100%;
+  height: 100%;
+  background: var(--ink-quiet-bg);
+}
+
+.ink-bm-recenttext {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ink-bm-recenttitle {
+  font-size: 0.83rem;
+  font-weight: 650;
+  line-height: 1.35;
+  color: var(--ink-text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: color var(--bm-hover) var(--bm-ease);
+}
+
+.ink-bm-recentlink:hover .ink-bm-recenttitle,
+.ink-bm-recentlink:focus-visible .ink-bm-recenttitle {
+  color: var(--ink-orange);
+}
+
+.ink-bm-recentmeta {
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  color: var(--bm-muted);
+}
+
+/* Rail failure note */
+.ink-bm-railnote {
+  border-radius: var(--ink-radius);
+  background: var(--bm-card);
+  border: 1px solid var(--bm-line-soft);
+  padding: 1.15rem 1.2rem;
+}
+
+.ink-bm-railnote-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--ink-text);
+}
+
+.ink-bm-railnote-text {
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--bm-muted);
+}
+
+/* ── States ─────────────────────────────────────────────────────────── */
+.ink-bm-state,
+.ink-bm-state-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border-radius: var(--ink-radius);
+  background: var(--bm-card);
+  border: 1px dashed var(--bm-line);
+  padding: clamp(2.25rem, 6vw, 3.5rem) clamp(1.5rem, 5vw, 3rem);
+}
+
+.ink-bm-state-card {
+  max-width: 560px;
+  margin: clamp(3rem, 10vw, 7rem) auto;
+}
+
+.ink-bm-state-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 20px;
+  background: var(--ink-orange-soft);
+  color: var(--ink-orange);
+  margin-bottom: 1.15rem;
+}
+
+.ink-bm-state-icon svg {
+  font-size: 30px;
+}
+
+.ink-bm-state-title {
+  font-family: var(--ink-font-display);
+  font-size: clamp(1.05rem, 1.6vw, 1.28rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--ink-text);
+  margin: 0;
+}
+
+.ink-bm-state-text {
+  margin: 0.7rem 0 0;
+  max-width: 46ch;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--bm-muted);
+}
+
+.ink-bm-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 2.25rem;
+}
+
+/* ── Skeletons ──────────────────────────────────────────────────────── */
+@keyframes ink-bm-shimmer {
+  0% {
+    background-position: -180% 0;
+  }
+  100% {
+    background-position: 180% 0;
+  }
+}
+
+.ink-bm-shimmer {
+  background: linear-gradient(90deg, var(--bm-wash) 0%, var(--bm-wash-2) 45%, var(--bm-wash) 90%);
+  background-size: 220% 100%;
+  animation: ink-bm-shimmer 1.4s linear infinite;
+}
+
+.ink-bm-card.is-skeleton {
+  pointer-events: none;
+}
+
+.ink-bm-card.is-skeleton:hover {
+  transform: none;
+  border-color: var(--bm-line-soft);
+  background: var(--bm-card);
+  box-shadow: none;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────── */
+@media (max-width: 1199.95px) {
+  .ink-bm-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1023.95px) {
+  /* The rail drops under the grid rather than squeezing both into a narrow
+     column — a 28% rail at this width is unreadable. */
+  .ink-bm-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ink-bm-rail {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ink-bm-railhead {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 899.95px) {
+  .ink-bm-hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+
+  /* Copy first, illustration under it: on a narrow screen the page is still
+     a reading dashboard, so the words lead. */
+  .ink-bm-hero-art {
+    justify-content: center;
+  }
+
+  .ink-bm-plate {
+    max-width: 380px;
+  }
+}
+
+@media (max-width: 719.95px) {
+  .ink-bm-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ink-bm-rail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ── Motion / contrast preferences ──────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  /* The whole hero goes still — the orbit and the drifting cards included,
+     not just the things whose motion is most obvious. */
+  .ink-bm-glow,
+  .ink-bm-aura,
+  .ink-bm-ring,
+  .ink-bm-fc-a,
+  .ink-bm-fc-b,
+  .ink-bm-fc-c,
+  .ink-bm-fc-d,
+  .ink-bm-glyph,
+  .ink-bm-ribbon,
+  .ink-bm-spark {
+    animation: none;
+  }
+
+  .ink-bm-shimmer {
+    animation: none;
+    background: var(--bm-wash-2);
+  }
+
+  .ink-bm-card,
+  .ink-bm-card:hover,
+  .ink-bm-card:focus-within {
+    transform: none;
+  }
+
+  .ink-bm-card:hover .ink-bm-cover img {
+    transform: none;
+  }
+
+  .ink-bm-bm:hover {
+    transform: none;
+  }
+
+  .ink-bm-topic-fill {
+    transition: none;
+  }
+
+  .ink-bm-card:hover .ink-bm-readmore-arrow,
+  .ink-bm-card:focus-within .ink-bm-readmore-arrow {
+    transform: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .ink-bm-card,
+  .ink-bm-railcard,
+  .ink-bm-stat,
+  .ink-bm-readmore,
+  .ink-bm-recentrow + .ink-bm-recentrow {
+    border-color: var(--ink-border);
+  }
+
+  .ink-bm-excerpt,
+  .ink-bm-topic-count,
+  .ink-bm-author-date,
+  .ink-bm-recentmeta,
+  .ink-bm-stat-label,
+  .ink-bm-railcard-text {
+    color: var(--ink-text-2);
+  }
+}

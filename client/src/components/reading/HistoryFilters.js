@@ -2,6 +2,10 @@ import React from "react";
 import { Box, Typography } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import CloseIcon from "@mui/icons-material/Close";
+// The bar's styles travel with the bar. Imported here rather than pasted
+// into each page's stylesheet, so Reading History and Bookmarks render the
+// same component with the same rules.
+import "../../styles/ink-filters.css";
 
 /* ─────────────────────────────────────────────────────────────────────
    Reading History — filter bar.
@@ -28,6 +32,12 @@ import CloseIcon from "@mui/icons-material/Close";
    truthful. Search reuses the app-wide `q` handling (parsePagination) — no
    second search system — and the sort options are exactly the four
    orderings the view row supports.
+
+   The bar is generic — tabs, sorts, placeholder and the labels a screen
+   reader hears all come in as props. Reading History passes nothing and so
+   keeps the defaults below; the Bookmarks page passes its own tab set
+   (which has a different, equally real, fourth facet). One bar, not two
+   hand-matched copies of the same markup.
    ───────────────────────────────────────────────────────────────────── */
 
 export const TABS = [
@@ -57,6 +67,14 @@ const HistoryFilters = ({
   topic,
   writer,
   onPick,
+  // Defaults reproduce this page's own bar exactly; callers with a different
+  // vocabulary override only what they need.
+  tabs = TABS,
+  sorts = SORTS,
+  placeholder = "Search your reading history...",
+  searchLabel = "Search your reading history",
+  filterLabel = "Filter reading history",
+  emptyDrill = "they appear once you’ve read something",
 }) => {
   const drill = tab === "topic" || tab === "writer";
   const options = tab === "topic" ? topics : writers;
@@ -66,8 +84,8 @@ const HistoryFilters = ({
     <Box className="ink-rh-filters">
       {/* One row: filters left, search + sort right. */}
       <Box className="ink-rh-filters-row">
-        <Box className="ink-rh-tabs" role="tablist" aria-label="Filter reading history">
-          {TABS.map((t) => (
+        <Box className="ink-rh-tabs" role="tablist" aria-label={filterLabel}>
+          {tabs.map((t) => (
             <Box
               component="button"
               type="button"
@@ -88,10 +106,10 @@ const HistoryFilters = ({
             <input
               type="search"
               className="ink-rh-search"
-              placeholder="Search your reading history..."
+              placeholder={placeholder}
               value={query}
               onChange={(e) => onQuery(e.target.value)}
-              aria-label="Search your reading history"
+              aria-label={searchLabel}
             />
             {query && (
               <Box
@@ -109,7 +127,7 @@ const HistoryFilters = ({
           <Box className="ink-rh-sort">
             <label htmlFor="ink-rh-sort">Sort by</label>
             <select id="ink-rh-sort" value={sort} onChange={(e) => onSort(e.target.value)}>
-              {SORTS.map((s) => (
+              {sorts.map((s) => (
                 <option key={s.key} value={s.key}>
                   {s.label}
                 </option>
@@ -125,9 +143,7 @@ const HistoryFilters = ({
         <Box className="ink-rh-drill">
           {options.length === 0 ? (
             <Typography className="ink-rh-drill-empty">
-              {tab === "topic"
-                ? "No topics yet — they appear once you’ve read something."
-                : "No writers yet — they appear once you’ve read something."}
+              {tab === "topic" ? `No topics yet — ${emptyDrill}.` : `No writers yet — ${emptyDrill}.`}
             </Typography>
           ) : (
             <>

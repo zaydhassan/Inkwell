@@ -16,4 +16,34 @@ const sanitizeHtml = (dirty) => {
   });
 };
 
-module.exports = { sanitizeHtml };
+// Strip HTML tags from a rich-text body and return plain text. Used to
+// measure a blog body without counting markup as words. A regex strip is
+// safe here because the result is never rendered as HTML — it is only ever
+// split into words.
+const stripHtml = (html) => {
+  if (!html) return "";
+  return String(html)
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&[a-z]+;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
+// Estimated reading time in minutes at 200 wpm, minimum 1.
+//
+// This deliberately mirrors `readingTime` in client/src/utils/sanitize.js
+// term for term: the figure a card shows and the figure the summary totals
+// must be the same measurement of the same field, or the rail would
+// contradict the cards it sits beside.
+//
+// NOTE: an empty body still returns 1 (the client's minimum). Callers that
+// need to know whether a body was actually measurable must test
+// `stripHtml(body)` themselves — see getBookmarksSummary, which omits the
+// total rather than summing these.
+const readingTime = (html) => {
+  const words = stripHtml(html).split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.round(words / 200));
+};
+
+module.exports = { sanitizeHtml, stripHtml, readingTime };
