@@ -47,9 +47,11 @@ import "../pages/ReadingHistory.css";
    rail honest no matter how long the history is.
 
    Nothing here is invented. Every number comes back from those endpoints
-   or is derived arithmetically from them in `components/reading/insights`,
-   and anything the data cannot support (a reading-time estimate, a
-   per-session duration) is simply absent rather than approximated.
+   or is derived arithmetically from them in `components/reading/insights`.
+   The per-article "N min read" is not a claim about the reader: it is the
+   same 200-wpm estimate of the article's own body that the reader page
+   shows, computed on the identical `description` field, and omitted when
+   there is no body to measure.
    ───────────────────────────────────────────────────────────────────── */
 
 const PAGE_SIZE = 9;
@@ -235,7 +237,7 @@ const ReadingHistory = () => {
     if (!summary || summary.articles === 0) return [];
     return [
       { icon: <MenuBookOutlinedIcon />, value: summary.articles, label: "Articles read" },
-      { icon: <LocalFireDepartmentIcon />, value: streak.current, label: "Day streak" },
+      { icon: <LocalFireDepartmentIcon />, value: streak.current, label: "Reading streak" },
       { icon: <StyleOutlinedIcon />, value: (summary.topics || []).length, label: "Topics explored" },
       { icon: <EditOutlinedIcon />, value: summary.writerCount || 0, label: "Writers read" },
     ];
@@ -305,7 +307,14 @@ const ReadingHistory = () => {
           </Reveal>
         )}
 
-        {/* ── Filters ────────────────────────────────────────────────── */}
+        {/* ── Controls ───────────────────────────────────────────────── */}
+        {/* The label names the region the controls act on, so the tab row
+            reads as "the history's controls" rather than as a second
+            navigation bar. */}
+        <Typography className="ink-rh-secthead" component="h2">
+          Reading history
+        </Typography>
+
         <Box className="ink-rh-filterbar">
           <HistoryFilters
             tab={tab}
@@ -358,14 +367,24 @@ const ReadingHistory = () => {
             ) : (
               <>
                 <Box className="ink-rh-grid">
-                  {blogs.map((blog) => (
-                    <HistoryCard
+                  {blogs.map((blog, i) => (
+                    // Each card is its own `Reveal`, so the grid rises in a
+                    // short stagger. The delay is capped: a long history
+                    // should not turn into a slow procession.
+                    <Reveal
                       key={blog._id}
-                      blog={blog}
-                      bookmarked={bookmarkedIds.includes(blog._id)}
-                      busy={busyIds.includes(blog._id)}
-                      onToggleBookmark={toggleBookmark}
-                    />
+                      className="ink-rh-cell"
+                      y={18}
+                      amount={0.1}
+                      delay={Math.min(i, 5) * 0.06}
+                    >
+                      <HistoryCard
+                        blog={blog}
+                        bookmarked={bookmarkedIds.includes(blog._id)}
+                        busy={busyIds.includes(blog._id)}
+                        onToggleBookmark={toggleBookmark}
+                      />
+                    </Reveal>
                   ))}
                 </Box>
 
@@ -393,9 +412,15 @@ const ReadingHistory = () => {
               <RailNote />
             ) : summary && summary.articles > 0 ? (
               <>
-                <StreakCard summary={summary} />
-                <TopicsCard topics={summary.topics || []} />
-                <ActivityCard heat={summary.heat || []} />
+                <Reveal className="ink-rh-railcell" y={16} delay={0.05}>
+                  <StreakCard summary={summary} />
+                </Reveal>
+                <Reveal className="ink-rh-railcell" y={16} delay={0.13}>
+                  <TopicsCard topics={summary.topics || []} />
+                </Reveal>
+                <Reveal className="ink-rh-railcell" y={16} delay={0.21}>
+                  <ActivityCard heat={summary.heat || []} />
+                </Reveal>
               </>
             ) : (
               <RailNote />

@@ -5,6 +5,7 @@ import BookmarkIcon from "@mui/icons-material/Bookmark";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import UserAvatar from "../UserAvatar";
 import InkMeter from "../ink/InkMeter";
+import { readingTime } from "../../utils/sanitize";
 import { relativeDay, progressState } from "./insights";
 
 /* ─────────────────────────────────────────────────────────────────────
@@ -43,6 +44,15 @@ const HistoryCard = ({ blog, bookmarked, onToggleBookmark, busy }) => {
   // is indented — the clamp counts lines, so stray newlines would eat one.
   const excerpt = stripHtml(blog.description).replace(/\s+/g, " ").trim();
 
+  // Reading time is a property of the ARTICLE, not a claim about the reader:
+  // it is the same `readingTime` estimate the reader page shows (200 wpm over
+  // the body's word count), computed on the identical `description` field. A
+  // row whose body is missing shows no estimate rather than a made-up one.
+  const minutes = blog.description ? readingTime(blog.description) : 0;
+  const meta = [read ? `Read ${read}` : "", minutes ? `${minutes} min read` : ""]
+    .filter(Boolean)
+    .join(" · ");
+
   // Up to two pills: the category leads, then the article's own tags fill
   // the second slot. Deduped so a tag that repeats the category shows once.
   const pills = [blog.category, ...(blog.tags || []).map((t) => t?.tag_name)]
@@ -70,7 +80,7 @@ const HistoryCard = ({ blog, bookmarked, onToggleBookmark, busy }) => {
           onClick={() => onToggleBookmark(blog._id)}
           disabled={busy}
           aria-pressed={bookmarked}
-          aria-label={bookmarked ? `Remove ${blog.title} from bookmarks` : `Save ${blog.title} to bookmarks`}
+          aria-label={bookmarked ? `Remove ${title} from bookmarks` : `Save ${title} to bookmarks`}
         >
           {bookmarked ? <BookmarkIcon /> : <BookmarkBorderIcon />}
         </Box>
@@ -101,9 +111,9 @@ const HistoryCard = ({ blog, bookmarked, onToggleBookmark, busy }) => {
             <Typography component="span" className="ink-rh-author-name">
               {author}
             </Typography>
-            {read && (
+            {meta && (
               <Typography component="span" className="ink-rh-author-date">
-                Read {read}
+                {meta}
               </Typography>
             )}
           </Box>

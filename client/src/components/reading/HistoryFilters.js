@@ -6,39 +6,40 @@ import CloseIcon from "@mui/icons-material/Close";
 /* ─────────────────────────────────────────────────────────────────────
    Reading History — filter bar.
 
+   ONE control row: the tabs on the left, the search field and the sort
+   select on the right (they stack on narrow screens). The row sits
+   directly under the compact stats strip so the article grid stays close
+   to the top of the page.
+
    Five tabs, every one of them backed by a real query:
 
-     All · Unfinished · Saved · Topics · Writers
+     All · Articles · Saved · Topics · Writers
 
-   The brief listed "Articles" in place of "Unfinished"; on a page where
-   every row IS an article, that tab would have filtered nothing and been
-   pure decoration, so it was replaced with the one state the data can
-   genuinely distinguish. The named constraint was "Do not create
-   decorative tabs."
+   "Articles" is the reader's actual reading — rows where `progress > 0`,
+   i.e. they scrolled into the article rather than only opening it. It is a
+   genuine subset of "All" (the three seeded rows at 0 drop out), applied
+   server-side by getReadingHistory's `articles` filter, so the totals and
+   pagination stay truthful. A tab that re-listed everything "All" already
+   shows would have been decoration, and the named constraint was "Do not
+   create decorative tabs."
 
-   The label is "Unfinished" rather than "In progress" on purpose: the
-   filter is `progress < 100`, which also contains articles the reader
-   opened but never scrolled into (a stored 0, drawn on the card as a
-   plain "Read" action rather than a 0% bar). Calling those "in progress"
-   would overstate them, so the tab is named for exactly what it holds.
-
-   Every tab is applied SERVER-side (see getReadingHistory's `filter`
-   param) rather than by filtering the loaded page, so the totals, the
-   pagination and the empty state all stay truthful. Search reuses the
-   app-wide `q` handling (parsePagination) — no second search system — and
-   the sort options are exactly the four orderings the view row supports.
+   Every tab is applied SERVER-side rather than by filtering the loaded
+   page, so the totals, the pagination and the empty state all stay
+   truthful. Search reuses the app-wide `q` handling (parsePagination) — no
+   second search system — and the sort options are exactly the four
+   orderings the view row supports.
    ───────────────────────────────────────────────────────────────────── */
 
 export const TABS = [
   { key: "all", label: "All" },
-  { key: "unfinished", label: "Unfinished" },
+  { key: "articles", label: "Articles" },
   { key: "saved", label: "Saved" },
   { key: "topic", label: "Topics" },
   { key: "writer", label: "Writers" },
 ];
 
 export const SORTS = [
-  { key: "recent", label: "Newest first" },
+  { key: "recent", label: "Most recent" },
   { key: "oldest", label: "Oldest first" },
   { key: "progress", label: "Furthest through" },
   { key: "unfinished", label: "Barely started" },
@@ -63,6 +64,7 @@ const HistoryFilters = ({
 
   return (
     <Box className="ink-rh-filters">
+      {/* One row: filters left, search + sort right. */}
       <Box className="ink-rh-filters-row">
         <Box className="ink-rh-tabs" role="tablist" aria-label="Filter reading history">
           {TABS.map((t) => (
@@ -80,39 +82,41 @@ const HistoryFilters = ({
           ))}
         </Box>
 
-        <Box className="ink-rh-sort">
-          <label htmlFor="ink-rh-sort">Sort</label>
-          <select id="ink-rh-sort" value={sort} onChange={(e) => onSort(e.target.value)}>
-            {SORTS.map((s) => (
-              <option key={s.key} value={s.key}>
-                {s.label}
-              </option>
-            ))}
-          </select>
-        </Box>
-      </Box>
-
-      <Box className="ink-rh-searchwrap">
-        <SearchIcon className="ink-rh-searchicon" fontSize="small" aria-hidden="true" />
-        <input
-          type="search"
-          className="ink-rh-search"
-          placeholder="Search your reading history..."
-          value={query}
-          onChange={(e) => onQuery(e.target.value)}
-          aria-label="Search your reading history"
-        />
-        {query && (
-          <Box
-            component="button"
-            type="button"
-            className="ink-rh-searchclear"
-            onClick={() => onQuery("")}
-            aria-label="Clear search"
-          >
-            <CloseIcon fontSize="inherit" />
+        <Box className="ink-rh-controls">
+          <Box className="ink-rh-searchwrap">
+            <SearchIcon className="ink-rh-searchicon" fontSize="small" aria-hidden="true" />
+            <input
+              type="search"
+              className="ink-rh-search"
+              placeholder="Search your reading history..."
+              value={query}
+              onChange={(e) => onQuery(e.target.value)}
+              aria-label="Search your reading history"
+            />
+            {query && (
+              <Box
+                component="button"
+                type="button"
+                className="ink-rh-searchclear"
+                onClick={() => onQuery("")}
+                aria-label="Clear search"
+              >
+                <CloseIcon fontSize="inherit" />
+              </Box>
+            )}
           </Box>
-        )}
+
+          <Box className="ink-rh-sort">
+            <label htmlFor="ink-rh-sort">Sort by</label>
+            <select id="ink-rh-sort" value={sort} onChange={(e) => onSort(e.target.value)}>
+              {SORTS.map((s) => (
+                <option key={s.key} value={s.key}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </Box>
+        </Box>
       </Box>
 
       {/* Drill-down for the two "browse by" tabs — real values with real

@@ -32,7 +32,9 @@ export const HeroSkeleton = () => (
       <Shimmer h={16} w="62%" sx={{ mt: 1.25 }} />
     </Box>
     <Box className="ink-rh-hero-art">
-      <Shimmer h={260} r={26} />
+      {/* Mirrors the real plate's new, smaller box so nothing shifts when
+          the illustration lands. */}
+      <Shimmer h={340} w="100%" r={26} sx={{ maxWidth: 440 }} />
     </Box>
   </Box>
 );

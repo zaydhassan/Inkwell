@@ -127,7 +127,14 @@ exports.getReadingHistory = async (req, res) => {
 
     // A filter must be one of the values below; anything else falls back to
     // "all" rather than erroring, so a stale URL can't dead-end the page.
-    const tab = ["unfinished", "finished", "saved", "topic", "writer"].includes(req.query.filter)
+    //
+    // "articles" is the one additive value here: rows the reader actually read
+    // into (progress > 0), as opposed to "all", which also holds the ones they
+    // only opened. The reading-history page's "Articles" tab is this — a real
+    // subset rather than a decorative restatement of "all".
+    const tab = ["unfinished", "finished", "articles", "saved", "topic", "writer"].includes(
+      req.query.filter
+    )
       ? req.query.filter
       : "all";
 
@@ -151,6 +158,9 @@ exports.getReadingHistory = async (req, res) => {
     // Progress lives on the view row itself, so it filters in place.
     if (tab === "unfinished") filter.progress = { $lt: 100 };
     if (tab === "finished") filter.progress = { $gte: 100 };
+    // Reading into an article at all — the reader scrolled past the opening
+    // screen. A stored 0 means "opened, never read", so it stays out.
+    if (tab === "articles") filter.progress = { $gt: 0 };
 
     // Every sort is on a field the view row really holds, so no option can
     // silently fall back to insertion order.
