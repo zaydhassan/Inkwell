@@ -1,5 +1,6 @@
 # Inkwell — MERN Blog Platform 
 
+
 > A production-grade, full-stack blogging platform: writers publish, readers
 > engage, and a server-side points/levels system rewards meaningful
 > participation. Built on the MERN stack with a hardened JWT auth layer,
