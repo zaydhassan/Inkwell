@@ -180,7 +180,7 @@
 }
 
 /* ── Responsive ─────────────────────────────────────────────────────── */
-@media (max-width: 639.95px) {
+@media (max-width: 599.95px) {
   /* Drop to two columns and let Today's progress take the full width — the
      three-across row crushes the meter into a sliver. */
   .ink-streak-figures {

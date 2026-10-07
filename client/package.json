@@ -42,7 +42,9 @@
     "start": "vite",
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:breakpoints": "node scripts/check-breakpoints.mjs",
+    "audit:responsive": "node scripts/responsive-audit.mjs"
   },
   "eslintConfig": {
     "extends": [

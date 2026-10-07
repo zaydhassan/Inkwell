@@ -83,10 +83,13 @@ const KBD_SX = {
 // every other item stays neutral and hovers on a plain white veil, so the
 // accent never becomes wallpaper. The 1px border is always present (transparent
 // when idle) so gaining the active state never nudges the row's height.
+// The `md` step is the tightest one: five items have to share the capsule with
+// the brand and the icon cluster between 900 and 1199px, so the labels give up
+// padding there rather than pushing the row wide.
 const navBtnSx = (active) => ({
   textTransform: "none",
   borderRadius: 999,
-  px: { lg: 1.25, xl: 2 },
+  px: { md: 0.7, lg: 1.25, xl: 2 },
   py: 1.375,
   minWidth: "auto",
   fontWeight: 600,
@@ -477,13 +480,23 @@ const Navbar = () => {
 
             {/* ── Primary navigation ───────────────────────────────────── */}
             <Stack
+              component="nav"
+              aria-label="Primary"
               direction="row"
               spacing={0.5}
-              // flexShrink 0: the nav labels are the one thing that must never
-              // be clipped. At the lg breakpoint (1200px) the capsule is at its
-              // tightest, and the search field — not the nav — yields the few
-              // px of slack (see flexShrink on the actions group below).
-              sx={{ flexGrow: 1, flexShrink: 0, justifyContent: "center", display: { xs: "none", lg: "flex" } }}
+              // The nav row runs from md (900) — the same breakpoint that swaps
+              // the hamburger out — so exactly one navigation control is present
+              // at every width. Before this it was `lg` (1200) while the
+              // hamburger was `md`, which left 900–1199px with no way to
+              // navigate at all.
+              //
+              // flexShrink is 1 (not 0) and minWidth is 0 so the row can yield
+              // when it must: at 900 five items plus the brand and the icon
+              // cluster only just fit inside the capsule. The full search field
+              // is what actually buys the room — it is held back to `lg` and
+              // replaced by the glyph button below, which is the same
+              // destination and the same command palette.
+              sx={{ flexGrow: 1, flexShrink: 1, minWidth: 0, justifyContent: "center", display: { xs: "none", md: "flex" } }}
             >
               {NAV_ITEMS.map((item) => {
                 const active = item.match(location.pathname);
@@ -512,12 +525,15 @@ const Navbar = () => {
                 onClick={openSearch}
                 aria-label="Search articles, topics and writers"
                 sx={{
-                  display: { xs: "none", md: "flex" },
+                  display: { xs: "none", lg: "flex" },
                   alignItems: "center",
                   gap: 1,
                   // Fluid rather than stepped: the capsule has to hold the
                   // brand, five nav items and this field on one line from
                   // 1200px up, and the field is the only part with slack.
+                  // Held back to `lg` deliberately — between 900 and 1199 the
+                  // five nav labels need this width more than the field does,
+                  // and the glyph button below covers the same ground.
                   width: "clamp(250px, 23vw, 340px)",
                   flexShrink: 1,
                   minWidth: 180,
@@ -556,13 +572,14 @@ const Navbar = () => {
                 <Box component="kbd" sx={KBD_SX}>{isMac ? "⌘" : "Ctrl"} K</Box>
               </Box>
 
-              {/* Phones get the glyph only — the field cannot fit, and the
+              {/* Phones and the 900–1199 band get the glyph only — the field
+                  cannot share the capsule with five nav labels, and the
                   palette is the same destination. */}
               <IconButton
                 onClick={openSearch}
                 aria-label="Search"
                 sx={{
-                  display: { xs: "inline-flex", md: "none" },
+                  display: { xs: "inline-flex", lg: "none" },
                   flexShrink: 0,
                   borderRadius: 999,
                   p: 0.75,
@@ -752,7 +769,11 @@ const Navbar = () => {
             />
           </Box>
 
-          <Stack spacing={0.5} sx={{ flexGrow: 1, overflowY: "auto" }}>
+          {/* The drawer is the same navigation as the desktop row, so it is a
+              landmark too — with its own label, because two `nav` landmarks
+              sharing one accessible name is ambiguous to a screen reader (and
+              to the audit, which resolves the desktop one by name). */}
+          <Stack component="nav" aria-label="Primary mobile" spacing={0.5} sx={{ flexGrow: 1, overflowY: "auto" }}>
             {NAV_ITEMS.map((item) => {
               const active = item.match(location.pathname);
               return (

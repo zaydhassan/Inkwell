@@ -1,0 +1,21 @@
+auditing 19 route(s) × 5 viewports
+  measured 360×740
+  measured 900×800
+  measured 1024×768
+  measured 1100×800
+  measured 1200×900
+
+=== REDIRECTED (not actually measured) ===
+  none — every route rendered where it was asked to
+
+=== HORIZONTAL OVERFLOW ===
+  none — every route fits every viewport
+
+=== NAVBAR (exactly one control per width) ===
+  ok — exactly one nav control at all 80 sampled widths
+
+=== ADMIN LAYOUT (phone) ===
+  360px → sidebar 345px @y0, main 345px @y304 (96% of viewport)   stacked ok
+
+95 measurements → responsive-audit.json
+screenshots → client-audit-shots/

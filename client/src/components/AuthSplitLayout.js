@@ -43,7 +43,7 @@ const AuthSplitLayout = ({ image, eyebrow, headline, tagline, highlights = DEFAU
     <Grid
       container
       sx={{
-        minHeight: { xs: "auto", sm: "100vh" },
+        minHeight: { xs: "auto", sm: "100dvh" },
         flexDirection: { xs: "column", sm: "row" },
       }}
     >
@@ -54,7 +54,7 @@ const AuthSplitLayout = ({ image, eyebrow, headline, tagline, highlights = DEFAU
         sm={6}
         sx={{
           position: "relative",
-          minHeight: { xs: 260, sm: "100vh" },
+          minHeight: { xs: 260, sm: "100dvh" },
           backgroundImage: `url(${image})`,
           backgroundSize: "cover",
           backgroundPosition: "center",

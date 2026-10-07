@@ -35,6 +35,7 @@
 
   position: relative;
   min-height: 100vh;
+  min-height: 100dvh;
   padding-bottom: clamp(4rem, 8vw, 6.5rem);
 }
 
@@ -897,7 +898,7 @@
   }
 }
 
-@media (max-width: 719.95px) {
+@media (max-width: 599.95px) {
   .ink-rh-grid {
     grid-template-columns: minmax(0, 1fr);
   }

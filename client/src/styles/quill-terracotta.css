@@ -78,3 +78,49 @@
   color: var(--text);
   box-shadow: var(--shadow-card);
 }
+
+/* ── Responsive ─────────────────────────────────────────────────────────
+   The toolbar is a run of inline-block `.ql-formats` groups and is the widest
+   thing in the editor, so it is what sets the editor's minimum width. The
+   groups already wrap (Quill emits whitespace between them) — what does not
+   fit is their gutters and the button hit boxes. Tighten those instead of
+   hiding controls: every one of these buttons is a real editing affordance
+   and dropping any of them on a phone would remove functionality.
+
+   The base rule is a deliberate tightening at *every* width — Quill ships a
+   15px gutter between format groups, which is generous for four groups of
+   icon buttons — so the media queries below descend from 8px, not from 15. */
+.ql-toolbar.ql-snow .ql-formats {
+  margin-right: 8px;
+}
+
+@media (max-width: 599.95px) {
+  .ql-toolbar.ql-snow {
+    padding: 6px 8px;
+  }
+
+  .ql-toolbar.ql-snow .ql-formats {
+    margin-right: 4px;
+  }
+
+  .ql-toolbar.ql-snow button {
+    width: 26px;
+    padding: 2px 4px;
+  }
+
+  .ql-toolbar.ql-snow .ql-picker-label {
+    padding: 2px 4px;
+  }
+}
+
+@media (max-width: 479.95px) {
+  .ql-toolbar.ql-snow .ql-picker.ql-header,
+  .ql-toolbar.ql-snow .ql-picker.ql-size {
+    width: 62px;
+  }
+
+  .ql-container.ql-snow,
+  .ql-editor {
+    font-size: 0.95rem;
+  }
+}

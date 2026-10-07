@@ -8,6 +8,12 @@
     color: white;
     font-size: 18px;
     border-radius: 8px;
+    /* Fixed and centred: without a cap a long message runs to both viewport
+       edges on a phone. `min()` keeps a usable gutter at 320px without
+       narrowing the banner on desktop. */
+    max-width: min(92vw, 520px);
+    overflow-wrap: anywhere;
+    text-align: center;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     opacity: 0;
     transition: all 0.5s ease;

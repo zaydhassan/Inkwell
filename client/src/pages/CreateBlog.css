@@ -1125,6 +1125,13 @@
 
 .ist-side-scroll {
   flex: 1;
+  min-width: 0;
+  /* `overflow-x` as well as `-y`: the panel is a fixed-width column and its
+     parent is `overflow: hidden`, so without this a long unbreakable token —
+     a URL, a code snippet, a base64 filename in the AI copilot or SEO tab —
+     was silently clipped with no way to reach it. Same reasoning as
+     `.blog-content pre` in BlogDetails.css. */
+  overflow-x: auto;
   overflow-y: auto;
   overscroll-behavior: contain;
   /* Gutter for the content + room for the focus ring. */
@@ -1140,6 +1147,25 @@
 .ist-side-scroll::-webkit-scrollbar-thumb {
   background: var(--ink-wash-2);
   border-radius: 999px;
+}
+
+/* Long unbreakable strings wrap instead of setting the panel's min-content
+   width. `anywhere` rather than `break-word`: only `anywhere` lets an unbroken
+   URL actually shrink a min-content-sized block, which is the case that was
+   overflowing. `pre` is excluded — a code block should scroll, not reflow. */
+.ist-side-scroll p,
+.ist-side-scroll li,
+.ist-side-scroll a,
+.ist-side-scroll code,
+.ist-side-scroll h4,
+.ist-side-scroll h5,
+.ist-side-scroll h6,
+.ist-side-scroll .ist-field-value {
+  overflow-wrap: anywhere;
+}
+
+.ist-side-scroll pre {
+  overflow-x: auto;
 }
 
 .ist-panel-slot > * + * {
@@ -3052,8 +3078,8 @@
   }
 }
 
-/* ≤639: compact the chrome; never squeeze three columns in. */
-@media (max-width: 639.95px) {
+/* ≤599.95: compact the chrome; never squeeze three columns in. */
+@media (max-width: 599.95px) {
   .ist-topbar {
     height: 58px;
     padding: 0 0.7rem;

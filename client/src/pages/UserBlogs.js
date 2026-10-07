@@ -126,7 +126,7 @@ const UserBlogs = () => {
   });
 
   return (
-    <Box sx={{ flexGrow: 1, minHeight: "100vh", p: { xs: 2, md: 4 } }}>
+    <Box sx={{ flexGrow: 1, minHeight: "100dvh", p: { xs: 2, md: 4 } }}>
       <SectionHeading
         eyebrow="Your workspace"
         title="My Blogs"

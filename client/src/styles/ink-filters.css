@@ -304,7 +304,7 @@
   }
 }
 
-@media (max-width: 719.95px) {
+@media (max-width: 599.95px) {
   /* Tabs, then search, then sort — each on its own line, full width. */
   .ink-rh-filters-row {
     flex-direction: column;

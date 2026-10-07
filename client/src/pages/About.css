@@ -73,7 +73,7 @@
   border-radius: 4px;
 }
 
-@media (max-width: 1239.95px) {
+@media (max-width: 1199.95px) {
   .ink-ab-rail {
     display: none;
   }
@@ -82,8 +82,8 @@
 /* The rail needs about 130px of the right edge to itself. Rather than let it
    sit on the hero panel, the reading column narrows by that much once the
    rail appears — symmetrically, so the page still reads centred. Below
-   1240px the rail is gone and the wrap takes the full width again. */
-@media (min-width: 1240px) {
+   1200px the rail is gone and the wrap takes the full width again. */
+@media (min-width: 1200px) {
   .ink-ab-wrap {
     max-width: min(1360px, calc(100vw - 272px));
   }
@@ -1831,7 +1831,7 @@
   }
 }
 
-@media (max-width: 639.95px) {
+@media (max-width: 599.95px) {
   .ink-ab-features,
   .ink-ab-values,
   .ink-ab-rwe,

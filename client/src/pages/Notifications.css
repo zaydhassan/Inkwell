@@ -875,7 +875,7 @@
 
 /* ── Responsive ─────────────────────────────────────────────────────── */
 
-@media (max-width: 1024px) {
+@media (max-width: 1023.95px) {
   /* Narrower viewports keep both columns but hand the feed a bigger share;
      only the sticky is dropped, since a short rail has nothing to travel. */
   .ink-nt-layout {
@@ -887,7 +887,7 @@
   }
 }
 
-@media (max-width: 860px) {
+@media (max-width: 899.95px) {
   .ink-nt-layout {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -897,7 +897,7 @@
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 599.95px) {
   .ink-nt-summary-cell {
     min-width: 50%;
     border-right: none;

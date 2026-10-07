@@ -17,6 +17,9 @@
   --ink-profile-content: 1100px;
   --ink-profile-section-y: clamp(2.5rem, 5vw, 4rem);
   min-height: 100vh;
+  /* dvh so the mobile address bar collapsing does not resize the page under
+     the reader; the vh above stays as the fallback. */
+  min-height: 100dvh;
 }
 
 /* ── Shell: rail beside content ─────────────────────────────────────── */
@@ -607,6 +610,7 @@
     /* Clears the sticky Navbar. */
     top: 104px;
     max-height: calc(100vh - 128px);
+    max-height: calc(100dvh - 128px);
     overflow-y: auto;
     padding-right: clamp(1rem, 2vw, 1.75rem);
     border-right: 1px solid var(--ink-border-soft);
@@ -706,8 +710,8 @@
   }
 }
 
-/* ── ≤639.95: single column everywhere ──────────────────────────────── */
-@media (max-width: 639.95px) {
+/* ── ≤599.95: single column everywhere ──────────────────────────────── */
+@media (max-width: 599.95px) {
   .ink-profile-hero {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:

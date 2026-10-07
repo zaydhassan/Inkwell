@@ -15,6 +15,7 @@
 .ink-explore {
   position: relative;
   min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: clip; /* the drifting glow blobs must not create a scrollbar */
 }
 
@@ -827,7 +828,7 @@
 /* Tablet: the rail drops under the stories, full width, and lays its cards out
    side by side so it does not become a tall column of its own. Same card
    rhythm as the desktop rail. */
-@media (max-width: 1024px) {
+@media (max-width: 1023.95px) {
   .ink-explore-layout {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -845,7 +846,7 @@
 
 /* Below tablet the hero stacks: copy first, drawing underneath it — never
    beside it, where it would squeeze the headline into four lines. */
-@media (max-width: 860px) {
+@media (max-width: 899.95px) {
   .ink-explore-hero-grid {
     grid-template-columns: minmax(0, 1fr);
     gap: 1.5rem;
@@ -870,7 +871,7 @@
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 599.95px) {
   .ink-explore-grid {
     grid-template-columns: minmax(0, 1fr);
     gap: 20px;

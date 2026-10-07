@@ -72,7 +72,7 @@ const Analytics = () => {
   // is a friendly guard rather than a security boundary.
   if (user && user.role === "Reader") {
     return (
-      <Box sx={{ minHeight: "100vh", p: { xs: 2, md: 4 } }}>
+      <Box sx={{ minHeight: "100dvh", p: { xs: 2, md: 4 } }}>
         <SectionHeading eyebrow="Writers only" title="Author Analytics" align="left" sx={{ mb: 4 }} />
         <Box sx={{ maxWidth: 720, mx: "auto" }}>
           <GlassCard sx={{ p: 6, textAlign: "center" }}>
@@ -90,7 +90,7 @@ const Analytics = () => {
   // Skeleton mirrors the dashboard layout: four stat cards + chart panels.
   if (loading) {
     return (
-      <Box sx={{ minHeight: '100vh', p: { xs: 2, md: 4 } }}>
+      <Box sx={{ minHeight: '100dvh', p: { xs: 2, md: 4 } }}>
         <Skeleton variant="text" width={220} height={38} sx={{ mb: 3 }} />
         <Grid container spacing={2} sx={{ mb: 3 }}>
           {Array.from({ length: 4 }).map((_, i) => (
@@ -113,7 +113,7 @@ const Analytics = () => {
 
   if (error || !stats) {
     return (
-      <Box sx={{ minHeight: "100vh", p: { xs: 2, md: 4 } }}>
+      <Box sx={{ minHeight: "100dvh", p: { xs: 2, md: 4 } }}>
         <SectionHeading eyebrow="Insights" title="Author Analytics" align="left" sx={{ mb: 4 }} />
         <Box sx={{ maxWidth: 720, mx: "auto", textAlign: "center" }}>
           <Typography color="text.secondary" sx={{ mb: 2 }}>Couldn’t load your analytics. Please try again.</Typography>
@@ -156,7 +156,7 @@ const Analytics = () => {
   const hasData = kpis.totalPosts > 0;
 
   return (
-    <Box sx={{ minHeight: "100vh", p: { xs: 2, md: 4 } }}>
+    <Box sx={{ minHeight: "100dvh", p: { xs: 2, md: 4 } }}>
       <SectionHeading
         eyebrow="Insights"
         title="Author Analytics"

@@ -62,7 +62,7 @@ function AppWrapper() {
     <MuiThemeProvider theme={themeInstance}>
       <CssBaseline />
       <CommandPalette />
-      <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+      <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100dvh" }}>
         {!isAdminRoute && !isImmersiveAuthRoute && !isStudioRoute && <Navbar />}
         {/* Global toast shell — a glass card on the theme's surface. The
             unique per-event badges/icons live in utils/toasts.js. */}

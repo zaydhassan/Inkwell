@@ -305,7 +305,7 @@ export default function Contact() {
 
   return (
     <>
-      <Box className="contact-page" sx={{ minHeight: "100vh", py: { xs: 5, md: 8 } }}>
+      <Box className="contact-page" sx={{ minHeight: "100dvh", py: { xs: 5, md: 8 } }}>
         <BackgroundLayers />
 
         <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1 }}>

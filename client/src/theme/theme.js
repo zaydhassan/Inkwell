@@ -93,19 +93,74 @@ const FONT_DISPLAY = '"Plus Jakarta Sans", "Inter", system-ui, sans-serif';
 const FONT_BODY = '"Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
 const FONT_MONO = '"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace';
 
+/* ─────────────────────────────────────────────────────────────────────────
+   THE BREAKPOINT LADDER — the one place these numbers are defined.
+
+   The app has two styling systems: this MUI theme (the older charcoal layer)
+   and the hand-written CSS in styles/inkwell.css plus the per-page sheets (the
+   "ink" editorial layer). CSS custom properties cannot be used in a media
+   query condition, so the CSS side cannot import these values — it mirrors
+   them. Anything that changes here changes the contract; update
+   styles/inkwell.css's matching comment block and the audit script together.
+
+     tier     max-width   MUI    what it means
+     phone      479.95      —     small-phone refinement. No MUI twin: `sx`
+                                  already covers phones with `xs`.
+     sm         599.95     600    MUI's own down("sm") value.
+     md         899.95     900    MUI's own down("md") value. The desktop shell
+                                  is built on this one — the Navbar capsule
+                                  height flips at md.
+     ink       1023.95    1024    Desktop shell: the writing studio's rail and
+                                  the dashboard side rails collapse here.
+     lg        1199.95    1200    MUI's own down("lg") value.
+
+   The `.95` values are MUI's own `down()` convention (down(x) is
+   `@media (max-width: <value - 0.05>px)`), so the CSS tiers land on exactly the
+   same pixel as the MUI tiers they mirror.
+
+   `ink` is a bespoke tier MUI has no concept of. It is registered below so
+   `sx={{ display: { xs: "none", ink: "flex" } }}` is available in future work;
+   nothing references it yet, so adding it moves no existing style.
+   ───────────────────────────────────────────────────────────────────────── */
+export const BREAKPOINT_VALUES = {
+  xs: 0,
+  sm: 600,
+  md: 900,
+  ink: 1024,
+  lg: 1200,
+  xl: 1536,
+};
+
+/* The same ladder expressed as the max-width you would write in a media query,
+   for any JS that needs to match the CSS side (useMediaQuery, a resize
+   listener). Keep in step with the CSS. */
+export const BP = {
+  phone: 479.95,
+  sm: 599.95,
+  md: 899.95,
+  ink: 1023.95,
+  lg: 1199.95,
+};
+
 const buildTheme = (mode) => {
   const tokens = getDesignTokens(mode);
   const { palette, customShadows, brandSoft } = tokens;
 
   return createTheme({
     palette,
+    breakpoints: { values: BREAKPOINT_VALUES },
     shape: { borderRadius: 16 },
     typography: {
       fontFamily: FONT_BODY,
-      h1: { fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: "3.25rem", lineHeight: 1.1, letterSpacing: "-0.02em" },
-      h2: { fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: "2.5rem", lineHeight: 1.15, letterSpacing: "-0.02em" },
-      h3: { fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: "2rem", lineHeight: 1.2, letterSpacing: "-0.015em" },
-      h4: { fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: "1.5rem", lineHeight: 1.25, letterSpacing: "-0.01em" },
+      /* Fluid headings. Each clamp's upper bound is the size this theme has
+         always used, and each reaches it at roughly 930–950px, so the desktop
+         look is byte-identical and the scale only steps down below the shell
+         breakpoint. Without this a 52px h1 is five lines on a 360px phone.
+         The ink layer has its own clamp() headings in the page sheets. */
+      h1: { fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: "clamp(2rem, 5.5vw, 3.25rem)", lineHeight: 1.1, letterSpacing: "-0.02em" },
+      h2: { fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: "clamp(1.75rem, 4.2vw, 2.5rem)", lineHeight: 1.15, letterSpacing: "-0.02em" },
+      h3: { fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: "clamp(1.5rem, 3.4vw, 2rem)", lineHeight: 1.2, letterSpacing: "-0.015em" },
+      h4: { fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: "clamp(1.25rem, 2.6vw, 1.5rem)", lineHeight: 1.25, letterSpacing: "-0.01em" },
       h5: { fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: "1.25rem", lineHeight: 1.3 },
       h6: { fontFamily: FONT_DISPLAY, fontWeight: 600, fontSize: "1.05rem", lineHeight: 1.35 },
       subtitle1: { fontWeight: 500, fontSize: "1rem", lineHeight: 1.5, color: palette.text.secondary },

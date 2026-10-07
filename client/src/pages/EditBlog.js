@@ -374,7 +374,7 @@ const EditBlog = () => {
                 <Box sx={{ mb: 2, width: "100%" }}>
                     <Box
                         ref={quillRef}
-                        sx={{ height: 300, width: "100%" }}
+                        sx={{ height: { xs: 240, md: 300 }, width: "100%" }}
                     />
                 </Box>
 

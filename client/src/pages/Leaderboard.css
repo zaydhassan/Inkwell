@@ -905,7 +905,37 @@
   }
 }
 
-@media (max-width: 699.95px) {
+@media (max-width: 899.95px) {
+  /* The band between the full desktop table and the phone collapse. The
+     writers' template is `52px minmax(0,1fr) 78px 78px 78px 92px 88px` — 466px
+     of fixed tracks plus six gaps ahead of and behind the one flexible column,
+     and the readers' is 376px. Once the layout is a single column there is no
+     rail to absorb that, so the person column was the only thing that could
+     give and the name was the thing being crushed, while four metric columns
+     stayed comfortable. Drop the two least load-bearing metrics here instead;
+     phones drop the rest below. */
+  .ink-lb-table--writers {
+    --lb-col: 46px minmax(0, 1fr) 68px 68px 78px;
+  }
+
+  .ink-lb-table--readers {
+    --lb-col: 46px minmax(0, 1fr) 104px 84px;
+  }
+
+  .ink-lb-col-likes,
+  .ink-lb-col-followers {
+    display: none;
+  }
+
+  .ink-lb-thead,
+  .ink-lb-trow,
+  .ink-lb-skel-row {
+    padding-inline: 14px;
+    gap: 0.4rem;
+  }
+}
+
+@media (max-width: 599.95px) {
   /* Phones keep rank, person and points. Four metric columns squeezed into
      a 360px row would be unreadable, so they are dropped — not shrunk. */
   .ink-lb-table--writers,

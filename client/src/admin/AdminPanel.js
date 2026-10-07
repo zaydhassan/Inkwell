@@ -146,7 +146,7 @@ const AdminPanel = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }}>
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100dvh" }}>
         <CircularProgress />
       </Box>
     );
@@ -154,17 +154,25 @@ const AdminPanel = () => {
 
   if (fetchError) {
     return (
-      <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", minHeight: "100vh", gap: 2 }}>
+      <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", minHeight: "100dvh", gap: 2 }}>
         <Typography variant="h6">Couldn't load admin data.</Typography>
         <Button variant="contained" color="primary" onClick={fetchData}>Retry</Button>
       </Box>
     );
   }
 
-  // Reusable "no rows" row for an empty table.
-  const EmptyRow = ({ label, colSpan }) => (
+  /* Reusable "no rows" row for an empty table.
+     `cols` is { xs, md } rather than a single number: the tables drop their
+     secondary columns below md, so an empty row has to span a different count
+     at each size. Two cells with opposite display rules rather than one cell
+     with a too-large colSpan — a colSpan wider than the real column count can
+     make the browser lay the table out wider than its container. */
+  const EmptyRow = ({ label, cols }) => (
     <TableRow>
-      <TableCell colSpan={colSpan} align="center" sx={{ py: 4, color: "text.secondary" }}>
+      <TableCell colSpan={cols.xs} align="center" sx={{ py: 4, color: "text.secondary", display: { xs: "table-cell", md: "none" } }}>
+        {label}
+      </TableCell>
+      <TableCell colSpan={cols.md} align="center" sx={{ py: 4, color: "text.secondary", display: { xs: "none", md: "table-cell" } }}>
         {label}
       </TableCell>
     </TableRow>
@@ -218,19 +226,24 @@ const AdminPanel = () => {
   };
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh" }}>
+    // Stacks on small screens. Without the flexDirection the sidebar (which is
+    // `width: 100%` below md) and the main column were laid out side by side,
+    // so the sidebar ate the whole row and the content was crushed to a sliver.
+    <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, minHeight: "100dvh" }}>
       {/* Sidebar */}
       <Box
         component="nav"
+        aria-label="Admin sections"
         sx={{
           width: { xs: "100%", md: drawerWidth },
           flexShrink: { md: 0 },
           borderRight: { md: `1px solid` },
-          borderColor: { md: "divider" },
+          borderBottom: { xs: `1px solid`, md: "none" },
+          borderColor: "divider",
           bgcolor: "background.paper",
           position: { md: "sticky" },
           top: 0,
-          height: { md: "100vh" },
+          height: { md: "100dvh" },
           p: 2,
           display: "flex",
           flexDirection: "column",
@@ -326,25 +339,29 @@ const AdminPanel = () => {
           <Box sx={{ p: 2, borderBottom: `1px solid`, borderColor: "divider" }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Manage Users</Typography>
           </Box>
-          <TableContainer>
+          {/* The card keeps `overflow: hidden` for its rounded corners, so the
+              TableContainer carries its own horizontal scroll as the fallback.
+              The real fix is dropping the secondary columns below md — an
+              24-char ObjectId and an email address cannot share a phone row. */}
+          <TableContainer sx={{ overflowX: "auto" }}>
             <Table size="small">
               <TableHead>
                 <TableRow sx={{ bgcolor: "brandSoft" }}>
                   <TableCell sx={{ fontWeight: 700 }}>Username</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Role</TableCell>
+                  <TableCell sx={{ fontWeight: 700, display: { xs: "none", md: "table-cell" } }}>Email</TableCell>
+                  <TableCell sx={{ fontWeight: 700, display: { xs: "none", md: "table-cell" } }}>Role</TableCell>
                   <TableCell sx={{ fontWeight: 700 }} align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {users.length === 0 ? (
-                  <EmptyRow label="No users yet." colSpan={4} />
+                  <EmptyRow label="No users yet." cols={{ xs: 2, md: 4 }} />
                 ) : (
                   users.slice(0, MAX_TABLE_ROWS).map((user) => (
                     <TableRow key={user._id} hover>
                       <TableCell>{user.username}</TableCell>
-                      <TableCell sx={{ color: "text.secondary" }}>{user.email}</TableCell>
-                      <TableCell><Chip label={user.role} size="small" color={user.role === "Admin" ? "secondary" : "default"} variant="outlined" /></TableCell>
+                      <TableCell sx={{ color: "text.secondary", display: { xs: "none", md: "table-cell" } }}>{user.email}</TableCell>
+                      <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}><Chip label={user.role} size="small" color={user.role === "Admin" ? "secondary" : "default"} variant="outlined" /></TableCell>
                       <TableCell align="right">
                         <Button size="small" color="error" variant="outlined" onClick={() => handleBanUser(user._id)}>Ban</Button>
                       </TableCell>
@@ -362,25 +379,28 @@ const AdminPanel = () => {
           <Box sx={{ p: 2, borderBottom: `1px solid`, borderColor: "divider" }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Manage Comments</Typography>
           </Box>
-          <TableContainer>
+          <TableContainer sx={{ overflowX: "auto" }}>
             <Table size="small">
               <TableHead>
                 <TableRow sx={{ bgcolor: "brandSoft" }}>
-                  <TableCell sx={{ fontWeight: 700 }}>Comment ID</TableCell>
+                  <TableCell sx={{ fontWeight: 700, display: { xs: "none", md: "table-cell" } }}>Comment ID</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Comment Text</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>User</TableCell>
+                  <TableCell sx={{ fontWeight: 700, display: { xs: "none", md: "table-cell" } }}>User</TableCell>
                   <TableCell sx={{ fontWeight: 700 }} align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {comments.length === 0 ? (
-                  <EmptyRow label="No comments yet." colSpan={4} />
+                  <EmptyRow label="No comments yet." cols={{ xs: 2, md: 4 }} />
                 ) : (
                   comments.slice(0, MAX_TABLE_ROWS).map((comment) => (
                     <TableRow key={comment._id} hover>
-                      <TableCell sx={{ color: "text.secondary", fontFamily: "monospace", fontSize: "0.75rem" }}>{comment._id}</TableCell>
-                      <TableCell sx={{ maxWidth: 360 }}>{comment.content}</TableCell>
-                      <TableCell>{comment.user_id ? comment.user_id.username : "No User"}</TableCell>
+                      <TableCell sx={{ color: "text.secondary", fontFamily: "monospace", fontSize: "0.75rem", display: { xs: "none", md: "table-cell" } }}>{comment._id}</TableCell>
+                      {/* Truncated rather than wrapped: an unbounded comment
+                          body would otherwise set the table's width and push
+                          the row (and the page) wide. */}
+                      <TableCell sx={{ maxWidth: { xs: 200, md: 360 }, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{comment.content}</TableCell>
+                      <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>{comment.user_id ? comment.user_id.username : "No User"}</TableCell>
                       <TableCell align="right">
                         <Button size="small" color="error" variant="outlined" onClick={() => handleDeleteComment(comment._id)}>Delete</Button>
                       </TableCell>
@@ -398,7 +418,7 @@ const AdminPanel = () => {
           <Box sx={{ p: 2, borderBottom: `1px solid`, borderColor: "divider" }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Manage Blogs</Typography>
           </Box>
-          <TableContainer>
+          <TableContainer sx={{ overflowX: "auto" }}>
             <Table size="small">
               <TableHead>
                 <TableRow sx={{ bgcolor: "brandSoft" }}>
@@ -409,11 +429,11 @@ const AdminPanel = () => {
               </TableHead>
               <TableBody>
                 {blogs.length === 0 ? (
-                  <EmptyRow label="No blogs yet." colSpan={3} />
+                  <EmptyRow label="No blogs yet." cols={{ xs: 3, md: 3 }} />
                 ) : (
                   blogs.slice(0, MAX_TABLE_ROWS).map((blog) => (
                     <TableRow key={blog._id} hover>
-                      <TableCell>{blog.title}</TableCell>
+                      <TableCell sx={{ maxWidth: { xs: 180, md: 420 }, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{blog.title}</TableCell>
                       <TableCell>
                         <Chip label={blog.status} size="small" color={blog.status === "Published" ? "primary" : "default"} variant={blog.status === "Published" ? "filled" : "outlined"} />
                       </TableCell>

@@ -33,6 +33,43 @@
    4.1:1 on this canvas, which fails AA for body copy. So muted *text* uses
    the lifted `--ink-text-3` (#8E887F, ~5.6:1) while the original value
    stays available as `--ink-text-3-decor` for purely decorative use.
+
+   ── THE BREAKPOINT LADDER ──────────────────────────────────────────────
+   A media query condition cannot read a custom property, so these numbers
+   cannot be tokenized; they are a documented contract, mirrored from
+   BREAKPOINT_VALUES in theme/theme.js. Use these five and nothing else.
+
+     phone    max-width: 479.95px   small-phone refinement (no MUI twin)
+     sm       max-width: 599.95px   = MUI sm (600)
+     md       max-width: 899.95px   = MUI md (900) — the desktop shell
+     ink      max-width: 1023.95px  studio rail / dashboard collapse
+     lg       max-width: 1199.95px  = MUI lg (1200)
+
+   The `.95` is MUI's own `down()` convention, so these land on the same pixel
+   as the MUI tiers they mirror. Where a layout is genuinely intrinsic (a card
+   grid that can simply reflow) prefer `repeat(auto-fill, minmax(min(<min>,
+   100%), 1fr))` over a breakpoint at all — see `.ink-explore-grid` in
+   Explore.css and `.ink-stories-grid` in Home.css, and the worked reasoning in
+   components/BlogGrid.js. Use `auto-fill`, not `auto-fit`, unless you actually
+   want a short row stretched to fill its width.
+
+   A `min-width` query that mirrors a ladder step uses the round number one
+   pixel above it — `min-width: 1024px` against `max-width: 1023.95px`,
+   `min-width: 1200px` against `max-width: 1199.95px`. The pair then leaves no
+   gap and no overlap on fractional viewports. Do not write
+   `max-width: 1024px`; that is a different (and wrong) boundary.
+
+   Four files deliberately keep their own values and are NOT part of this
+   ladder, because their numbers encode a tuned design rather than a device
+   tier:
+     · Rewards.css      — the hero must hold 55/45 at tablet (720/800/820/900)
+     · Login.css        — a tuned split-screen plus a landscape height query
+                          (1180/979.95/599.95 and max-height: 980px)
+     · CreateBlog.css   — the 1024–1249.95 three-tier studio aside
+     · Footer.css       — its tiers sit where the content stops fitting, not at
+                          a device width: 520px is where the CTA stops fitting a
+                          half-width cell, and 767px is where the brand
+                          statement stops sharing a row (see its own header).
    ───────────────────────────────────────────────────────────────────── */
 
 .ink,
@@ -105,8 +142,11 @@
   /* Rhythm. One spacing scale, used by both pages. */
   --ink-gutter: clamp(1.25rem, 4vw, 2.5rem);
   --ink-section-y: clamp(4rem, 9vw, 7.5rem);
-  --ink-radius: 22px;
-  --ink-radius-lg: 28px;
+  /* Radii ease down with the viewport: a 22px corner on a 320px card reads as
+     a pill. The upper bound is the value these have always had, so anything
+     from ~1100px up is unchanged. Nothing calc()s against them. */
+  --ink-radius: clamp(16px, 2vw, 22px);
+  --ink-radius-lg: clamp(20px, 2.6vw, 28px);
 }
 
 /* ── Light mode ───────────────────────────────────────────────────────

@@ -1,0 +1,38 @@
+auditing 19 route(s) × 16 viewports
+  measured 320×568
+  measured 360×740
+  measured 390×844
+  measured 414×896
+  measured 480×800
+  measured 600×900
+  measured 700×900
+  measured 768×1024
+  measured 850×900
+  measured 900×800
+  measured 1023×768
+  measured 1024×768
+  measured 1100×800
+  measured 1200×900
+  measured 1440×900
+  measured 1920×1080
+
+=== REDIRECTED (not actually measured) ===
+  CreateBlog       /create-blog → /
+  Admin            /admin → /
+
+=== HORIZONTAL OVERFLOW ===
+  none — every route fits every viewport
+
+=== NAVBAR (exactly one control per width) ===
+  NO NAV CONTROL at width(s): 900
+
+=== ADMIN MAIN COLUMN (phone) ===
+  320px → main 305px (95% of viewport)
+  360px → main 345px (96% of viewport)
+  390px → main 375px (96% of viewport)
+  414px → main 399px (96% of viewport)
+  480px → main 465px (97% of viewport)
+
+  (1 probe(s) failed to evaluate)
+
+304 measurements → responsive-audit.json
