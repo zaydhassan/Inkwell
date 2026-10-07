@@ -277,6 +277,7 @@ const Navbar = () => {
     location.pathname === "/notifications" ||
     location.pathname === "/reading-history" ||
     location.pathname === "/bookmarks" ||
+    location.pathname === "/rewards" ||
     location.pathname.startsWith("/explore") ||
     location.pathname.startsWith("/blogs") ||
     location.pathname.startsWith("/category") ||
