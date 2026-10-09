@@ -8,7 +8,6 @@
 
 ---
 
-
 ## ✨ Features
 
 - **Auth & RBAC** — JWT access + Rotated httpOnly refresh tokens, three roles
