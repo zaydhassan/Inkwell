@@ -4,7 +4,7 @@
 > engage, and a server-side points/levels system rewards meaningful
 > participation. Built on the MERN stack with a hardened JWT auth layer,
 > server-side point awarding, transactional data writes, and a Vite-powered
-> React frontend.
+> React frontend
 
 ---
 
