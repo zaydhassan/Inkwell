@@ -1,18 +1,10 @@
-/* ─────────────────────────────────────────────────────────────────────
-   About page — the story's building blocks, one import surface.
-
-   About.js composes these in order; nothing here is used anywhere else in
-   the app, so this barrel exists to keep the page's import block readable
-   rather than to be a shared library.
-   ───────────────────────────────────────────────────────────────────── */
-
 export { Section, StepMark, NodeChip, AuthorTag, DiagramStage, useParallax } from "./shared";
 export { default as ScrollProgress, CHAPTERS } from "./ScrollProgress";
 export { default as EcosystemFlow } from "./EcosystemFlow";
 export { default as OrbitDiagram } from "./OrbitDiagram";
 export { default as ProblemLedger } from "./ProblemLedger";
 export { default as SolutionWorkflow } from "./SolutionWorkflow";
-export { default as AiComparison } from "./AiComparison";
+eexport { default as AiComparison } from "./AIComparison";
 export { default as AiFeatureGrid } from "./AiFeatureGrid";
 export { default as WritingDemo } from "./WritingDemo";
 export { default as WriterJourney } from "./WriterJourney";
